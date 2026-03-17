@@ -20,6 +20,7 @@ const currentPath = Astro.url.pathname;
 
     <nav class="nav-desktop" aria-label="Main navigation">
       <a href="/#features" class="nav-link">{nav.features}</a>
+      <a href="/tools" class="nav-link" class:list={[{ active: currentPath.startsWith('/tools') }]}>Tools</a>
       <a href="/pricing" class="nav-link" class:list={[{ active: currentPath === '/pricing/' || currentPath === '/pricing' }]}>{nav.pricing}</a>
       <a href="https://docs.bugreel.io" class="nav-link" target="_blank" rel="noopener">{nav.docs}</a>
       <a href="/blog" class="nav-link" class:list={[{ active: currentPath.startsWith('/blog') }]}>{nav.blog}</a>
@@ -36,6 +37,7 @@ const currentPath = Astro.url.pathname;
 
   <nav class="nav-mobile" aria-label="Mobile navigation" hidden>
     <a href="/#features" class="nav-mobile-link">{nav.features}</a>
+    <a href="/tools" class="nav-mobile-link">Tools</a>
     <a href="/pricing" class="nav-mobile-link">{nav.pricing}</a>
     <a href="https://docs.bugreel.io" class="nav-mobile-link" target="_blank" rel="noopener">{nav.docs}</a>
     <a href="/blog" class="nav-mobile-link">{nav.blog}</a>

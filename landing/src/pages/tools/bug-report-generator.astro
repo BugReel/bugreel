@@ -1,0 +1,1490 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Bug Report Generator',
+    description: 'Generate structured bug reports for Jira, GitHub, Linear, and more. Fill out the form, copy the formatted report. Free, no signup required.',
+    url: 'https://bugreel.io/tools/bug-report-generator',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Bug Report Generator', item: 'https://bugreel.io/tools/bug-report-generator' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Free Bug Report Generator — Create Perfect Bug Reports | BugReel"
+  description="Generate structured bug reports for Jira, GitHub, Linear, and more. Fill out the form, copy the formatted report. Free, no signup required."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Bug Report Generator</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-success">Free &middot; No Signup</span>
+        <h1>Bug Report Generator</h1>
+        <p class="hero-subtitle">Create a perfectly structured bug report in seconds. Copy to Jira, GitHub, Linear, or any tracker.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Tool -->
+  <section class="tool-section">
+    <div class="container">
+      <div class="tool-layout" id="tool-layout">
+
+        <!-- LEFT: Form -->
+        <div class="form-panel">
+          <form id="bug-form" autocomplete="off">
+
+            <!-- Title -->
+            <div class="form-group">
+              <label for="bug-title" class="form-label">
+                Bug Title
+                <span class="form-hint">Clear, specific summary of the issue</span>
+              </label>
+              <input
+                type="text"
+                id="bug-title"
+                class="form-input"
+                placeholder="e.g., Login button unresponsive on mobile Safari"
+                required
+              />
+            </div>
+
+            <!-- Environment -->
+            <div class="form-group">
+              <label class="form-label">
+                Environment
+                <span class="form-hint">Where the bug occurs</span>
+              </label>
+              <div class="env-row">
+                <input type="text" id="bug-browser" class="form-input" placeholder="Browser" />
+                <input type="text" id="bug-os" class="form-input" placeholder="OS" />
+                <input type="text" id="bug-version" class="form-input" placeholder="App Version" />
+              </div>
+            </div>
+
+            <!-- Steps to Reproduce -->
+            <div class="form-group">
+              <label for="bug-steps" class="form-label">
+                Steps to Reproduce
+                <span class="form-hint">Numbered steps — press Enter for each new step</span>
+              </label>
+              <textarea
+                id="bug-steps"
+                class="form-textarea"
+                rows="5"
+                placeholder="1. Go to the login page&#10;2. Enter valid credentials&#10;3. Tap the 'Sign In' button&#10;4. Observe the button does not respond"
+              ></textarea>
+            </div>
+
+            <!-- Expected Behavior -->
+            <div class="form-group">
+              <label for="bug-expected" class="form-label">
+                Expected Behavior
+                <span class="form-hint">What should happen</span>
+              </label>
+              <textarea
+                id="bug-expected"
+                class="form-textarea"
+                rows="2"
+                placeholder="The user should be logged in and redirected to the dashboard."
+              ></textarea>
+            </div>
+
+            <!-- Actual Behavior -->
+            <div class="form-group">
+              <label for="bug-actual" class="form-label">
+                Actual Behavior
+                <span class="form-hint">What actually happens</span>
+              </label>
+              <textarea
+                id="bug-actual"
+                class="form-textarea"
+                rows="2"
+                placeholder="The button does not respond to taps. No loading indicator appears."
+              ></textarea>
+            </div>
+
+            <!-- Severity & Priority -->
+            <div class="form-row">
+              <div class="form-group form-group--half">
+                <label for="bug-severity" class="form-label">Severity</label>
+                <div class="select-wrapper">
+                  <select id="bug-severity" class="form-select">
+                    <option value="">Select severity</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                  <span class="severity-dot" id="severity-dot"></span>
+                </div>
+              </div>
+
+              <div class="form-group form-group--half">
+                <label for="bug-priority" class="form-label">Priority</label>
+                <select id="bug-priority" class="form-select">
+                  <option value="">Select priority</option>
+                  <option value="p1">P1 — Urgent</option>
+                  <option value="p2">P2 — High</option>
+                  <option value="p3">P3 — Medium</option>
+                  <option value="p4">P4 — Low</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Additional Context (collapsible) -->
+            <div class="form-group">
+              <button type="button" class="collapse-toggle" id="toggle-context" aria-expanded="false">
+                <svg class="collapse-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Additional Context
+                <span class="form-hint" style="margin-left: 4px;">(optional)</span>
+              </button>
+              <div class="collapse-content" id="context-content" hidden>
+                <textarea
+                  id="bug-context"
+                  class="form-textarea"
+                  rows="3"
+                  placeholder="Any additional context: workarounds, frequency, related issues, etc."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Screenshots -->
+            <div class="form-group">
+              <button type="button" class="collapse-toggle" id="toggle-screenshots" aria-expanded="false">
+                <svg class="collapse-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Screenshots / Attachments
+                <span class="form-hint" style="margin-left: 4px;">(optional)</span>
+              </button>
+              <div class="collapse-content" id="screenshots-content" hidden>
+                <input
+                  type="text"
+                  id="bug-screenshots"
+                  class="form-input"
+                  placeholder="Paste URL or describe: 'See attached screenshot showing the error state'"
+                />
+              </div>
+            </div>
+
+            <!-- Clear Form -->
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="clear-form">Clear Form</button>
+              <span class="autosave-indicator" id="autosave-indicator">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M3.5 7l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Auto-saved
+              </span>
+            </div>
+          </form>
+        </div>
+
+        <!-- RIGHT: Preview -->
+        <div class="preview-panel" id="preview-panel">
+          <div class="preview-sticky">
+            <!-- Format Tabs -->
+            <div class="format-tabs" role="tablist" aria-label="Output format">
+              <button class="format-tab active" role="tab" aria-selected="true" data-format="markdown">Markdown</button>
+              <button class="format-tab" role="tab" aria-selected="false" data-format="jira">Jira</button>
+              <button class="format-tab" role="tab" aria-selected="false" data-format="github">GitHub</button>
+              <button class="format-tab" role="tab" aria-selected="false" data-format="linear">Linear</button>
+            </div>
+
+            <!-- Preview Area -->
+            <div class="preview-area">
+              <div class="preview-rendered" id="preview-rendered" role="tabpanel"></div>
+              <div class="preview-raw" id="preview-raw"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="preview-actions">
+              <button class="btn btn-primary" id="copy-btn" type="button">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M3 11V3.5A.5.5 0 013.5 3H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span id="copy-text">Copy to Clipboard</span>
+              </button>
+              <button class="btn btn-secondary btn-sm" id="download-btn" type="button">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M7 2v7.5M3.5 7L7 10.5 10.5 7M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Download .md
+              </button>
+              <span class="char-count" id="char-count">0 chars</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Pro Tips -->
+  <section class="section-sm tips-section">
+    <div class="container">
+      <h2 class="tips-title">Pro Tips for Better Bug Reports</h2>
+      <div class="tips-grid">
+        <div class="tip-card card">
+          <div class="tip-number">1</div>
+          <h3>Be specific, not vague</h3>
+          <p>Instead of "the button doesn't work", write "the Submit button on the checkout page (/checkout) does not respond to clicks after entering an invalid coupon code." Include the exact URL, element, and trigger condition.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">2</div>
+          <h3>Include the environment</h3>
+          <p>Browser version, OS, screen size, and app version matter. A bug on Chrome 120 / macOS might not reproduce on Firefox / Windows. The developer needs this to replicate your exact conditions.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">3</div>
+          <h3>Separate expected vs. actual</h3>
+          <p>The gap between "what should happen" and "what actually happens" is the bug. Making this explicit helps developers understand the issue without guessing your intent. Include screenshots of both states when possible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Want AI to generate bug reports automatically?</p>
+      <h2>Record your screen. AI does the rest.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel turns screen recordings into complete bug reports with steps, screenshots, and severity — in minutes, not hours.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/nicrmn/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 700px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 560px;
+  }
+
+  /* ===== Tool Layout ===== */
+  .tool-section {
+    padding-bottom: 64px;
+  }
+
+  .tool-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ===== Form Panel ===== */
+  .form-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+  }
+
+  .form-group {
+    margin-bottom: 24px;
+  }
+
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+  }
+
+  .form-hint {
+    font-weight: 400;
+    color: var(--color-text-dim);
+    font-size: 0.8125rem;
+  }
+
+  .form-input,
+  .form-textarea,
+  .form-select {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    outline: none;
+  }
+
+  .form-input::placeholder,
+  .form-textarea::placeholder {
+    color: var(--color-text-dim);
+  }
+
+  .form-input:focus,
+  .form-textarea:focus,
+  .form-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+  }
+
+  .form-textarea {
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.6;
+  }
+
+  .form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2371717a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  .form-select option {
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .env-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group--half {
+    margin-bottom: 24px;
+  }
+
+  .select-wrapper {
+    position: relative;
+  }
+
+  .severity-dot {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: none;
+    pointer-events: none;
+  }
+
+  .severity-dot.visible {
+    display: block;
+  }
+
+  .severity-dot.visible + .form-select {
+    padding-left: 30px;
+  }
+
+  .severity-dot.critical { background: var(--color-error); box-shadow: 0 0 6px var(--color-error); }
+  .severity-dot.high { background: #f97316; box-shadow: 0 0 6px #f97316; }
+  .severity-dot.medium { background: var(--color-warning); box-shadow: 0 0 6px var(--color-warning); }
+  .severity-dot.low { background: var(--color-success); box-shadow: 0 0 6px var(--color-success); }
+
+  /* ===== Collapsible ===== */
+  .collapse-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    text-align: left;
+  }
+
+  .collapse-toggle:hover {
+    color: var(--color-text);
+  }
+
+  .collapse-icon {
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+  }
+
+  .collapse-toggle[aria-expanded="true"] .collapse-icon {
+    transform: rotate(180deg);
+  }
+
+  .collapse-content {
+    margin-top: 10px;
+  }
+
+  .collapse-content[hidden] {
+    display: none;
+  }
+
+  /* ===== Form Actions ===== */
+  .form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .autosave-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+  }
+
+  .autosave-indicator.visible {
+    opacity: 1;
+  }
+
+  /* ===== Preview Panel ===== */
+  .preview-panel {
+    position: relative;
+  }
+
+  .preview-sticky {
+    position: sticky;
+    top: 80px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  /* Format Tabs */
+  .format-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+    overflow-x: auto;
+  }
+
+  .format-tab {
+    padding: 6px 16px;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+  }
+
+  .format-tab:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+
+  .format-tab.active {
+    color: #fff;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  /* Preview Area */
+  .preview-area {
+    padding: 24px;
+    min-height: 360px;
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  .preview-rendered {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--color-text-muted);
+  }
+
+  .preview-raw {
+    display: none;
+  }
+
+  /* Preview rendered styles */
+  .preview-rendered :global(h2) {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .preview-rendered :global(h3) {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-top: 20px;
+    margin-bottom: 8px;
+  }
+
+  .preview-rendered :global(p) {
+    margin-bottom: 8px;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .preview-rendered :global(ol),
+  .preview-rendered :global(ul) {
+    padding-left: 20px;
+    margin-bottom: 8px;
+  }
+
+  .preview-rendered :global(li) {
+    margin-bottom: 4px;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .preview-rendered :global(strong) {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .preview-rendered :global(hr) {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 16px 0;
+  }
+
+  .preview-rendered :global(.severity-badge) {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .preview-rendered :global(.severity-critical) {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+
+  .preview-rendered :global(.severity-high) {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+  }
+
+  .preview-rendered :global(.severity-medium) {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+
+  .preview-rendered :global(.severity-low) {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+  }
+
+  .preview-rendered :global(.priority-badge) {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--color-primary-glow);
+    color: var(--color-primary);
+  }
+
+  .preview-rendered :global(.meta-line) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+    font-size: 0.8125rem;
+  }
+
+  .preview-rendered :global(.meta-separator) {
+    color: var(--color-text-dim);
+  }
+
+  .preview-rendered :global(.watermark) {
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    font-style: italic;
+  }
+
+  .preview-rendered :global(.watermark a) {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .preview-rendered :global(.empty-state) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    text-align: center;
+    color: var(--color-text-dim);
+  }
+
+  .preview-rendered :global(.empty-state svg) {
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .preview-rendered :global(.empty-state p) {
+    font-size: 0.9375rem;
+    color: var(--color-text-dim);
+  }
+
+  .preview-rendered :global(.checkbox-item) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .preview-rendered :global(.checkbox-item input) {
+    margin-top: 4px;
+    accent-color: var(--color-primary);
+  }
+
+  /* Preview Actions */
+  .preview-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .char-count {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+  }
+
+  #copy-btn {
+    position: relative;
+    min-width: 180px;
+  }
+
+  #copy-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+
+  /* ===== Pro Tips ===== */
+  .tips-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tips-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .tip-card {
+    position: relative;
+    padding-top: 48px;
+  }
+
+  .tip-number {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-lg) 0 var(--radius-md) 0;
+  }
+
+  .tip-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .tip-card p {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1024px) {
+    .tool-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .preview-sticky {
+      position: static;
+    }
+
+    .tips-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .form-panel {
+      padding: 24px;
+    }
+
+    .env-row {
+      grid-template-columns: 1fr;
+    }
+
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .preview-actions {
+      flex-wrap: wrap;
+    }
+
+    .char-count {
+      width: 100%;
+      text-align: right;
+      margin-left: 0;
+    }
+  }
+</style>
+
+<script>
+  // ===== Bug Report Generator — Client-Side Logic =====
+
+  const STORAGE_KEY = 'bugreel-bug-report-form';
+  const DEBOUNCE_MS = 100;
+
+  // --- DOM Elements ---
+  const form = document.getElementById('bug-form') as HTMLFormElement;
+  const fields = {
+    title: document.getElementById('bug-title') as HTMLInputElement,
+    browser: document.getElementById('bug-browser') as HTMLInputElement,
+    os: document.getElementById('bug-os') as HTMLInputElement,
+    version: document.getElementById('bug-version') as HTMLInputElement,
+    steps: document.getElementById('bug-steps') as HTMLTextAreaElement,
+    expected: document.getElementById('bug-expected') as HTMLTextAreaElement,
+    actual: document.getElementById('bug-actual') as HTMLTextAreaElement,
+    severity: document.getElementById('bug-severity') as HTMLSelectElement,
+    priority: document.getElementById('bug-priority') as HTMLSelectElement,
+    context: document.getElementById('bug-context') as HTMLTextAreaElement,
+    screenshots: document.getElementById('bug-screenshots') as HTMLInputElement,
+  };
+
+  const previewRendered = document.getElementById('preview-rendered')!;
+  const previewRaw = document.getElementById('preview-raw')!;
+  const copyBtn = document.getElementById('copy-btn')!;
+  const copyText = document.getElementById('copy-text')!;
+  const downloadBtn = document.getElementById('download-btn')!;
+  const charCount = document.getElementById('char-count')!;
+  const clearFormBtn = document.getElementById('clear-form')!;
+  const autosaveIndicator = document.getElementById('autosave-indicator')!;
+  const severityDot = document.getElementById('severity-dot')!;
+
+  const formatTabs = document.querySelectorAll('.format-tab');
+
+  let currentFormat = 'markdown';
+  let debounceTimer: ReturnType<typeof setTimeout>;
+  let currentRawText = '';
+
+  // --- Severity Colors ---
+  const severityColors: Record<string, string> = {
+    critical: 'critical',
+    high: 'high',
+    medium: 'medium',
+    low: 'low',
+  };
+
+  const severityLabels: Record<string, string> = {
+    critical: 'Critical',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+  };
+
+  const priorityLabels: Record<string, string> = {
+    p1: 'P1 — Urgent',
+    p2: 'P2 — High',
+    p3: 'P3 — Medium',
+    p4: 'P4 — Low',
+  };
+
+  // --- Helpers ---
+  function escapeHtml(str: string): string {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function getFormData() {
+    return {
+      title: fields.title.value.trim(),
+      browser: fields.browser.value.trim(),
+      os: fields.os.value.trim(),
+      version: fields.version.value.trim(),
+      steps: fields.steps.value.trim(),
+      expected: fields.expected.value.trim(),
+      actual: fields.actual.value.trim(),
+      severity: fields.severity.value,
+      priority: fields.priority.value,
+      context: fields.context.value.trim(),
+      screenshots: fields.screenshots.value.trim(),
+    };
+  }
+
+  function hasContent(): boolean {
+    const d = getFormData();
+    return !!(d.title || d.steps || d.expected || d.actual);
+  }
+
+  function parseSteps(raw: string): string[] {
+    if (!raw) return [];
+    const lines = raw.split('\n').filter(l => l.trim());
+    return lines.map((line, i) => {
+      // Strip existing numbering (e.g., "1. ", "2) ", "- ")
+      const cleaned = line.replace(/^\s*(\d+[\.\)]\s*|-\s*|\*\s*)/, '').trim();
+      return cleaned || line.trim();
+    });
+  }
+
+  // --- Format Generators ---
+
+  function generateMarkdown(d: ReturnType<typeof getFormData>): string {
+    let out = '';
+    out += `## Bug Report: ${d.title || 'Untitled'}\n\n`;
+
+    // Environment line
+    const envParts = [d.browser, d.os, d.version].filter(Boolean);
+    if (envParts.length) {
+      out += `**Environment:** ${envParts.join(' / ')}\n`;
+    }
+
+    // Severity + Priority
+    const meta = [];
+    if (d.severity) meta.push(`**Severity:** ${severityLabels[d.severity]}`);
+    if (d.priority) meta.push(`**Priority:** ${priorityLabels[d.priority]}`);
+    if (meta.length) out += meta.join(' | ') + '\n';
+    if (envParts.length || meta.length) out += '\n';
+
+    // Steps
+    if (d.steps) {
+      out += `### Steps to Reproduce\n`;
+      const steps = parseSteps(d.steps);
+      steps.forEach((s, i) => { out += `${i + 1}. ${s}\n`; });
+      out += '\n';
+    }
+
+    if (d.expected) {
+      out += `### Expected Behavior\n${d.expected}\n\n`;
+    }
+
+    if (d.actual) {
+      out += `### Actual Behavior\n${d.actual}\n\n`;
+    }
+
+    if (d.context) {
+      out += `### Additional Context\n${d.context}\n\n`;
+    }
+
+    if (d.screenshots) {
+      out += `### Screenshots\n${d.screenshots}\n\n`;
+    }
+
+    out += `---\n*Generated with [BugReel](https://bugreel.io/tools/bug-report-generator/)*`;
+    return out;
+  }
+
+  function generateJira(d: ReturnType<typeof getFormData>): string {
+    let out = '';
+    out += `h2. Bug Report: ${d.title || 'Untitled'}\n\n`;
+
+    const envParts = [d.browser, d.os, d.version].filter(Boolean);
+    if (envParts.length) {
+      out += `*Environment:* ${envParts.join(' / ')}\n`;
+    }
+
+    const meta = [];
+    if (d.severity) {
+      const color = d.severity === 'critical' ? '#ef4444' : d.severity === 'high' ? '#f97316' : d.severity === 'medium' ? '#f59e0b' : '#22c55e';
+      meta.push(`*Severity:* {color:${color}}${severityLabels[d.severity]}{color}`);
+    }
+    if (d.priority) meta.push(`*Priority:* ${priorityLabels[d.priority]}`);
+    if (meta.length) out += meta.join(' | ') + '\n';
+    if (envParts.length || meta.length) out += '\n';
+
+    if (d.steps) {
+      out += `h3. Steps to Reproduce\n`;
+      const steps = parseSteps(d.steps);
+      steps.forEach((s, i) => { out += `# ${s}\n`; });
+      out += '\n';
+    }
+
+    if (d.expected) {
+      out += `h3. Expected Behavior\n${d.expected}\n\n`;
+    }
+
+    if (d.actual) {
+      out += `h3. Actual Behavior\n${d.actual}\n\n`;
+    }
+
+    if (d.context) {
+      out += `h3. Additional Context\n${d.context}\n\n`;
+    }
+
+    if (d.screenshots) {
+      out += `h3. Screenshots\n${d.screenshots}\n\n`;
+    }
+
+    out += `----\n_Generated with [BugReel|https://bugreel.io/tools/bug-report-generator/]_`;
+    return out;
+  }
+
+  function generateGitHub(d: ReturnType<typeof getFormData>): string {
+    let out = '';
+    out += `## Bug Report: ${d.title || 'Untitled'}\n\n`;
+
+    const envParts = [d.browser, d.os, d.version].filter(Boolean);
+    if (envParts.length) {
+      out += `**Environment:** ${envParts.join(' / ')}\n`;
+    }
+
+    const meta = [];
+    if (d.severity) meta.push(`**Severity:** ${severityLabels[d.severity]}`);
+    if (d.priority) meta.push(`**Priority:** ${priorityLabels[d.priority]}`);
+    if (meta.length) out += meta.join(' | ') + '\n';
+    if (envParts.length || meta.length) out += '\n';
+
+    if (d.steps) {
+      out += `### Steps to Reproduce\n`;
+      const steps = parseSteps(d.steps);
+      steps.forEach((s) => { out += `- [ ] ${s}\n`; });
+      out += '\n';
+    }
+
+    if (d.expected) {
+      out += `### Expected Behavior\n${d.expected}\n\n`;
+    }
+
+    if (d.actual) {
+      out += `### Actual Behavior\n${d.actual}\n\n`;
+    }
+
+    if (d.context) {
+      out += `<details>\n<summary>Additional Context</summary>\n\n${d.context}\n\n</details>\n\n`;
+    }
+
+    if (d.screenshots) {
+      out += `### Screenshots\n${d.screenshots}\n\n`;
+    }
+
+    out += `---\n*Generated with [BugReel](https://bugreel.io/tools/bug-report-generator/)*`;
+    return out;
+  }
+
+  function generateLinear(d: ReturnType<typeof getFormData>): string {
+    // Linear uses standard Markdown
+    let out = '';
+    out += `## ${d.title || 'Untitled'}\n\n`;
+
+    const envParts = [d.browser, d.os, d.version].filter(Boolean);
+    if (envParts.length) {
+      out += `**Environment:** ${envParts.join(' / ')}\n`;
+    }
+
+    const meta = [];
+    if (d.severity) meta.push(`**Severity:** ${severityLabels[d.severity]}`);
+    if (d.priority) meta.push(`**Priority:** ${priorityLabels[d.priority]}`);
+    if (meta.length) out += meta.join(' | ') + '\n';
+    if (envParts.length || meta.length) out += '\n';
+
+    if (d.steps) {
+      out += `### Steps to Reproduce\n`;
+      const steps = parseSteps(d.steps);
+      steps.forEach((s, i) => { out += `${i + 1}. ${s}\n`; });
+      out += '\n';
+    }
+
+    if (d.expected) {
+      out += `### Expected\n${d.expected}\n\n`;
+    }
+
+    if (d.actual) {
+      out += `### Actual\n${d.actual}\n\n`;
+    }
+
+    if (d.context) {
+      out += `### Context\n${d.context}\n\n`;
+    }
+
+    if (d.screenshots) {
+      out += `### Screenshots\n${d.screenshots}\n\n`;
+    }
+
+    out += `---\n*Generated with [BugReel](https://bugreel.io/tools/bug-report-generator/)*`;
+    return out;
+  }
+
+  // --- Rendered HTML Preview ---
+
+  function renderPreviewHtml(d: ReturnType<typeof getFormData>): string {
+    if (!hasContent()) {
+      return `
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="8" y="6" width="32" height="36" rx="4" stroke="currentColor" stroke-width="2"/>
+            <line x1="16" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="16" y1="22" x2="28" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="16" y1="28" x2="24" y2="28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <p>Start filling out the form to see<br/>your bug report preview here.</p>
+        </div>
+      `;
+    }
+
+    let html = '';
+
+    // Title
+    html += `<h2>${escapeHtml(d.title || 'Untitled')}</h2>`;
+
+    // Meta line
+    const envParts = [d.browser, d.os, d.version].filter(Boolean);
+    const hasMeta = envParts.length || d.severity || d.priority;
+    if (hasMeta) {
+      html += `<div class="meta-line">`;
+      if (envParts.length) {
+        html += `<strong>Environment:</strong> ${escapeHtml(envParts.join(' / '))}`;
+      }
+      if (envParts.length && (d.severity || d.priority)) {
+        html += `<span class="meta-separator">|</span>`;
+      }
+      if (d.severity) {
+        html += `<span class="severity-badge severity-${d.severity}">${escapeHtml(severityLabels[d.severity])}</span>`;
+      }
+      if (d.priority) {
+        html += `<span class="priority-badge">${escapeHtml(priorityLabels[d.priority])}</span>`;
+      }
+      html += `</div>`;
+    }
+
+    // Steps
+    if (d.steps) {
+      const steps = parseSteps(d.steps);
+      if (currentFormat === 'github') {
+        html += `<h3>Steps to Reproduce</h3>`;
+        steps.forEach(s => {
+          html += `<div class="checkbox-item"><input type="checkbox" disabled /><span>${escapeHtml(s)}</span></div>`;
+        });
+      } else {
+        html += `<h3>Steps to Reproduce</h3><ol>`;
+        steps.forEach(s => { html += `<li>${escapeHtml(s)}</li>`; });
+        html += `</ol>`;
+      }
+    }
+
+    if (d.expected) {
+      const label = currentFormat === 'linear' ? 'Expected' : 'Expected Behavior';
+      html += `<h3>${label}</h3><p>${escapeHtml(d.expected)}</p>`;
+    }
+
+    if (d.actual) {
+      const label = currentFormat === 'linear' ? 'Actual' : 'Actual Behavior';
+      html += `<h3>${label}</h3><p>${escapeHtml(d.actual)}</p>`;
+    }
+
+    if (d.context) {
+      const label = currentFormat === 'linear' ? 'Context' : 'Additional Context';
+      html += `<h3>${label}</h3><p>${escapeHtml(d.context)}</p>`;
+    }
+
+    if (d.screenshots) {
+      html += `<h3>Screenshots</h3><p>${escapeHtml(d.screenshots)}</p>`;
+    }
+
+    html += `<hr /><p class="watermark">Generated with <a href="https://bugreel.io/tools/bug-report-generator/" target="_blank" rel="noopener">BugReel</a></p>`;
+
+    return html;
+  }
+
+  // --- Get Raw Text by Format ---
+  function getRawText(d: ReturnType<typeof getFormData>): string {
+    switch (currentFormat) {
+      case 'jira': return generateJira(d);
+      case 'github': return generateGitHub(d);
+      case 'linear': return generateLinear(d);
+      default: return generateMarkdown(d);
+    }
+  }
+
+  // --- Update Preview ---
+  function updatePreview() {
+    const d = getFormData();
+    const raw = getRawText(d);
+    currentRawText = raw;
+
+    previewRendered.innerHTML = renderPreviewHtml(d);
+    charCount.textContent = `${raw.length} chars`;
+  }
+
+  // --- Save / Load from localStorage ---
+  function saveToStorage() {
+    try {
+      const data = getFormData();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      autosaveIndicator.classList.add('visible');
+      setTimeout(() => autosaveIndicator.classList.remove('visible'), 2000);
+    } catch (e) {
+      // Silently fail if storage is unavailable
+    }
+  }
+
+  function loadFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data.title) fields.title.value = data.title;
+      if (data.browser) fields.browser.value = data.browser;
+      if (data.os) fields.os.value = data.os;
+      if (data.version) fields.version.value = data.version;
+      if (data.steps) fields.steps.value = data.steps;
+      if (data.expected) fields.expected.value = data.expected;
+      if (data.actual) fields.actual.value = data.actual;
+      if (data.severity) fields.severity.value = data.severity;
+      if (data.priority) fields.priority.value = data.priority;
+      if (data.context) {
+        fields.context.value = data.context;
+        // Show the context section
+        const toggleCtx = document.getElementById('toggle-context')!;
+        const contentCtx = document.getElementById('context-content')!;
+        toggleCtx.setAttribute('aria-expanded', 'true');
+        contentCtx.hidden = false;
+      }
+      if (data.screenshots) {
+        fields.screenshots.value = data.screenshots;
+        // Show the screenshots section
+        const toggleSs = document.getElementById('toggle-screenshots')!;
+        const contentSs = document.getElementById('screenshots-content')!;
+        toggleSs.setAttribute('aria-expanded', 'true');
+        contentSs.hidden = false;
+      }
+      updateSeverityDot();
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  // --- Severity Dot ---
+  function updateSeverityDot() {
+    const val = fields.severity.value;
+    severityDot.className = 'severity-dot';
+    if (val && severityColors[val]) {
+      severityDot.classList.add('visible', severityColors[val]);
+    }
+  }
+
+  // --- Auto-number steps ---
+  function handleStepsKeydown(e: KeyboardEvent) {
+    if (e.key !== 'Enter') return;
+
+    const textarea = e.target as HTMLTextAreaElement;
+    const { selectionStart, value } = textarea;
+    const beforeCursor = value.substring(0, selectionStart);
+    const lines = beforeCursor.split('\n');
+    const currentLine = lines[lines.length - 1];
+
+    const match = currentLine.match(/^(\s*)(\d+)[\.\)]\s/);
+    if (match) {
+      e.preventDefault();
+      const indent = match[1];
+      const nextNum = parseInt(match[2], 10) + 1;
+      const insert = `\n${indent}${nextNum}. `;
+      const afterCursor = value.substring(selectionStart);
+      textarea.value = beforeCursor + insert + afterCursor;
+      const newPos = selectionStart + insert.length;
+      textarea.selectionStart = textarea.selectionEnd = newPos;
+      onInputChange();
+    }
+  }
+
+  // --- Event Handlers ---
+  function onInputChange() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      updatePreview();
+      saveToStorage();
+    }, DEBOUNCE_MS);
+  }
+
+  // Bind all input events
+  Object.values(fields).forEach(el => {
+    el.addEventListener('input', onInputChange);
+    el.addEventListener('change', onInputChange);
+  });
+
+  // Severity dot
+  fields.severity.addEventListener('change', updateSeverityDot);
+
+  // Steps auto-numbering
+  fields.steps.addEventListener('keydown', handleStepsKeydown);
+
+  // Format tabs
+  formatTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      formatTabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      currentFormat = (tab as HTMLElement).dataset.format || 'markdown';
+      updatePreview();
+    });
+  });
+
+  // Collapsible sections
+  document.querySelectorAll('.collapse-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!expanded));
+      const content = toggle.nextElementSibling as HTMLElement;
+      if (content) {
+        content.hidden = expanded;
+        if (!expanded) {
+          const input = content.querySelector('input, textarea') as HTMLElement;
+          input?.focus();
+        }
+      }
+    });
+  });
+
+  // Copy to clipboard
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(currentRawText);
+      copyBtn.classList.add('copied');
+      copyText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyText.textContent = 'Copy to Clipboard';
+      }, 2000);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = currentRawText;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      copyBtn.classList.add('copied');
+      copyText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyText.textContent = 'Copy to Clipboard';
+      }, 2000);
+    }
+  });
+
+  // Download as .md
+  downloadBtn.addEventListener('click', () => {
+    const d = getFormData();
+    const raw = generateMarkdown(d);
+    const filename = d.title
+      ? d.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '.md'
+      : 'bug-report.md';
+    const blob = new Blob([raw], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // Clear form
+  clearFormBtn.addEventListener('click', () => {
+    Object.values(fields).forEach(el => { el.value = ''; });
+    severityDot.className = 'severity-dot';
+    localStorage.removeItem(STORAGE_KEY);
+    // Collapse optional sections
+    document.querySelectorAll('.collapse-toggle').forEach(toggle => {
+      toggle.setAttribute('aria-expanded', 'false');
+      const content = toggle.nextElementSibling as HTMLElement;
+      if (content) content.hidden = true;
+    });
+    updatePreview();
+    fields.title.focus();
+  });
+
+  // Prevent form submission
+  form.addEventListener('submit', (e) => e.preventDefault());
+
+  // --- Init ---
+  loadFromStorage();
+  updateSeverityDot();
+  updatePreview();
+</script>

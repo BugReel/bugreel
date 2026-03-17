@@ -1,0 +1,283 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'Free QA Tools — BugReel',
+    description: 'Free online tools for QA engineers and developers. Bug Report Generator, Severity Calculator, QA Checklist, and more.',
+    url: 'https://bugreel.io/tools',
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+        { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      ],
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Free QA Tools',
+    description: 'A collection of free online tools for QA engineers, testers, and developers.',
+    url: 'https://bugreel.io/tools',
+    hasPart: [
+      {
+        '@type': 'WebApplication',
+        name: 'Bug Report Generator',
+        url: 'https://bugreel.io/tools/bug-report-generator',
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Any',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      },
+    ],
+  },
+];
+
+const tools = [
+  {
+    title: 'Bug Report Generator',
+    description: 'Create perfectly structured bug reports for Jira, GitHub, Linear, and any tracker. Fill out a form, copy the formatted report.',
+    icon: '🐛',
+    href: '/tools/bug-report-generator',
+    status: 'live' as const,
+    badge: 'Free',
+  },
+  {
+    title: 'Severity Calculator',
+    description: 'Determine bug severity and priority based on impact, frequency, and affected users. Get consistent severity ratings across your team.',
+    icon: '📊',
+    href: '#',
+    status: 'soon' as const,
+    badge: 'Coming Soon',
+  },
+  {
+    title: 'QA Checklist Generator',
+    description: 'Generate comprehensive test checklists for features, releases, and regression testing. Never miss a test case again.',
+    icon: '✅',
+    href: '#',
+    status: 'soon' as const,
+    badge: 'Coming Soon',
+  },
+  {
+    title: 'Time Saved Calculator',
+    description: 'Calculate how much time your team wastes on manual bug reporting. See the ROI of switching to automated tools.',
+    icon: '⏱',
+    href: '#',
+    status: 'soon' as const,
+    badge: 'Coming Soon',
+  },
+];
+---
+
+<Base
+  title="Free QA Tools — Bug Report Generator, Severity Calculator | BugReel"
+  description="Free online tools for QA engineers and developers. Generate structured bug reports, calculate severity, create test checklists, and more. No signup required."
+  schema={schema}
+>
+  <div class="tools-page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <span>Tools</span>
+      </nav>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge">Free &amp; No Signup</span>
+        <h1>QA Tools</h1>
+        <p>Free online tools for QA engineers, developers, and testers. Use them right in your browser — no account needed.</p>
+      </div>
+
+      <div class="tools-grid">
+        {tools.map((tool) => (
+          <a
+            href={tool.status === 'live' ? tool.href : undefined}
+            class:list={['tool-card', 'card', { 'tool-card--disabled': tool.status === 'soon' }]}
+            aria-disabled={tool.status === 'soon' ? 'true' : undefined}
+          >
+            <div class="tool-card__icon">{tool.icon}</div>
+            <div class="tool-card__content">
+              <div class="tool-card__header">
+                <h2 class="tool-card__title">{tool.title}</h2>
+                <span class:list={['badge', { 'badge-success': tool.status === 'live' }]}>
+                  {tool.badge}
+                </span>
+              </div>
+              <p class="tool-card__desc">{tool.description}</p>
+              {tool.status === 'live' && (
+                <span class="tool-card__cta">
+                  Use tool
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-sm cta-section">
+    <div class="container" style="text-align: center; max-width: 600px;">
+      <h2>Want AI to handle it all?</h2>
+      <p style="margin: 16px 0 32px;">BugReel records your screen and generates bug reports automatically — with AI-powered analysis, smart screenshots, and one-click export.</p>
+      <a href="https://github.com/nicrmn/bugreel" class="btn btn-primary">Get Started Free</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .tools-page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .section-header {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 64px;
+  }
+
+  .section-header .badge {
+    margin-bottom: 16px;
+  }
+
+  .section-header h1 {
+    margin: 16px 0;
+  }
+
+  .section-header p {
+    font-size: 1.125rem;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .tool-card {
+    display: flex;
+    gap: 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+  }
+
+  .tool-card:hover:not(.tool-card--disabled) {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-glow-primary);
+    transform: translateY(-2px);
+    color: inherit;
+  }
+
+  .tool-card--disabled {
+    opacity: 0.55;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .tool-card__icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary-glow);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-md);
+  }
+
+  .tool-card__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tool-card__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tool-card__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .tool-card__desc {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .tool-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    transition: gap var(--transition-fast);
+  }
+
+  .tool-card:hover .tool-card__cta {
+    gap: 10px;
+  }
+
+  .cta-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-section h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  @media (max-width: 768px) {
+    .tools-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
