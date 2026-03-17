@@ -1,0 +1,1516 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Bug Triage Matrix',
+    description: 'Classify bugs by severity and business impact. Get instant triage recommendations — fix now, schedule, backlog, or close.',
+    url: 'https://bugreel.io/tools/bug-triage-matrix',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Bug Triage Matrix', item: 'https://bugreel.io/tools/bug-triage-matrix' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Bug Triage Matrix — Classify & Prioritize Bugs Visually | BugReel"
+  description="Classify bugs by severity and business impact. Get instant triage recommendations — fix now, schedule, backlog, or close. Free, no signup required."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Bug Triage Matrix</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-success">Free &middot; No Signup</span>
+        <h1>Bug Triage Matrix</h1>
+        <p class="hero-subtitle">Classify bugs by severity and business impact. Get instant triage recommendations &mdash; fix now, schedule, backlog, or close.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tool -->
+  <section class="tool-section">
+    <div class="container">
+      <div class="triage-layout">
+
+        <!-- Left Panel: Bug Input -->
+        <div class="input-panel">
+          <div class="input-panel-inner card">
+            <h2 class="input-panel-title">Add a Bug</h2>
+
+            <div class="form-group">
+              <label class="form-label" for="bug-title">Bug title or description</label>
+              <input
+                type="text"
+                id="bug-title"
+                class="form-input"
+                placeholder="e.g. Login button unresponsive on Safari"
+                maxlength="120"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="bug-severity">Severity</label>
+              <div class="select-wrapper">
+                <select id="bug-severity" class="form-select">
+                  <option value="" disabled selected>Select severity</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                <svg class="select-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="severity-legend">
+                <span class="legend-item"><span class="sev-dot sev-dot--critical"></span>Critical</span>
+                <span class="legend-item"><span class="sev-dot sev-dot--high"></span>High</span>
+                <span class="legend-item"><span class="sev-dot sev-dot--medium"></span>Medium</span>
+                <span class="legend-item"><span class="sev-dot sev-dot--low"></span>Low</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="bug-impact">Business Impact</label>
+              <div class="select-wrapper">
+                <select id="bug-impact" class="form-select">
+                  <option value="" disabled selected>Select business impact</option>
+                  <option value="revenue">Revenue / Security</option>
+                  <option value="core">Core Workflow</option>
+                  <option value="secondary">Secondary Feature</option>
+                  <option value="cosmetic">Cosmetic</option>
+                </select>
+                <svg class="select-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <button class="btn btn-primary add-bug-btn" id="add-bug-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Add to Matrix
+            </button>
+
+            <div class="form-error" id="form-error" hidden></div>
+
+            <!-- Quick-add examples -->
+            <div class="quick-add">
+              <span class="quick-add-label">Quick add examples:</span>
+              <button class="quick-add-btn" type="button" data-title="Payment processing fails silently" data-severity="critical" data-impact="revenue">Payment fails silently</button>
+              <button class="quick-add-btn" type="button" data-title="Search returns no results for valid queries" data-severity="high" data-impact="core">Search broken</button>
+              <button class="quick-add-btn" type="button" data-title="Dashboard chart tooltip misaligned" data-severity="low" data-impact="secondary">Tooltip misaligned</button>
+              <button class="quick-add-btn" type="button" data-title="CSV export missing header row" data-severity="medium" data-impact="core">CSV export no header</button>
+              <button class="quick-add-btn" type="button" data-title="Footer copyright year outdated" data-severity="low" data-impact="cosmetic">Wrong copyright year</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Visual Matrix -->
+        <div class="matrix-panel">
+          <div class="matrix-wrapper">
+            <!-- Y-axis label -->
+            <div class="matrix-y-label" aria-hidden="true">
+              <span>High Severity</span>
+              <svg class="axis-arrow" width="12" height="60" viewBox="0 0 12 60" fill="none" aria-hidden="true">
+                <path d="M6 58V2M6 2L2 8M6 2l4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Low Severity</span>
+            </div>
+
+            <div class="matrix-grid-area">
+              <!-- X-axis label -->
+              <div class="matrix-x-label" aria-hidden="true">
+                <span>High Impact</span>
+                <svg class="axis-arrow-h" width="60" height="12" viewBox="0 0 60 12" fill="none" aria-hidden="true">
+                  <path d="M2 6h56M58 6l-6-4M58 6l-6 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Low Impact</span>
+              </div>
+
+              <!-- The 2x2 Grid -->
+              <div class="matrix-grid" id="matrix-grid">
+                <!-- Cell: High Severity + High Impact = FIX NOW -->
+                <div class="matrix-cell cell-fix-now" data-cell="fix-now" data-severity="high" data-impact="high">
+                  <div class="cell-header">
+                    <svg class="cell-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                      <path d="M9 1.5L1.5 16.5h15L9 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M9 6.75v3M9 12.75h.008" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span class="cell-title">FIX NOW</span>
+                  </div>
+                  <span class="cell-desc">Drop everything</span>
+                  <span class="cell-count" data-count="fix-now">0 bugs</span>
+                  <div class="cell-bugs" id="cell-fix-now"></div>
+                </div>
+
+                <!-- Cell: High Severity + Low Impact = SCHEDULE -->
+                <div class="matrix-cell cell-schedule" data-cell="schedule" data-severity="high" data-impact="low">
+                  <div class="cell-header">
+                    <svg class="cell-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                      <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M9 5.25V9l2.25 2.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="cell-title">SCHEDULE</span>
+                  </div>
+                  <span class="cell-desc">Next sprint</span>
+                  <span class="cell-count" data-count="schedule">0 bugs</span>
+                  <div class="cell-bugs" id="cell-schedule"></div>
+                </div>
+
+                <!-- Cell: Low Severity + High Impact = PLAN -->
+                <div class="matrix-cell cell-plan" data-cell="plan" data-severity="low" data-impact="high">
+                  <div class="cell-header">
+                    <svg class="cell-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                      <path d="M3 3.75h12M3 7.5h9M3 11.25h12M3 15h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span class="cell-title">PLAN</span>
+                  </div>
+                  <span class="cell-desc">Add to roadmap</span>
+                  <span class="cell-count" data-count="plan">0 bugs</span>
+                  <div class="cell-bugs" id="cell-plan"></div>
+                </div>
+
+                <!-- Cell: Low Severity + Low Impact = BACKLOG -->
+                <div class="matrix-cell cell-backlog" data-cell="backlog" data-severity="low" data-impact="low">
+                  <div class="cell-header">
+                    <svg class="cell-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                      <path d="M3.75 3.75h10.5v10.5H3.75z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6.75 7.5h4.5M6.75 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span class="cell-title">BACKLOG</span>
+                  </div>
+                  <span class="cell-desc">Low priority / close</span>
+                  <span class="cell-count" data-count="backlog">0 bugs</span>
+                  <div class="cell-bugs" id="cell-backlog"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div class="matrix-empty" id="matrix-empty">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <rect x="4" y="4" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <rect x="22" y="4" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <rect x="4" y="22" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <rect x="22" y="22" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+            </svg>
+            <p>Add bugs to see them classified in the matrix.</p>
+            <p class="matrix-empty-hint">Use the form or quick-add examples to get started.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Triage Summary -->
+      <div class="triage-summary" id="triage-summary" hidden>
+        <div class="summary-header">
+          <h2 class="summary-title">Triage Summary</h2>
+          <div class="summary-actions">
+            <button class="btn btn-primary btn-sm" id="copy-report-btn" type="button">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3 11V3.5A.5.5 0 013.5 3H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span id="copy-report-text">Copy Triage Report</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="clear-all-btn" type="button">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2 4h12M5.333 4V2.667a.667.667 0 01.667-.667h4a.667.667 0 01.667.667V4M12.667 4v9.333a.667.667 0 01-.667.667H4a.667.667 0 01-.667-.667V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Clear All
+            </button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="summary-table">
+            <thead>
+              <tr>
+                <th>Bug</th>
+                <th>Severity</th>
+                <th>Impact</th>
+                <th>Action</th>
+                <th>Assignee</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="summary-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- What is Bug Triage? -->
+  <section class="section-sm explanation-section">
+    <div class="container">
+      <h2 class="explanation-title">What is Bug Triage?</h2>
+      <div class="explanation-prose">
+        <p>Bug triage is the process of evaluating, categorizing, and prioritizing reported bugs so your team works on the right things first. The word "triage" comes from emergency medicine &mdash; just like an ER sorts patients by urgency, a development team sorts bugs by severity and business impact to allocate engineering time where it matters most.</p>
+        <p>Without a structured triage process, teams either fix bugs in the order they arrive (inefficient) or let the loudest stakeholder dictate priority (biased). A triage matrix provides an objective framework: map each bug to two axes &mdash; <strong>how bad is it technically</strong> and <strong>how much does it hurt the business</strong> &mdash; and the recommended action becomes clear.</p>
+        <p>The best triage meetings are short, time-boxed, and use a consistent rubric. This tool gives you that rubric. Add your bugs, classify them visually, and export a triage report your team can act on immediately.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Triage Meeting Best Practices -->
+  <section class="section-sm tips-section">
+    <div class="container">
+      <h2 class="tips-title">Triage Meeting Best Practices</h2>
+      <div class="tips-grid">
+        <div class="tip-card card">
+          <div class="tip-number">1</div>
+          <h3>Time-box to 15 minutes</h3>
+          <p>Triage is about classification, not discussion. Set a hard 15-minute cap. If a bug needs deeper analysis, tag it for investigation and move on. The goal is to get every new bug into a quadrant &mdash; not to solve it in the meeting.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">2</div>
+          <h3>Separate severity from urgency</h3>
+          <p>Severity measures technical impact. Urgency measures business timing. A medium-severity bug on a checkout page before Black Friday is urgent. A critical bug in an admin tool used weekly is severe but not urgent. Rate both axes independently.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">3</div>
+          <h3>Close more than you open</h3>
+          <p>If your backlog only grows, your triage process is broken. Actively close bugs that are duplicates, no longer reproducible, or in the backlog quadrant for over 3 months. A healthy bug list is a short bug list. If it is not worth fixing, close it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Want to auto-triage bugs from screen recordings?</p>
+      <h2>Record your screen. AI triages the bug.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel watches your screen recording and automatically classifies severity, business impact, and suggests the right triage action &mdash; before you even file the ticket.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 700px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 580px;
+  }
+
+  /* ===== Tool Section ===== */
+  .tool-section {
+    padding-bottom: 64px;
+  }
+
+  /* ===== Triage Layout (2 panels) ===== */
+  .triage-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ===== Left Panel: Input ===== */
+  .input-panel-inner {
+    position: sticky;
+    top: 24px;
+  }
+
+  .input-panel-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .form-input::placeholder {
+    color: var(--color-text-dim);
+  }
+
+  .form-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+  }
+
+  .select-wrapper {
+    position: relative;
+  }
+
+  .form-select {
+    width: 100%;
+    padding: 10px 38px 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .form-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+  }
+
+  .select-chevron {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-dim);
+    pointer-events: none;
+  }
+
+  .severity-legend {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+  }
+
+  .sev-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .sev-dot--critical { background: #ef4444; }
+  .sev-dot--high { background: #f97316; }
+  .sev-dot--medium { background: #f59e0b; }
+  .sev-dot--low { background: #22c55e; }
+
+  .add-bug-btn {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .form-error {
+    font-size: 0.8125rem;
+    color: var(--color-error);
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-sm);
+  }
+
+  .form-error[hidden] {
+    display: none;
+  }
+
+  /* Quick add */
+  .quick-add {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .quick-add-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+
+  .quick-add-btn {
+    display: inline-block;
+    padding: 5px 12px;
+    margin: 0 6px 6px 0;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .quick-add-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-glow);
+  }
+
+  .quick-add-btn.used {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* ===== Right Panel: Matrix ===== */
+  .matrix-panel {
+    position: relative;
+    min-height: 420px;
+  }
+
+  .matrix-wrapper {
+    display: flex;
+    gap: 0;
+  }
+
+  /* Y-axis */
+  .matrix-y-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 28px;
+    padding: 48px 0 8px;
+    flex-shrink: 0;
+  }
+
+  .matrix-y-label span {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .axis-arrow {
+    color: var(--color-text-dim);
+    flex-shrink: 0;
+  }
+
+  .matrix-grid-area {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* X-axis */
+  .matrix-x-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px 10px;
+  }
+
+  .matrix-x-label span {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .axis-arrow-h {
+    color: var(--color-text-dim);
+    flex-shrink: 0;
+  }
+
+  /* The Grid */
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 3px;
+    background: var(--color-border);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    min-height: 360px;
+  }
+
+  .matrix-cell {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 180px;
+    transition: background-color var(--transition-fast);
+    position: relative;
+  }
+
+  .matrix-cell.drag-over {
+    outline: 2px dashed var(--color-primary);
+    outline-offset: -2px;
+  }
+
+  .cell-fix-now {
+    background: rgba(239, 68, 68, 0.08);
+  }
+  .cell-fix-now .cell-header { color: #ef4444; }
+
+  .cell-schedule {
+    background: rgba(249, 115, 22, 0.08);
+  }
+  .cell-schedule .cell-header { color: #f97316; }
+
+  .cell-plan {
+    background: rgba(245, 158, 11, 0.08);
+  }
+  .cell-plan .cell-header { color: #f59e0b; }
+
+  .cell-backlog {
+    background: rgba(34, 197, 94, 0.08);
+  }
+  .cell-backlog .cell-header { color: #22c55e; }
+
+  .cell-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+
+  .cell-icon {
+    flex-shrink: 0;
+  }
+
+  .cell-title {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .cell-desc {
+    font-size: 0.6875rem;
+    color: var(--color-text-dim);
+    margin-bottom: 8px;
+  }
+
+  .cell-count {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 8px;
+  }
+
+  .cell-bugs {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 20px;
+  }
+
+  /* Bug pills */
+  .bug-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: grab;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast);
+    user-select: none;
+  }
+
+  .bug-pill:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .bug-pill:active {
+    cursor: grabbing;
+  }
+
+  .bug-pill.dragging {
+    opacity: 0.4;
+  }
+
+  .bug-pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .bug-pill-dot.dot-critical { background: #ef4444; }
+  .bug-pill-dot.dot-high { background: #f97316; }
+  .bug-pill-dot.dot-medium { background: #f59e0b; }
+  .bug-pill-dot.dot-low { background: #22c55e; }
+
+  .bug-pill-text {
+    flex: 1;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .bug-pill-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: none;
+    color: var(--color-text-dim);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    padding: 0;
+    transition: all var(--transition-fast);
+  }
+
+  .bug-pill-remove:hover {
+    color: var(--color-error);
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  /* Empty state */
+  .matrix-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--color-text-dim);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .matrix-empty[hidden] {
+    display: none;
+  }
+
+  .matrix-empty p {
+    font-size: 0.875rem;
+    color: var(--color-text-dim);
+    text-align: center;
+  }
+
+  .matrix-empty-hint {
+    font-size: 0.75rem !important;
+    opacity: 0.6;
+  }
+
+  /* ===== Triage Summary ===== */
+  .triage-summary {
+    margin-top: 48px;
+    animation: fadeInUp 0.4s ease forwards;
+  }
+
+  .triage-summary[hidden] {
+    display: none;
+  }
+
+  .summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .summary-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .summary-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  .summary-table th,
+  .summary-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.8125rem;
+    vertical-align: middle;
+  }
+
+  .summary-table th {
+    font-weight: 600;
+    color: var(--color-text);
+    background: var(--color-surface);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+  }
+
+  .summary-table td {
+    color: var(--color-text-muted);
+  }
+
+  .summary-table tr:hover td {
+    background: var(--color-surface-hover);
+  }
+
+  .summary-table td:first-child {
+    color: var(--color-text);
+    font-weight: 500;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .summary-sev {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .summary-action-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: var(--radius-full);
+  }
+
+  .action-fix-now {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  .action-schedule {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.12);
+  }
+
+  .action-plan {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+  }
+
+  .action-backlog {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+  }
+
+  .summary-remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--color-border);
+    background: none;
+    color: var(--color-text-dim);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 0;
+    transition: all var(--transition-fast);
+  }
+
+  .summary-remove-btn:hover {
+    color: var(--color-error);
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  #copy-report-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+
+  /* ===== Explanation Section ===== */
+  .explanation-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .explanation-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .explanation-prose {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .explanation-prose p {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .explanation-prose p:last-child {
+    margin-bottom: 0;
+  }
+
+  .explanation-prose strong {
+    color: var(--color-text);
+  }
+
+  /* ===== Pro Tips ===== */
+  .tips-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tips-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .tip-card {
+    position: relative;
+    padding-top: 48px;
+  }
+
+  .tip-number {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-lg) 0 var(--radius-md) 0;
+  }
+
+  .tip-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .tip-card p {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Animation ===== */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 960px) {
+    .triage-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .input-panel-inner {
+      position: static;
+    }
+
+    .matrix-grid {
+      min-height: 300px;
+    }
+
+    .matrix-cell {
+      min-height: 150px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .tips-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .summary-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* Matrix becomes list on mobile */
+    .matrix-wrapper {
+      flex-direction: column;
+    }
+
+    .matrix-y-label {
+      display: none;
+    }
+
+    .matrix-x-label {
+      display: none;
+    }
+
+    .matrix-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+      min-height: 0;
+    }
+
+    .matrix-cell {
+      min-height: 80px;
+    }
+
+    .matrix-cell::before {
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.6;
+      margin-bottom: 4px;
+    }
+
+    .cell-fix-now::before { content: "High Severity + High Impact"; }
+    .cell-schedule::before { content: "High Severity + Low Impact"; }
+    .cell-plan::before { content: "Low Severity + High Impact"; }
+    .cell-backlog::before { content: "Low Severity + Low Impact"; }
+
+    .summary-table th:nth-child(5),
+    .summary-table td:nth-child(5) {
+      display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .summary-table th:nth-child(3),
+    .summary-table td:nth-child(3) {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // ===== Bug Triage Matrix — Client-Side Logic =====
+
+  // --- Types ---
+  interface Bug {
+    id: string;
+    title: string;
+    severity: string;
+    impact: string;
+    cell: string;
+  }
+
+  // --- Constants ---
+  const SEVERITY_MAP: Record<string, { label: string; dotClass: string; order: number }> = {
+    critical: { label: 'Critical', dotClass: 'dot-critical', order: 0 },
+    high: { label: 'High', dotClass: 'dot-high', order: 1 },
+    medium: { label: 'Medium', dotClass: 'dot-medium', order: 2 },
+    low: { label: 'Low', dotClass: 'dot-low', order: 3 },
+  };
+
+  const IMPACT_MAP: Record<string, { label: string; order: number }> = {
+    revenue: { label: 'Revenue / Security', order: 0 },
+    core: { label: 'Core Workflow', order: 1 },
+    secondary: { label: 'Secondary Feature', order: 2 },
+    cosmetic: { label: 'Cosmetic', order: 3 },
+  };
+
+  const CELL_MAP: Record<string, { action: string; actionClass: string; assignee: string }> = {
+    'fix-now': { action: 'Fix Now', actionClass: 'action-fix-now', assignee: 'Senior Dev / On-call' },
+    schedule: { action: 'Schedule', actionClass: 'action-schedule', assignee: 'Senior Dev' },
+    plan: { action: 'Plan', actionClass: 'action-plan', assignee: 'Product Owner' },
+    backlog: { action: 'Backlog', actionClass: 'action-backlog', assignee: 'Junior Dev / QA' },
+  };
+
+  // --- State ---
+  let bugs: Bug[] = [];
+  let draggedBugId: string | null = null;
+
+  // --- DOM ---
+  const titleInput = document.getElementById('bug-title') as HTMLInputElement;
+  const severitySelect = document.getElementById('bug-severity') as HTMLSelectElement;
+  const impactSelect = document.getElementById('bug-impact') as HTMLSelectElement;
+  const addBtn = document.getElementById('add-bug-btn')!;
+  const formError = document.getElementById('form-error')!;
+  const matrixEmpty = document.getElementById('matrix-empty')!;
+  const triageSummary = document.getElementById('triage-summary')!;
+  const summaryTbody = document.getElementById('summary-tbody')!;
+  const copyReportBtn = document.getElementById('copy-report-btn')!;
+  const copyReportText = document.getElementById('copy-report-text')!;
+  const clearAllBtn = document.getElementById('clear-all-btn')!;
+
+  const cellElements: Record<string, HTMLElement> = {
+    'fix-now': document.getElementById('cell-fix-now')!,
+    schedule: document.getElementById('cell-schedule')!,
+    plan: document.getElementById('cell-plan')!,
+    backlog: document.getElementById('cell-backlog')!,
+  };
+
+  const matrixCells = document.querySelectorAll('.matrix-cell') as NodeListOf<HTMLElement>;
+  const quickAddBtns = document.querySelectorAll('.quick-add-btn') as NodeListOf<HTMLButtonElement>;
+
+  // --- Helpers ---
+  function generateId(): string {
+    return 'bug-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function classifyBug(severity: string, impact: string): string {
+    const isHighSev = severity === 'critical' || severity === 'high';
+    const isHighImpact = impact === 'revenue' || impact === 'core';
+
+    if (isHighSev && isHighImpact) return 'fix-now';
+    if (isHighSev && !isHighImpact) return 'schedule';
+    if (!isHighSev && isHighImpact) return 'plan';
+    return 'backlog';
+  }
+
+  function showError(msg: string) {
+    formError.textContent = msg;
+    formError.hidden = false;
+    setTimeout(() => { formError.hidden = true; }, 3000);
+  }
+
+  // --- Add Bug ---
+  function addBug(title: string, severity: string, impact: string) {
+    const cell = classifyBug(severity, impact);
+    const bug: Bug = { id: generateId(), title, severity, impact, cell };
+    bugs.push(bug);
+    render();
+  }
+
+  // --- Remove Bug ---
+  function removeBug(id: string) {
+    bugs = bugs.filter(b => b.id !== id);
+    render();
+  }
+
+  // --- Move Bug to Cell ---
+  function moveBugToCell(id: string, newCell: string) {
+    const bug = bugs.find(b => b.id === id);
+    if (bug) {
+      bug.cell = newCell;
+      render();
+    }
+  }
+
+  // --- Render ---
+  function render() {
+    // Clear cells
+    Object.values(cellElements).forEach(el => { el.innerHTML = ''; });
+
+    // Update counts
+    const counts: Record<string, number> = { 'fix-now': 0, schedule: 0, plan: 0, backlog: 0 };
+    bugs.forEach(b => { counts[b.cell] = (counts[b.cell] || 0) + 1; });
+
+    Object.keys(counts).forEach(cell => {
+      const countEl = document.querySelector(`[data-count="${cell}"]`);
+      if (countEl) {
+        const n = counts[cell];
+        countEl.textContent = n === 1 ? '1 bug' : `${n} bugs`;
+      }
+    });
+
+    // Render pills in cells
+    bugs.forEach(bug => {
+      const container = cellElements[bug.cell];
+      if (!container) return;
+
+      const pill = document.createElement('div');
+      pill.className = 'bug-pill';
+      pill.draggable = true;
+      pill.dataset.bugId = bug.id;
+
+      const sevInfo = SEVERITY_MAP[bug.severity];
+
+      pill.innerHTML = `
+        <span class="bug-pill-dot ${sevInfo ? sevInfo.dotClass : ''}"></span>
+        <span class="bug-pill-text" title="${bug.title}">${bug.title}</span>
+        <button class="bug-pill-remove" type="button" aria-label="Remove bug" data-remove-id="${bug.id}">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      `;
+
+      container.appendChild(pill);
+    });
+
+    // Wire pill drag events
+    document.querySelectorAll('.bug-pill').forEach(pill => {
+      pill.addEventListener('dragstart', handlePillDragStart as EventListener);
+      pill.addEventListener('dragend', handlePillDragEnd as EventListener);
+    });
+
+    // Wire remove buttons
+    document.querySelectorAll('.bug-pill-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (btn as HTMLElement).dataset.removeId;
+        if (id) removeBug(id);
+      });
+    });
+
+    // Empty state
+    matrixEmpty.hidden = bugs.length > 0;
+
+    // Summary
+    if (bugs.length > 0) {
+      triageSummary.hidden = false;
+      renderSummary();
+    } else {
+      triageSummary.hidden = true;
+    }
+  }
+
+  function renderSummary() {
+    summaryTbody.innerHTML = '';
+
+    // Sort: fix-now first, then schedule, plan, backlog
+    const cellOrder: Record<string, number> = { 'fix-now': 0, schedule: 1, plan: 2, backlog: 3 };
+    const sorted = [...bugs].sort((a, b) => (cellOrder[a.cell] ?? 4) - (cellOrder[b.cell] ?? 4));
+
+    sorted.forEach(bug => {
+      const sevInfo = SEVERITY_MAP[bug.severity];
+      const impInfo = IMPACT_MAP[bug.impact];
+      const cellInfo = CELL_MAP[bug.cell];
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td title="${bug.title}">${bug.title}</td>
+        <td>
+          <span class="summary-sev">
+            <span class="sev-dot ${sevInfo ? 'sev-dot--' + bug.severity : ''}"></span>
+            ${sevInfo ? sevInfo.label : bug.severity}
+          </span>
+        </td>
+        <td>${impInfo ? impInfo.label : bug.impact}</td>
+        <td><span class="summary-action-badge ${cellInfo ? cellInfo.actionClass : ''}">${cellInfo ? cellInfo.action : bug.cell}</span></td>
+        <td>${cellInfo ? cellInfo.assignee : '---'}</td>
+        <td>
+          <button class="summary-remove-btn" type="button" aria-label="Remove" data-summary-remove="${bug.id}">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </td>
+      `;
+      summaryTbody.appendChild(row);
+    });
+
+    // Wire summary remove buttons
+    document.querySelectorAll('.summary-remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.summaryRemove;
+        if (id) removeBug(id);
+      });
+    });
+  }
+
+  // --- Drag & Drop ---
+  function handlePillDragStart(e: DragEvent) {
+    const pill = (e.target as HTMLElement).closest('.bug-pill') as HTMLElement;
+    if (!pill) return;
+    draggedBugId = pill.dataset.bugId || null;
+    pill.classList.add('dragging');
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedBugId || '');
+    }
+  }
+
+  function handlePillDragEnd(e: DragEvent) {
+    const pill = (e.target as HTMLElement).closest('.bug-pill') as HTMLElement;
+    if (pill) pill.classList.remove('dragging');
+    draggedBugId = null;
+    matrixCells.forEach(c => c.classList.remove('drag-over'));
+  }
+
+  matrixCells.forEach(cell => {
+    cell.addEventListener('dragover', (e: Event) => {
+      const de = e as DragEvent;
+      de.preventDefault();
+      if (de.dataTransfer) de.dataTransfer.dropEffect = 'move';
+      cell.classList.add('drag-over');
+    });
+
+    cell.addEventListener('dragleave', () => {
+      cell.classList.remove('drag-over');
+    });
+
+    cell.addEventListener('drop', (e: Event) => {
+      const de = e as DragEvent;
+      de.preventDefault();
+      cell.classList.remove('drag-over');
+      const bugId = de.dataTransfer?.getData('text/plain') || draggedBugId;
+      const targetCell = cell.dataset.cell;
+      if (bugId && targetCell) {
+        moveBugToCell(bugId, targetCell);
+      }
+    });
+  });
+
+  // --- Add Bug Button ---
+  addBtn.addEventListener('click', () => {
+    const title = titleInput.value.trim();
+    const severity = severitySelect.value;
+    const impact = impactSelect.value;
+
+    if (!title) { showError('Enter a bug title or description.'); titleInput.focus(); return; }
+    if (!severity) { showError('Select a severity level.'); return; }
+    if (!impact) { showError('Select a business impact.'); return; }
+
+    addBug(title, severity, impact);
+
+    // Reset form
+    titleInput.value = '';
+    severitySelect.value = '';
+    impactSelect.value = '';
+    formError.hidden = true;
+    titleInput.focus();
+  });
+
+  // Enter key on title input
+  titleInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addBtn.click();
+    }
+  });
+
+  // --- Quick Add ---
+  quickAddBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const title = btn.dataset.title || '';
+      const severity = btn.dataset.severity || '';
+      const impact = btn.dataset.impact || '';
+      if (title && severity && impact) {
+        addBug(title, severity, impact);
+        btn.classList.add('used');
+      }
+    });
+  });
+
+  // --- Copy Report ---
+  function buildReport(): string {
+    const cellOrder: Record<string, number> = { 'fix-now': 0, schedule: 1, plan: 2, backlog: 3 };
+    const sorted = [...bugs].sort((a, b) => (cellOrder[a.cell] ?? 4) - (cellOrder[b.cell] ?? 4));
+
+    let md = '# Bug Triage Report\n\n';
+    md += '| Bug | Severity | Impact | Action | Assignee |\n';
+    md += '|-----|----------|--------|--------|----------|\n';
+
+    sorted.forEach(bug => {
+      const sevInfo = SEVERITY_MAP[bug.severity];
+      const impInfo = IMPACT_MAP[bug.impact];
+      const cellInfo = CELL_MAP[bug.cell];
+      md += `| ${bug.title} | ${sevInfo ? sevInfo.label : bug.severity} | ${impInfo ? impInfo.label : bug.impact} | ${cellInfo ? cellInfo.action : bug.cell} | ${cellInfo ? cellInfo.assignee : '---'} |\n`;
+    });
+
+    md += `\n---\nGenerated with BugReel Bug Triage Matrix (https://bugreel.io/tools/bug-triage-matrix)`;
+    return md;
+  }
+
+  copyReportBtn.addEventListener('click', async () => {
+    if (bugs.length === 0) return;
+    const text = buildReport();
+    try {
+      await navigator.clipboard.writeText(text);
+      copyReportBtn.classList.add('copied');
+      copyReportText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyReportBtn.classList.remove('copied');
+        copyReportText.textContent = 'Copy Triage Report';
+      }, 2000);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      copyReportBtn.classList.add('copied');
+      copyReportText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyReportBtn.classList.remove('copied');
+        copyReportText.textContent = 'Copy Triage Report';
+      }, 2000);
+    }
+  });
+
+  // --- Clear All ---
+  clearAllBtn.addEventListener('click', () => {
+    bugs = [];
+    render();
+    // Reset quick-add buttons
+    quickAddBtns.forEach(btn => btn.classList.remove('used'));
+    // Scroll to top of tool
+    document.querySelector('.tool-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // --- Initial Render ---
+  render();
+</script>

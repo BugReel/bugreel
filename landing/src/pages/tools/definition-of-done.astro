@@ -1,0 +1,2039 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Definition of Done Generator',
+    description: 'Create a comprehensive Definition of Done for your agile team. Select your project type and practices — get a ready-to-use DoD checklist. Free, no signup required.',
+    url: 'https://bugreel.io/tools/definition-of-done',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Definition of Done Generator', item: 'https://bugreel.io/tools/definition-of-done' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Free Definition of Done Generator — Agile DoD Checklist Builder | BugReel"
+  description="Create a comprehensive Definition of Done for your agile team. Select your project type and practices — get a ready-to-use DoD checklist. Free, no signup required."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Definition of Done Generator</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-success">Free &middot; No Signup</span>
+        <h1>Definition of Done Generator</h1>
+        <p class="hero-subtitle">Create a comprehensive Definition of Done for your agile team. Select your project type and practices &mdash; get a ready-to-use DoD checklist.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Tool -->
+  <section class="tool-section">
+    <div class="container">
+
+      <!-- Step 1: Project Type -->
+      <div class="step-block" id="step-1">
+        <div class="step-header">
+          <span class="step-badge">Step 1</span>
+          <h2 class="step-title">Select Project Type</h2>
+        </div>
+        <div class="app-type-grid" id="project-type-grid">
+          <button class="app-type-card" data-type="web" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="3" y="5" width="26" height="18" rx="3" stroke="currentColor" stroke-width="2"/>
+              <line x1="3" y1="10" x2="29" y2="10" stroke="currentColor" stroke-width="2"/>
+              <circle cx="6.5" cy="7.5" r="1" fill="currentColor"/>
+              <circle cx="9.5" cy="7.5" r="1" fill="currentColor"/>
+              <circle cx="12.5" cy="7.5" r="1" fill="currentColor"/>
+              <line x1="10" y1="27" x2="22" y2="27" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="16" y1="23" x2="16" y2="27" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="app-type-label">Web Application</span>
+          </button>
+          <button class="app-type-card" data-type="mobile" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="8" y="3" width="16" height="26" rx="3" stroke="currentColor" stroke-width="2"/>
+              <line x1="12" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="25" r="1.5" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <span class="app-type-label">Mobile App</span>
+          </button>
+          <button class="app-type-card" data-type="api" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="4" y="6" width="24" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+              <rect x="4" y="18" width="24" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+              <circle cx="8" cy="10" r="1.5" fill="currentColor"/>
+              <circle cx="8" cy="22" r="1.5" fill="currentColor"/>
+              <line x1="12" y1="10" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="22" x2="20" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="app-type-label">API / Microservice</span>
+          </button>
+          <button class="app-type-card" data-type="data-pipeline" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <circle cx="6" cy="16" r="3" stroke="currentColor" stroke-width="2"/>
+              <circle cx="16" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
+              <circle cx="16" cy="24" r="3" stroke="currentColor" stroke-width="2"/>
+              <circle cx="26" cy="16" r="3" stroke="currentColor" stroke-width="2"/>
+              <line x1="9" y1="14" x2="13" y2="10" stroke="currentColor" stroke-width="2"/>
+              <line x1="9" y1="18" x2="13" y2="22" stroke="currentColor" stroke-width="2"/>
+              <line x1="19" y1="10" x2="23" y2="14" stroke="currentColor" stroke-width="2"/>
+              <line x1="19" y1="22" x2="23" y2="18" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="app-type-label">Data Pipeline</span>
+          </button>
+          <button class="app-type-card" data-type="desktop" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="2" y="4" width="28" height="20" rx="3" stroke="currentColor" stroke-width="2"/>
+              <line x1="8" y1="28" x2="24" y2="28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="24" x2="12" y2="28" stroke="currentColor" stroke-width="2"/>
+              <line x1="20" y1="24" x2="20" y2="28" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="app-type-label">Desktop Application</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Team Practices -->
+      <div class="step-block step-disabled" id="step-2">
+        <div class="step-header">
+          <span class="step-badge">Step 2</span>
+          <h2 class="step-title">Select Team Practices</h2>
+          <button class="select-all-btn btn btn-sm btn-secondary" id="select-all-btn" type="button">Select All</button>
+        </div>
+        <div class="category-grid" id="practice-grid">
+          <button class="category-card" data-practice="code-review" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 7l-3 3 3 3M13 7l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="5" x2="9" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span class="category-label">Code Review</span>
+          </button>
+          <button class="category-card" data-practice="automated-testing" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">Automated Testing (Unit + Integration)</span>
+          </button>
+          <button class="category-card" data-practice="ci-cd" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3l1.5 2.5L13 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">CI/CD Pipeline</span>
+          </button>
+          <button class="category-card" data-practice="performance-testing" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 17h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M5 17V9M8 17V5M11 17V11M14 17V7M17 17V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span class="category-label">Performance Testing</span>
+          </button>
+          <button class="category-card" data-practice="security-review" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2L3 6v4c0 4.4 3 8.5 7 9.5 4-1 7-5.1 7-9.5V6l-7-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <span class="category-label">Security Review</span>
+          </button>
+          <button class="category-card" data-practice="accessibility" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h12M10 8v4M7 18l3-6 3 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">Accessibility Compliance</span>
+          </button>
+          <button class="category-card" data-practice="documentation" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 3h8l4 4v10a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 3v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="6" y1="10" x2="14" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="13" x2="11" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span class="category-label">Documentation Updates</span>
+          </button>
+          <button class="category-card" data-practice="monitoring" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><polyline points="5,11 8,7 11,9 15,5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="6" y1="18" x2="14" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="15" x2="10" y2="18" stroke="currentColor" stroke-width="1.5"/></svg>
+            <span class="category-label">Monitoring &amp; Alerting</span>
+          </button>
+          <button class="category-card" data-practice="feature-flags" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 3v14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M4 4h10l-2 3 2 3H4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <span class="category-label">Feature Flags</span>
+          </button>
+          <button class="category-card" data-practice="design-review" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="7" x2="18" y2="7" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="9.5" width="5" height="3" rx="1" stroke="currentColor" stroke-width="1"/><rect x="11" y="9.5" width="5" height="3" rx="1" stroke="currentColor" stroke-width="1"/></svg>
+            <span class="category-label">Design Review (UI/UX)</span>
+          </button>
+          <button class="category-card" data-practice="db-migration" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><ellipse cx="10" cy="5" rx="7" ry="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 5v5c0 1.7 3.1 3 7 3s7-1.3 7-3V5" stroke="currentColor" stroke-width="1.5"/><path d="M3 10v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5" stroke="currentColor" stroke-width="1.5"/></svg>
+            <span class="category-label">Database Migration Review</span>
+          </button>
+          <button class="category-card" data-practice="api-docs" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 4h10c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.5"/><path d="M7 8l-2 2 2 2M13 8l2 2-2 2M11 7l-2 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">API Documentation</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Generated DoD Checklist -->
+      <div class="step-block step-disabled" id="step-3">
+        <div class="step-header">
+          <span class="step-badge">Step 3</span>
+          <h2 class="step-title">Your Definition of Done</h2>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-wrapper" id="progress-wrapper">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+          <span class="progress-label" id="progress-label">0 / 0 items checked</span>
+        </div>
+
+        <!-- Checklist Actions -->
+        <div class="checklist-actions" id="checklist-actions-top">
+          <button class="btn btn-primary btn-sm" id="copy-md-btn" type="button">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M3 11V3.5A.5.5 0 013.5 3H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span id="copy-md-text">Copy as Markdown</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" id="download-md-btn" type="button">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 2v7.5M3.5 7L7 10.5 10.5 7M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Download .md
+          </button>
+          <button class="btn btn-secondary btn-sm" id="reset-btn" type="button">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 7a5 5 0 019.3-2.5M12 7a5 5 0 01-9.3 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <polyline points="11,2 11.3,4.5 8.8,4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="3,12 2.7,9.5 5.2,9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Reset
+          </button>
+        </div>
+
+        <!-- Checklist Output -->
+        <div class="checklist-output" id="checklist-output"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Info Sections -->
+  <section class="section-sm info-section">
+    <div class="container">
+      <div class="info-grid">
+
+        <!-- What is Definition of Done? -->
+        <div class="info-card">
+          <h2>What is Definition of Done?</h2>
+          <p>The Definition of Done (DoD) is a shared checklist of criteria that every increment of work must satisfy before it can be considered complete. In Scrum, the DoD ensures transparency and quality by setting a common standard that every team member understands and follows.</p>
+          <p>A well-crafted DoD prevents "almost done" items from piling up, reduces rework, and gives stakeholders confidence that delivered features are truly production-ready. It typically covers code quality, testing, documentation, deployment, and product acceptance.</p>
+        </div>
+
+        <!-- DoD vs Acceptance Criteria -->
+        <div class="info-card">
+          <h2>DoD vs Acceptance Criteria</h2>
+          <div class="table-wrapper">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Definition of Done</th>
+                  <th>Acceptance Criteria</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Scope</td>
+                  <td>Applies to every user story / increment</td>
+                  <td>Specific to a single user story</td>
+                </tr>
+                <tr>
+                  <td>Who defines it</td>
+                  <td>The whole Scrum team</td>
+                  <td>Product Owner (with team input)</td>
+                </tr>
+                <tr>
+                  <td>Changes</td>
+                  <td>Evolves over time, rarely per sprint</td>
+                  <td>Defined before each story starts</td>
+                </tr>
+                <tr>
+                  <td>Focus</td>
+                  <td>Quality standards and process gates</td>
+                  <td>Functional behavior and business rules</td>
+                </tr>
+                <tr>
+                  <td>Example</td>
+                  <td>"Code reviewed and approved"</td>
+                  <td>"User can filter orders by date range"</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Shipping done features with hidden bugs?</p>
+      <h2>Record your screen. AI does the rest.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel turns screen recordings into complete bug reports with steps, screenshots, and severity -- in minutes, not hours.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 700px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 620px;
+  }
+
+  /* ===== Tool Section ===== */
+  .tool-section {
+    padding-bottom: 64px;
+  }
+
+  /* ===== Step Blocks ===== */
+  .step-block {
+    margin-bottom: 48px;
+  }
+
+  .step-block.step-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    filter: grayscale(0.5);
+    transition: opacity var(--transition-slow), filter var(--transition-slow);
+  }
+
+  .step-block.step-active {
+    opacity: 1;
+    pointer-events: auto;
+    filter: none;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-full);
+  }
+
+  .step-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    margin: 0;
+  }
+
+  .select-all-btn {
+    margin-left: auto;
+  }
+
+  /* ===== Project Type Cards ===== */
+  .app-type-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+
+  .app-type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 16px;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-sans);
+    text-align: center;
+  }
+
+  .app-type-card:hover {
+    border-color: var(--color-border-hover);
+    background: var(--color-surface-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .app-type-card.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-glow);
+    box-shadow: var(--shadow-glow-primary);
+  }
+
+  .app-type-icon {
+    color: var(--color-text-muted);
+    transition: color var(--transition-base);
+  }
+
+  .app-type-card.selected .app-type-icon {
+    color: var(--color-primary);
+  }
+
+  .app-type-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    transition: color var(--transition-base);
+  }
+
+  .app-type-card.selected .app-type-label {
+    color: var(--color-text);
+  }
+
+  /* ===== Practice Cards ===== */
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .category-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-sans);
+    text-align: left;
+  }
+
+  .category-card:hover {
+    border-color: var(--color-border-hover);
+    background: var(--color-surface-hover);
+  }
+
+  .category-card.selected {
+    border-color: var(--color-accent);
+    background: var(--color-accent-glow);
+  }
+
+  .category-icon {
+    flex-shrink: 0;
+    color: var(--color-text-dim);
+    transition: color var(--transition-base);
+  }
+
+  .category-card.selected .category-icon {
+    color: var(--color-accent);
+  }
+
+  .category-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    transition: color var(--transition-base);
+    line-height: 1.3;
+  }
+
+  .category-card.selected .category-label {
+    color: var(--color-text);
+  }
+
+  /* ===== Progress Bar ===== */
+  .progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .progress-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    transition: width var(--transition-base), background var(--transition-base);
+  }
+
+  .progress-bar-fill.progress-mid {
+    background: var(--color-warning);
+  }
+
+  .progress-bar-fill.progress-high {
+    background: var(--color-success);
+  }
+
+  .progress-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    min-width: 160px;
+    text-align: right;
+  }
+
+  /* ===== Checklist Actions ===== */
+  .checklist-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  #copy-md-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+
+  /* ===== Checklist Output ===== */
+  .checklist-output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Category sections */
+  .checklist-output :global(.cl-section) {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .checklist-output :global(.cl-section-header) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    transition: background var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-section-header:hover) {
+    background: var(--color-surface-hover);
+  }
+
+  .checklist-output :global(.cl-section-chevron) {
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+    color: var(--color-text-dim);
+  }
+
+  .checklist-output :global(.cl-section-header.collapsed .cl-section-chevron) {
+    transform: rotate(-90deg);
+  }
+
+  .checklist-output :global(.cl-section-title) {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text);
+    flex: 1;
+  }
+
+  .checklist-output :global(.cl-section-count) {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+  }
+
+  .checklist-output :global(.cl-section-body) {
+    padding: 8px 0;
+  }
+
+  .checklist-output :global(.cl-section-body.collapsed) {
+    display: none;
+  }
+
+  /* Checklist items */
+  .checklist-output :global(.cl-item) {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-item:hover) {
+    background: var(--color-surface-hover);
+  }
+
+  .checklist-output :global(.cl-item.custom-item) {
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .checklist-output :global(.cl-checkbox) {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border: 2px solid var(--color-border-hover);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    background: transparent;
+  }
+
+  .checklist-output :global(.cl-item.checked .cl-checkbox) {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .checklist-output :global(.cl-checkmark) {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-item.checked .cl-checkmark) {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .checklist-output :global(.cl-text) {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    transition: all var(--transition-fast);
+    flex: 1;
+  }
+
+  .checklist-output :global(.cl-item.checked .cl-text) {
+    text-decoration: line-through;
+    color: var(--color-text-dim);
+  }
+
+  .checklist-output :global(.cl-delete-btn) {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-dim);
+    opacity: 0;
+    transition: opacity var(--transition-fast), color var(--transition-fast);
+    padding: 0;
+    margin-top: 1px;
+  }
+
+  .checklist-output :global(.cl-item.custom-item:hover .cl-delete-btn) {
+    opacity: 1;
+  }
+
+  .checklist-output :global(.cl-delete-btn:hover) {
+    color: var(--color-error);
+  }
+
+  /* Add custom item */
+  .checklist-output :global(.cl-add-item) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px 12px;
+  }
+
+  .checklist-output :global(.cl-add-input) {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 0.8125rem;
+    font-family: var(--font-sans);
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: border-color var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-add-input:focus) {
+    border-color: var(--color-primary);
+  }
+
+  .checklist-output :global(.cl-add-input::placeholder) {
+    color: var(--color-text-dim);
+  }
+
+  .checklist-output :global(.cl-add-btn) {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    color: var(--color-primary);
+    background: var(--color-primary-glow);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-add-btn:hover) {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  /* ===== Info Section ===== */
+  .info-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .info-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+  }
+
+  .info-card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+  }
+
+  .info-card p {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+
+  .info-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  .info-card .table-wrapper {
+    margin-top: 8px;
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1024px) {
+    .app-type-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .category-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .app-type-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .category-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .progress-wrapper {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .progress-label {
+      text-align: left;
+      min-width: auto;
+    }
+
+    .checklist-actions {
+      gap: 8px;
+    }
+
+    .step-header {
+      gap: 10px;
+    }
+
+    .select-all-btn {
+      margin-left: 0;
+    }
+
+    .info-card {
+      padding: 24px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .app-type-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  // ===== Definition of Done Generator -- Client-Side Logic =====
+
+  const STORAGE_KEY = 'bugreel-dod-generator';
+
+  // --- Types ---
+  type ProjectType = 'web' | 'mobile' | 'api' | 'data-pipeline' | 'desktop';
+  type PracticeKey = 'code-review' | 'automated-testing' | 'ci-cd' | 'performance-testing' | 'security-review' | 'accessibility' | 'documentation' | 'monitoring' | 'feature-flags' | 'design-review' | 'db-migration' | 'api-docs';
+
+  interface ChecklistItem {
+    id: string;
+    text: string;
+    checked: boolean;
+    custom?: boolean;
+  }
+
+  // --- DoD category keys (always-present + practice-conditional) ---
+  type DodCategoryKey = 'code-quality' | 'testing' | 'ci-cd' | 'documentation' | 'security' | 'accessibility' | 'monitoring' | 'performance' | 'feature-flags' | 'design-review' | 'db-migration' | 'api-docs' | 'product';
+
+  interface DodCategoryDef {
+    label: string;
+    // null = always shown; string = shown only if that practice is selected
+    requiredPractice: PracticeKey | null;
+    items: Record<ProjectType, string[]>;
+  }
+
+  const DOD_CATEGORIES: Record<DodCategoryKey, DodCategoryDef> = {
+    'code-quality': {
+      label: 'Code Quality',
+      requiredPractice: null, // always shown
+      items: {
+        web: [
+          'Code reviewed and approved by at least one team member',
+          'No compiler warnings or linting errors',
+          'Code follows team coding standards and style guide',
+          'Technical debt documented in backlog (if any introduced)',
+          'No TODO/FIXME comments left without a linked ticket',
+          'Functions and methods have clear, descriptive names',
+          'Complex logic has inline comments explaining intent',
+          'No hardcoded values -- configuration is externalized',
+        ],
+        mobile: [
+          'Code reviewed and approved by at least one team member',
+          'No compiler warnings or linting errors',
+          'Code follows platform conventions (Swift/Kotlin style guides)',
+          'Technical debt documented in backlog (if any introduced)',
+          'No TODO/FIXME comments left without a linked ticket',
+          'Memory management verified (no retain cycles / leaks)',
+          'Thread safety ensured for concurrent operations',
+          'No hardcoded strings -- all user-facing text is localized',
+        ],
+        api: [
+          'Code reviewed and approved by at least one team member',
+          'No compiler warnings or linting errors',
+          'Code follows team coding standards and style guide',
+          'Technical debt documented in backlog (if any introduced)',
+          'No TODO/FIXME comments left without a linked ticket',
+          'Input validation applied on all public endpoints',
+          'Error handling is consistent and returns proper HTTP status codes',
+          'No hardcoded secrets or configuration values in source',
+        ],
+        'data-pipeline': [
+          'Code reviewed and approved by at least one team member',
+          'No linting errors in pipeline scripts',
+          'Code follows team coding standards for data engineering',
+          'Technical debt documented in backlog (if any introduced)',
+          'Data transformations are idempotent and re-runnable',
+          'Schema validation applied at ingestion and output stages',
+          'Pipeline handles null/missing values explicitly',
+          'No hardcoded file paths, credentials, or connection strings',
+        ],
+        desktop: [
+          'Code reviewed and approved by at least one team member',
+          'No compiler warnings or linting errors',
+          'Code follows team coding standards and platform guidelines',
+          'Technical debt documented in backlog (if any introduced)',
+          'No TODO/FIXME comments left without a linked ticket',
+          'Resource management verified (handles, streams properly closed)',
+          'UI code separated from business logic (MVVM/MVC pattern)',
+          'No hardcoded paths or platform-specific assumptions',
+        ],
+      },
+    },
+    testing: {
+      label: 'Testing',
+      requiredPractice: 'automated-testing',
+      items: {
+        web: [
+          'Unit tests written for new code (coverage >= 80%)',
+          'Integration tests pass for affected workflows',
+          'Manual testing completed for UI changes on target browsers',
+          'Edge cases identified and covered with test scenarios',
+          'No known regressions introduced',
+          'Form validation tested with valid, invalid, and boundary inputs',
+          'Error states and fallbacks verified manually',
+          'Tests run in CI and pass consistently (no flaky tests)',
+        ],
+        mobile: [
+          'Unit tests written for new code (coverage >= 80%)',
+          'Integration tests pass for affected user flows',
+          'Manual testing completed on physical devices (iOS + Android)',
+          'Edge cases identified and covered with test scenarios',
+          'No known regressions introduced',
+          'Offline behavior tested (network toggled during use)',
+          'App lifecycle tested (backgrounding, force-quit, restore)',
+          'Tests run in CI for both platforms and pass consistently',
+        ],
+        api: [
+          'Unit tests written for new code (coverage >= 80%)',
+          'Integration tests pass for affected endpoints',
+          'Contract tests validate request/response schema',
+          'Edge cases identified and covered (empty arrays, nulls, max values)',
+          'No known regressions introduced',
+          'Load testing confirms acceptable response times under expected traffic',
+          'Error responses return correct status codes and messages',
+          'Tests run in CI and pass consistently (no flaky tests)',
+        ],
+        'data-pipeline': [
+          'Unit tests written for transformation logic (coverage >= 80%)',
+          'Integration tests validate end-to-end pipeline output',
+          'Data quality checks pass (row counts, schema, null rates)',
+          'Edge cases tested (empty inputs, malformed records, duplicate keys)',
+          'No known regressions in downstream consumers',
+          'Pipeline tested with production-scale sample data',
+          'Retry and failure recovery scenarios validated',
+          'Tests run in CI and pass consistently',
+        ],
+        desktop: [
+          'Unit tests written for new code (coverage >= 80%)',
+          'Integration tests pass for affected features',
+          'Manual testing completed on all target operating systems',
+          'Edge cases identified and covered with test scenarios',
+          'No known regressions introduced',
+          'Keyboard navigation tested for new UI elements',
+          'Installer/updater tested for clean install and upgrade paths',
+          'Tests run in CI and pass consistently (no flaky tests)',
+        ],
+      },
+    },
+    'ci-cd': {
+      label: 'CI/CD',
+      requiredPractice: 'ci-cd',
+      items: {
+        web: [
+          'All CI checks pass (build, lint, test, type-check)',
+          'Deployed successfully to staging/dev environment',
+          'Smoke test passed on staging before production merge',
+          'Build artifacts are versioned and traceable to the commit',
+          'No environment-specific configuration leaked into the build',
+          'Rollback plan documented or automated',
+        ],
+        mobile: [
+          'All CI checks pass (build, lint, test) for both platforms',
+          'App built and signed for TestFlight / Internal Testing track',
+          'Smoke test passed on beta build before release',
+          'Build number incremented and tagged in version control',
+          'No debug flags or test endpoints in the release build',
+          'Rollback strategy confirmed (previous version still available)',
+        ],
+        api: [
+          'All CI checks pass (build, lint, test, security scan)',
+          'Deployed successfully to staging/dev environment',
+          'Health check endpoint returns 200 on staging',
+          'Database migrations applied successfully on staging',
+          'Smoke test passed on staging before production merge',
+          'Rollback plan documented (migration reversibility confirmed)',
+        ],
+        'data-pipeline': [
+          'All CI checks pass (lint, test, schema validation)',
+          'Pipeline deployed to staging environment and executed end-to-end',
+          'Output data validated against expected schema and row counts',
+          'No orphaned temporary resources after pipeline completes',
+          'Rollback plan documented for data and schema changes',
+          'Scheduling/trigger configuration updated if needed',
+        ],
+        desktop: [
+          'All CI checks pass (build, lint, test) for all target platforms',
+          'Installer built and signed for each target OS',
+          'Smoke test passed on built installer (clean machine)',
+          'Auto-update mechanism tested with the new version',
+          'Build artifacts archived and linked to the release tag',
+          'Rollback plan documented (previous installer available)',
+        ],
+      },
+    },
+    documentation: {
+      label: 'Documentation',
+      requiredPractice: 'documentation',
+      items: {
+        web: [
+          'README updated if setup or configuration changed',
+          'Changelog entry added for the release',
+          'Inline code comments updated for changed logic',
+          'Environment variables documented if new ones added',
+          'Architecture decision records (ADRs) created for significant choices',
+          'Migration guide written if breaking changes introduced',
+        ],
+        mobile: [
+          'README updated if build steps or dependencies changed',
+          'Changelog entry added for the release',
+          'App Store / Play Store release notes drafted',
+          'New permissions documented with user-facing rationale',
+          'Deep link schema documented if new routes added',
+          'Migration guide written if breaking changes introduced',
+        ],
+        api: [
+          'README updated if setup or deployment changed',
+          'Changelog entry added for the release',
+          'New/changed environment variables documented',
+          'Database schema changes documented in migration notes',
+          'Rate limits and quotas documented for new endpoints',
+          'Breaking changes communicated to API consumers',
+        ],
+        'data-pipeline': [
+          'README updated if pipeline setup or dependencies changed',
+          'Changelog entry added for the release',
+          'Data dictionary updated for new/changed fields',
+          'Pipeline DAG/flow diagram updated if topology changed',
+          'SLA and scheduling documentation updated',
+          'Data lineage documentation updated for new sources/sinks',
+        ],
+        desktop: [
+          'README updated if build steps or dependencies changed',
+          'Changelog entry added for the release',
+          'User-facing help docs updated for new features',
+          'System requirements updated if minimum specs changed',
+          'Keyboard shortcuts documentation updated',
+          'Migration guide written if breaking changes introduced',
+        ],
+      },
+    },
+    security: {
+      label: 'Security',
+      requiredPractice: 'security-review',
+      items: {
+        web: [
+          'No secrets or credentials committed to source control',
+          'Input validation applied on all new form fields and endpoints',
+          'Authentication and authorization verified for new routes',
+          'OWASP Top 10 considerations reviewed for changes',
+          'Dependencies scanned for known vulnerabilities',
+          'CSP headers reviewed if new external resources added',
+          'Sensitive data not logged or exposed in error messages',
+        ],
+        mobile: [
+          'No secrets or API keys hardcoded in the binary',
+          'Sensitive data encrypted at rest on device',
+          'Network calls use TLS with certificate validation',
+          'Biometric/auth bypass scenarios tested',
+          'Dependencies scanned for known vulnerabilities',
+          'Permissions follow principle of least privilege',
+          'Sensitive data not logged or exposed in crash reports',
+        ],
+        api: [
+          'No secrets or credentials committed to source control',
+          'Input validation applied on all new endpoint parameters',
+          'Authentication and authorization verified for new endpoints',
+          'SQL injection / NoSQL injection tested on new parameters',
+          'Dependencies scanned for known vulnerabilities',
+          'CORS policy reviewed if origins changed',
+          'Rate limiting configured for new public endpoints',
+          'Sensitive data not logged or returned in error responses',
+        ],
+        'data-pipeline': [
+          'No secrets or credentials committed to source control',
+          'PII/PHI data masked or encrypted in transit and at rest',
+          'Access controls verified for new data sources and sinks',
+          'Data retention policies applied to temporary storage',
+          'Dependencies scanned for known vulnerabilities',
+          'Audit trail maintained for data access and transformations',
+          'Pipeline credentials use service accounts, not personal keys',
+        ],
+        desktop: [
+          'No secrets or credentials committed to source control',
+          'Code signed with a valid certificate for distribution',
+          'Local storage encryption verified for sensitive data',
+          'Auto-update mechanism uses HTTPS and signature verification',
+          'Dependencies scanned for known vulnerabilities',
+          'IPC (inter-process communication) inputs validated',
+          'Sensitive data not persisted in logs or crash dumps',
+        ],
+      },
+    },
+    accessibility: {
+      label: 'Accessibility',
+      requiredPractice: 'accessibility',
+      items: {
+        web: [
+          'New UI elements have proper ARIA labels and roles',
+          'Keyboard navigation works for all new interactive elements',
+          'Color contrast meets WCAG AA standards (4.5:1 text, 3:1 large)',
+          'Screen reader tested on new content and dynamic updates',
+          'Focus management correct for modals, dropdowns, and drawers',
+          'No information conveyed by color alone',
+        ],
+        mobile: [
+          'VoiceOver (iOS) and TalkBack (Android) navigate new screens',
+          'Touch targets meet minimum size (44pt iOS / 48dp Android)',
+          'Dynamic type / font scaling does not break layout',
+          'New content announces properly to screen readers',
+          'Haptic feedback used where appropriate for key actions',
+          'Reduced motion preference respected for animations',
+        ],
+        api: [
+          'Error messages are descriptive for assistive technology consumers',
+          'API responses include semantic data for accessible UI rendering',
+          'Pagination metadata is explicit for screen reader navigation',
+          'Documentation available in accessible formats',
+        ],
+        'data-pipeline': [
+          'Reports and dashboards powered by pipeline data meet WCAG AA',
+          'Data exports include headers and metadata for screen readers',
+          'Alert notifications are accessible (not color-only indicators)',
+          'Documentation available in accessible formats',
+        ],
+        desktop: [
+          'All new controls are keyboard accessible with focus indicators',
+          'Screen reader software reads new controls and content correctly',
+          'High contrast mode does not hide or obscure new elements',
+          'Text resizing does not break new layouts',
+          'Animations respect system-level reduced motion settings',
+          'Tab order follows logical reading sequence',
+        ],
+      },
+    },
+    monitoring: {
+      label: 'Monitoring & Alerting',
+      requiredPractice: 'monitoring',
+      items: {
+        web: [
+          'Error tracking configured for new features (Sentry / similar)',
+          'Key user-facing metrics dashboarded (page load, error rate)',
+          'Alerts set for critical error rate thresholds',
+          'Custom events tracked for new user flows (analytics)',
+          'Performance budgets monitored (LCP, CLS, INP)',
+          'Uptime monitoring covers new routes/pages',
+        ],
+        mobile: [
+          'Crash reporting configured for new screens (Crashlytics / similar)',
+          'Key metrics dashboarded (crash rate, ANR rate, launch time)',
+          'Alerts set for crash rate spikes after release',
+          'Custom events tracked for new user flows (analytics)',
+          'Network error rates monitored for new API integrations',
+          'App size and startup time tracked across releases',
+        ],
+        api: [
+          'Error tracking configured for new endpoints (Sentry / similar)',
+          'Key metrics dashboarded (latency p50/p95, error rate, throughput)',
+          'Alerts set for latency spikes and elevated error rates',
+          'Database query performance monitored for new queries',
+          'Rate limit hit rates tracked and alerted',
+          'Health check endpoint monitored with uptime service',
+        ],
+        'data-pipeline': [
+          'Pipeline run status dashboarded (success/failure/duration)',
+          'Alerts set for pipeline failures and SLA breaches',
+          'Data quality metrics tracked (row counts, null rates, freshness)',
+          'Resource utilization monitored (CPU, memory, storage)',
+          'Downstream consumer health checked after pipeline runs',
+          'Dead letter queue / failed record count alerted',
+        ],
+        desktop: [
+          'Crash reporting configured (Sentry / Breakpad / similar)',
+          'Key metrics dashboarded (crash rate, memory usage, startup time)',
+          'Alerts set for crash rate spikes after release',
+          'Update adoption rate tracked across versions',
+          'License activation and deactivation events monitored',
+          'Error logs collected opt-in and reviewable for support',
+        ],
+      },
+    },
+    performance: {
+      label: 'Performance',
+      requiredPractice: 'performance-testing',
+      items: {
+        web: [
+          'Page load time under 3 seconds on standard connection',
+          'Largest Contentful Paint (LCP) under 2.5 seconds',
+          'No memory leaks detected on repeated navigation',
+          'Bundle size impact reviewed (no unnecessary dependencies added)',
+          'Images optimized and lazy-loaded below the fold',
+          'API calls profiled and within acceptable latency limits',
+        ],
+        mobile: [
+          'App cold start time under 2 seconds',
+          'Screen transitions complete within 300ms',
+          'Scrolling maintains 60fps on mid-range devices',
+          'Memory usage stable under extended use (no leaks)',
+          'Battery impact acceptable during active usage',
+          'Network requests optimized (batching, caching, compression)',
+        ],
+        api: [
+          'Response time under 200ms for simple queries (p95)',
+          'Response time under 1 second for complex aggregations (p95)',
+          'Load tested at expected peak traffic without errors',
+          'Database queries profiled (no N+1, proper indexing)',
+          'Payload sizes reviewed and optimized (pagination, sparse fields)',
+          'Connection pooling configured for database and HTTP clients',
+        ],
+        'data-pipeline': [
+          'Pipeline completes within SLA window on production-scale data',
+          'Resource usage (CPU, memory) within cluster limits',
+          'No data skew causing hotspot partitions',
+          'Incremental processing optimized (no full recomputation when avoidable)',
+          'Output write performance validated (partitioning, compression)',
+          'Retry overhead acceptable without cascading delays',
+        ],
+        desktop: [
+          'Application launches within 3 seconds on minimum spec hardware',
+          'Large files open without UI freezing',
+          'Memory usage stable during extended sessions',
+          'CPU drops to near-zero when application is idle',
+          'Batch operations show progress and complete within SLA',
+          'Startup optimized (lazy loading of non-critical modules)',
+        ],
+      },
+    },
+    'feature-flags': {
+      label: 'Feature Flags',
+      requiredPractice: 'feature-flags',
+      items: {
+        web: [
+          'New feature wrapped in a feature flag (disabled by default)',
+          'Feature flag documented in the flag registry',
+          'Application behaves correctly with flag on and flag off',
+          'Flag cleanup ticket created for post-launch removal',
+          'No feature flag nesting beyond one level',
+        ],
+        mobile: [
+          'New feature wrapped in a feature flag (disabled by default)',
+          'Feature flag documented in the flag registry',
+          'Application behaves correctly with flag on and flag off',
+          'Flag cleanup ticket created for post-launch removal',
+          'Remote config refresh tested (flag toggles mid-session)',
+        ],
+        api: [
+          'New feature wrapped in a feature flag (disabled by default)',
+          'Feature flag documented in the flag registry',
+          'API responds correctly with flag on and flag off',
+          'Flag cleanup ticket created for post-launch removal',
+          'Feature flag evaluation does not add measurable latency',
+        ],
+        'data-pipeline': [
+          'New pipeline logic gated behind a feature flag or config toggle',
+          'Flag documented in pipeline configuration registry',
+          'Pipeline output validated with flag on and flag off',
+          'Flag cleanup ticket created for post-validation removal',
+          'Rollback to previous logic is a single config change',
+        ],
+        desktop: [
+          'New feature wrapped in a feature flag (disabled by default)',
+          'Feature flag documented in the flag registry',
+          'Application behaves correctly with flag on and flag off',
+          'Flag cleanup ticket created for post-launch removal',
+          'Flag state persists correctly across application restarts',
+        ],
+      },
+    },
+    'design-review': {
+      label: 'Design Review',
+      requiredPractice: 'design-review',
+      items: {
+        web: [
+          'UI matches approved design mockups / Figma specs',
+          'Responsive behavior reviewed at all target breakpoints',
+          'Typography, spacing, and color usage follow the design system',
+          'Interactive states (hover, focus, active, disabled) implemented',
+          'Loading and empty states designed and implemented',
+          'Design review approved by UI/UX team member',
+        ],
+        mobile: [
+          'UI matches approved design mockups / Figma specs',
+          'Platform conventions followed (iOS HIG / Material Design)',
+          'Typography, spacing, and color usage follow the design system',
+          'Animations and transitions match interaction specs',
+          'Loading and empty states designed and implemented',
+          'Design review approved by UI/UX team member',
+        ],
+        api: [
+          'API response structure reviewed for frontend consumption',
+          'Error message copy reviewed for user-facing clarity',
+          'Pagination and filtering match frontend UX requirements',
+          'API contract review approved by frontend team',
+        ],
+        'data-pipeline': [
+          'Dashboard / report layout matches approved design specs',
+          'Data visualization choices reviewed by UX team',
+          'Output format reviewed for downstream consumer UX',
+          'Design review approved for any user-facing outputs',
+        ],
+        desktop: [
+          'UI matches approved design mockups / Figma specs',
+          'Window layout adapts correctly to resizing',
+          'Typography, spacing, and color usage follow the design system',
+          'Dark mode and light mode reviewed for all new elements',
+          'Icon set is consistent with existing application style',
+          'Design review approved by UI/UX team member',
+        ],
+      },
+    },
+    'db-migration': {
+      label: 'Database Migration',
+      requiredPractice: 'db-migration',
+      items: {
+        web: [
+          'Migration script tested on a copy of production data',
+          'Migration is reversible (down migration provided)',
+          'No data loss during migration (verified with row counts)',
+          'Indexes added for new query patterns',
+          'Migration execution time acceptable for production deploy window',
+          'Backward compatibility maintained (old code works during rollout)',
+        ],
+        mobile: [
+          'Local database migration tested on upgrade from previous version',
+          'Migration handles edge cases (corrupted data, partial upgrades)',
+          'No data loss during migration (verified with test scenarios)',
+          'Migration performance acceptable on low-end devices',
+          'Fallback behavior defined if migration fails',
+          'Schema version incremented correctly',
+        ],
+        api: [
+          'Migration script tested on a copy of production data',
+          'Migration is reversible (down migration provided)',
+          'No data loss during migration (verified with row counts)',
+          'Indexes added for new query patterns',
+          'Migration execution time acceptable for zero-downtime deploy',
+          'Backward compatibility maintained for rolling deployments',
+          'Foreign key constraints and data integrity verified post-migration',
+        ],
+        'data-pipeline': [
+          'Schema migration tested on a copy of production data',
+          'Migration is re-runnable (idempotent)',
+          'No data loss during schema evolution (verified with counts)',
+          'Partitioning strategy reviewed for new/changed tables',
+          'Downstream consumers tested against new schema',
+          'Backward compatibility maintained during transition period',
+        ],
+        desktop: [
+          'Local database migration tested on upgrade from previous version',
+          'Migration is reversible or backup is created before upgrade',
+          'No data loss during migration (verified with test scenarios)',
+          'Migration performance acceptable on minimum spec hardware',
+          'Embedded database engine version compatible with migration',
+          'Schema version incremented correctly in application metadata',
+        ],
+      },
+    },
+    'api-docs': {
+      label: 'API Documentation',
+      requiredPractice: 'api-docs',
+      items: {
+        web: [
+          'API calls documented for frontend developers (endpoints, params)',
+          'Request/response examples updated in API docs',
+          'Error codes and messages documented for each endpoint',
+          'Authentication requirements documented for new endpoints',
+        ],
+        mobile: [
+          'API calls documented for mobile developers (endpoints, params)',
+          'Request/response examples updated in API docs',
+          'Error codes and messages documented for each endpoint',
+          'Offline behavior and caching strategy documented',
+        ],
+        api: [
+          'OpenAPI/Swagger spec updated for new/changed endpoints',
+          'Request/response examples provided for each endpoint',
+          'Error codes and messages documented with resolution steps',
+          'Authentication and authorization requirements documented',
+          'Rate limits and quotas documented per endpoint',
+          'Breaking changes highlighted with migration instructions',
+          'Versioning clearly indicated in the API docs',
+        ],
+        'data-pipeline': [
+          'Input and output schemas documented (field types, constraints)',
+          'Pipeline configuration parameters documented',
+          'API endpoints for pipeline triggers documented (if applicable)',
+          'Data access patterns documented for downstream consumers',
+        ],
+        desktop: [
+          'Plugin/extension API documented for third-party developers',
+          'Internal API changes documented for team reference',
+          'CLI arguments and configuration options updated in docs',
+          'IPC protocol documented if inter-process APIs changed',
+        ],
+      },
+    },
+    product: {
+      label: 'Product',
+      requiredPractice: null, // always shown
+      items: {
+        web: [
+          'All acceptance criteria from the user story are met',
+          'Product owner reviewed and approved the implementation',
+          'Release notes drafted for user-facing changes',
+          'Analytics events fire correctly for new user interactions',
+          'Feature demo recorded or presented to stakeholders',
+          'No open blockers or unresolved questions',
+        ],
+        mobile: [
+          'All acceptance criteria from the user story are met',
+          'Product owner reviewed and approved the implementation',
+          'App store release notes drafted for the update',
+          'Analytics events fire correctly for new user interactions',
+          'Feature demo recorded or presented to stakeholders',
+          'No open blockers or unresolved questions',
+        ],
+        api: [
+          'All acceptance criteria from the user story are met',
+          'Product owner reviewed and approved the implementation',
+          'Release notes drafted for API consumers',
+          'Migration guide provided if breaking changes introduced',
+          'Feature demo or walkthrough presented to stakeholders',
+          'No open blockers or unresolved questions',
+        ],
+        'data-pipeline': [
+          'All acceptance criteria from the user story are met',
+          'Data owner reviewed and approved the output',
+          'Release notes drafted for downstream consumers',
+          'Data quality SLAs confirmed and documented',
+          'Pipeline demo or output review presented to stakeholders',
+          'No open blockers or unresolved questions',
+        ],
+        desktop: [
+          'All acceptance criteria from the user story are met',
+          'Product owner reviewed and approved the implementation',
+          'Release notes drafted for the update',
+          'Analytics events fire correctly for new user interactions',
+          'Feature demo recorded or presented to stakeholders',
+          'No open blockers or unresolved questions',
+        ],
+      },
+    },
+  };
+
+  const CATEGORY_ORDER: DodCategoryKey[] = [
+    'code-quality', 'testing', 'ci-cd', 'documentation', 'security',
+    'accessibility', 'monitoring', 'performance', 'feature-flags',
+    'design-review', 'db-migration', 'api-docs', 'product',
+  ];
+
+  const PRACTICE_LIST: PracticeKey[] = [
+    'code-review', 'automated-testing', 'ci-cd', 'performance-testing',
+    'security-review', 'accessibility', 'documentation', 'monitoring',
+    'feature-flags', 'design-review', 'db-migration', 'api-docs',
+  ];
+
+  const PROJECT_TYPES: ProjectType[] = ['web', 'mobile', 'api', 'data-pipeline', 'desktop'];
+
+  const PROJECT_LABELS: Record<ProjectType, string> = {
+    web: 'Web Application',
+    mobile: 'Mobile App',
+    api: 'API / Microservice',
+    'data-pipeline': 'Data Pipeline',
+    desktop: 'Desktop Application',
+  };
+
+  // --- State ---
+  let selectedProjectType: ProjectType | null = null;
+  let selectedPractices: Set<PracticeKey> = new Set();
+  let checkedItems: Set<string> = new Set();
+  let customItems: Record<string, string[]> = {}; // categoryKey -> custom texts
+
+  // --- DOM ---
+  const projectTypeGrid = document.getElementById('project-type-grid')!;
+  const practiceGrid = document.getElementById('practice-grid')!;
+  const step2 = document.getElementById('step-2')!;
+  const step3 = document.getElementById('step-3')!;
+  const checklistOutput = document.getElementById('checklist-output')!;
+  const progressBarFill = document.getElementById('progress-bar-fill')!;
+  const progressLabel = document.getElementById('progress-label')!;
+  const copyMdBtn = document.getElementById('copy-md-btn')!;
+  const copyMdText = document.getElementById('copy-md-text')!;
+  const downloadMdBtn = document.getElementById('download-md-btn')!;
+  const resetBtn = document.getElementById('reset-btn')!;
+  const selectAllBtn = document.getElementById('select-all-btn')!;
+
+  const projectTypeCards = projectTypeGrid.querySelectorAll('.app-type-card');
+  const practiceCards = practiceGrid.querySelectorAll('.category-card');
+
+  // --- localStorage ---
+  function saveState() {
+    try {
+      const state = {
+        projectType: selectedProjectType,
+        practices: Array.from(selectedPractices),
+        checked: Array.from(checkedItems),
+        customItems: customItems,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* silent */ }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const state = JSON.parse(raw);
+
+      if (state.projectType && PROJECT_TYPES.includes(state.projectType)) {
+        selectedProjectType = state.projectType;
+        projectTypeCards.forEach(card => {
+          card.classList.toggle('selected', (card as HTMLElement).dataset.type === selectedProjectType);
+        });
+        step2.classList.remove('step-disabled');
+        step2.classList.add('step-active');
+      }
+
+      if (state.practices && Array.isArray(state.practices)) {
+        state.practices.forEach((p: string) => {
+          if (PRACTICE_LIST.includes(p as PracticeKey)) {
+            selectedPractices.add(p as PracticeKey);
+          }
+        });
+        practiceCards.forEach(card => {
+          card.classList.toggle('selected', selectedPractices.has((card as HTMLElement).dataset.practice as PracticeKey));
+        });
+      }
+
+      if (state.checked && Array.isArray(state.checked)) {
+        state.checked.forEach((id: string) => checkedItems.add(id));
+      }
+
+      if (state.customItems && typeof state.customItems === 'object') {
+        customItems = state.customItems;
+      }
+
+      updateSelectAllBtn();
+
+      if (selectedProjectType) {
+        step3.classList.remove('step-disabled');
+        step3.classList.add('step-active');
+        renderChecklist();
+      }
+    } catch (e) { /* silent */ }
+  }
+
+  // --- Project Type Selection ---
+  projectTypeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const type = (card as HTMLElement).dataset.type as ProjectType;
+
+      if (selectedProjectType !== type) {
+        checkedItems.clear();
+      }
+
+      selectedProjectType = type;
+      projectTypeCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+
+      // Enable step 2
+      step2.classList.remove('step-disabled');
+      step2.classList.add('step-active');
+
+      // Always show step 3 when project type is selected (code quality + product always visible)
+      step3.classList.remove('step-disabled');
+      step3.classList.add('step-active');
+      renderChecklist();
+
+      saveState();
+    });
+  });
+
+  // --- Practice Selection ---
+  practiceCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const practice = (card as HTMLElement).dataset.practice as PracticeKey;
+
+      if (selectedPractices.has(practice)) {
+        selectedPractices.delete(practice);
+        card.classList.remove('selected');
+      } else {
+        selectedPractices.add(practice);
+        card.classList.add('selected');
+      }
+
+      updateSelectAllBtn();
+
+      if (selectedProjectType) {
+        step3.classList.remove('step-disabled');
+        step3.classList.add('step-active');
+        renderChecklist();
+      }
+
+      saveState();
+    });
+  });
+
+  // --- Select All / Deselect All ---
+  selectAllBtn.addEventListener('click', () => {
+    const allSelected = selectedPractices.size === PRACTICE_LIST.length;
+    if (allSelected) {
+      selectedPractices.clear();
+      practiceCards.forEach(c => c.classList.remove('selected'));
+    } else {
+      PRACTICE_LIST.forEach(p => selectedPractices.add(p));
+      practiceCards.forEach(c => c.classList.add('selected'));
+    }
+
+    updateSelectAllBtn();
+
+    if (selectedProjectType) {
+      step3.classList.remove('step-disabled');
+      step3.classList.add('step-active');
+      renderChecklist();
+    }
+
+    saveState();
+  });
+
+  function updateSelectAllBtn() {
+    const allSelected = selectedPractices.size === PRACTICE_LIST.length;
+    selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All';
+  }
+
+  // --- Get visible categories ---
+  function getVisibleCategories(): DodCategoryKey[] {
+    return CATEGORY_ORDER.filter(catKey => {
+      const cat = DOD_CATEGORIES[catKey];
+      // Always-visible categories (requiredPractice is null)
+      if (cat.requiredPractice === null) return true;
+      // Practice-conditional categories
+      return selectedPractices.has(cat.requiredPractice);
+    });
+  }
+
+  // --- Render Checklist ---
+  function renderChecklist() {
+    if (!selectedProjectType) {
+      checklistOutput.innerHTML = '';
+      updateProgress(0, 0);
+      return;
+    }
+
+    const visibleCategories = getVisibleCategories();
+
+    let html = '';
+    let totalItems = 0;
+    let checkedCount = 0;
+
+    visibleCategories.forEach(catKey => {
+      const cat = DOD_CATEGORIES[catKey];
+      const items = cat.items[selectedProjectType!] || [];
+      const customs = customItems[catKey] || [];
+      const allItems = items.length + customs.length;
+      if (allItems === 0 && customs.length === 0) return;
+
+      let sectionChecked = 0;
+      items.forEach((_, idx) => {
+        const id = `${catKey}-${idx}`;
+        if (checkedItems.has(id)) sectionChecked++;
+      });
+      customs.forEach((_, idx) => {
+        const id = `${catKey}-custom-${idx}`;
+        if (checkedItems.has(id)) sectionChecked++;
+      });
+
+      totalItems += allItems;
+      checkedCount += sectionChecked;
+
+      html += `<div class="cl-section" data-category="${catKey}">`;
+      html += `<div class="cl-section-header" data-toggle="${catKey}">`;
+      html += `<svg class="cl-section-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      html += `<span class="cl-section-title">${escapeHtml(cat.label)}</span>`;
+      html += `<span class="cl-section-count" data-count="${catKey}">${sectionChecked}/${allItems}</span>`;
+      html += `</div>`;
+      html += `<div class="cl-section-body" data-body="${catKey}">`;
+
+      // Built-in items
+      items.forEach((text, idx) => {
+        const id = `${catKey}-${idx}`;
+        const isChecked = checkedItems.has(id);
+        html += `<div class="cl-item${isChecked ? ' checked' : ''}" data-id="${id}">`;
+        html += `<div class="cl-checkbox">`;
+        html += `<svg class="cl-checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        html += `</div>`;
+        html += `<span class="cl-text">${escapeHtml(text)}</span>`;
+        html += `</div>`;
+      });
+
+      // Custom items
+      customs.forEach((text, idx) => {
+        const id = `${catKey}-custom-${idx}`;
+        const isChecked = checkedItems.has(id);
+        html += `<div class="cl-item custom-item${isChecked ? ' checked' : ''}" data-id="${id}" data-custom-cat="${catKey}" data-custom-idx="${idx}">`;
+        html += `<div class="cl-checkbox">`;
+        html += `<svg class="cl-checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        html += `</div>`;
+        html += `<span class="cl-text">${escapeHtml(text)}</span>`;
+        html += `<button class="cl-delete-btn" data-del-cat="${catKey}" data-del-idx="${idx}" type="button" title="Remove custom item">`;
+        html += `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+        html += `</button>`;
+        html += `</div>`;
+      });
+
+      // Add custom item input
+      html += `<div class="cl-add-item">`;
+      html += `<input class="cl-add-input" data-add-cat="${catKey}" type="text" placeholder="Add custom item..." />`;
+      html += `<button class="cl-add-btn" data-add-btn="${catKey}" type="button">Add</button>`;
+      html += `</div>`;
+
+      html += `</div></div>`;
+    });
+
+    checklistOutput.innerHTML = html;
+    updateProgress(checkedCount, totalItems);
+
+    // Bind click events for items
+    checklistOutput.querySelectorAll('.cl-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        // Don't toggle when clicking delete button
+        if ((e.target as HTMLElement).closest('.cl-delete-btn')) return;
+
+        const id = (item as HTMLElement).dataset.id!;
+        if (checkedItems.has(id)) {
+          checkedItems.delete(id);
+          item.classList.remove('checked');
+        } else {
+          checkedItems.add(id);
+          item.classList.add('checked');
+        }
+        updateProgressFromDOM();
+        saveState();
+      });
+    });
+
+    // Bind click events for section collapse
+    checklistOutput.querySelectorAll('.cl-section-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const catKey = (header as HTMLElement).dataset.toggle!;
+        const body = checklistOutput.querySelector(`[data-body="${catKey}"]`) as HTMLElement;
+        if (!body) return;
+        const isCollapsed = body.classList.contains('collapsed');
+        if (isCollapsed) {
+          body.classList.remove('collapsed');
+          header.classList.remove('collapsed');
+        } else {
+          body.classList.add('collapsed');
+          header.classList.add('collapsed');
+        }
+      });
+    });
+
+    // Bind add custom item buttons
+    checklistOutput.querySelectorAll('.cl-add-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const catKey = (btn as HTMLElement).dataset.addBtn!;
+        const input = checklistOutput.querySelector(`[data-add-cat="${catKey}"]`) as HTMLInputElement;
+        if (!input) return;
+        const text = input.value.trim();
+        if (!text) return;
+        if (!customItems[catKey]) customItems[catKey] = [];
+        customItems[catKey].push(text);
+        input.value = '';
+        saveState();
+        renderChecklist();
+      });
+    });
+
+    // Bind enter key on add inputs
+    checklistOutput.querySelectorAll('.cl-add-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if ((e as KeyboardEvent).key === 'Enter') {
+          const catKey = (input as HTMLElement).dataset.addCat!;
+          const btn = checklistOutput.querySelector(`[data-add-btn="${catKey}"]`) as HTMLButtonElement;
+          if (btn) btn.click();
+        }
+      });
+    });
+
+    // Bind delete custom item buttons
+    checklistOutput.querySelectorAll('.cl-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const catKey = (btn as HTMLElement).dataset.delCat!;
+        const idx = parseInt((btn as HTMLElement).dataset.delIdx!, 10);
+        if (customItems[catKey]) {
+          // Remove checked state for this and reindex subsequent custom items
+          const oldId = `${catKey}-custom-${idx}`;
+          checkedItems.delete(oldId);
+          customItems[catKey].splice(idx, 1);
+          if (customItems[catKey].length === 0) delete customItems[catKey];
+          // Reindex checked items for this category
+          reindexCustomChecked(catKey);
+        }
+        saveState();
+        renderChecklist();
+      });
+    });
+  }
+
+  function reindexCustomChecked(catKey: string) {
+    // Clear all custom checked for this category and re-apply based on new indices
+    const toRemove: string[] = [];
+    checkedItems.forEach(id => {
+      if (id.startsWith(`${catKey}-custom-`)) toRemove.push(id);
+    });
+    toRemove.forEach(id => checkedItems.delete(id));
+    // Note: after deletion and reindex, previously checked custom items lose their state
+    // This is acceptable UX since the list is reordered
+  }
+
+  // --- Progress ---
+  function updateProgress(checked: number, total: number) {
+    const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressBarFill.style.width = `${pct}%`;
+
+    progressBarFill.classList.remove('progress-mid', 'progress-high');
+    if (pct >= 100) {
+      progressBarFill.classList.add('progress-high');
+    } else if (pct >= 50) {
+      progressBarFill.classList.add('progress-mid');
+    }
+
+    progressLabel.textContent = `${checked} / ${total} items checked`;
+  }
+
+  function updateProgressFromDOM() {
+    const allItems = checklistOutput.querySelectorAll('.cl-item');
+    const checkedCount = checklistOutput.querySelectorAll('.cl-item.checked').length;
+    updateProgress(checkedCount, allItems.length);
+
+    // Update section counts
+    getVisibleCategories().forEach(catKey => {
+      const section = checklistOutput.querySelector(`[data-category="${catKey}"]`);
+      if (!section) return;
+      const items = section.querySelectorAll('.cl-item');
+      const checked = section.querySelectorAll('.cl-item.checked');
+      const countEl = section.querySelector(`[data-count="${catKey}"]`);
+      if (countEl) {
+        countEl.textContent = `${checked.length}/${items.length}`;
+      }
+    });
+  }
+
+  // --- Generate Markdown ---
+  function generateMarkdown(): string {
+    if (!selectedProjectType) return '';
+
+    let md = `# Definition of Done -- ${PROJECT_LABELS[selectedProjectType]}\n\n`;
+
+    const visibleCategories = getVisibleCategories();
+
+    visibleCategories.forEach(catKey => {
+      const cat = DOD_CATEGORIES[catKey];
+      const items = cat.items[selectedProjectType!] || [];
+      const customs = customItems[catKey] || [];
+      if (items.length === 0 && customs.length === 0) return;
+
+      md += `## ${cat.label}\n\n`;
+      items.forEach((text, idx) => {
+        const id = `${catKey}-${idx}`;
+        const mark = checkedItems.has(id) ? 'x' : ' ';
+        md += `- [${mark}] ${text}\n`;
+      });
+      customs.forEach((text, idx) => {
+        const id = `${catKey}-custom-${idx}`;
+        const mark = checkedItems.has(id) ? 'x' : ' ';
+        md += `- [${mark}] ${text}\n`;
+      });
+      md += '\n';
+    });
+
+    md += `---\n*Generated with [BugReel Definition of Done Generator](https://bugreel.io/tools/definition-of-done)*\n`;
+    return md;
+  }
+
+  // --- Copy ---
+  copyMdBtn.addEventListener('click', async () => {
+    const md = generateMarkdown();
+    if (!md) return;
+    try {
+      await navigator.clipboard.writeText(md);
+      copyMdBtn.classList.add('copied');
+      copyMdText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyMdBtn.classList.remove('copied');
+        copyMdText.textContent = 'Copy as Markdown';
+      }, 2000);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = md;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      copyMdBtn.classList.add('copied');
+      copyMdText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyMdBtn.classList.remove('copied');
+        copyMdText.textContent = 'Copy as Markdown';
+      }, 2000);
+    }
+  });
+
+  // --- Download ---
+  downloadMdBtn.addEventListener('click', () => {
+    const md = generateMarkdown();
+    if (!md) return;
+    const slug = selectedProjectType || 'checklist';
+    const filename = `definition-of-done-${slug}.md`;
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // --- Reset ---
+  resetBtn.addEventListener('click', () => {
+    checkedItems.clear();
+    checklistOutput.querySelectorAll('.cl-item.checked').forEach(item => {
+      item.classList.remove('checked');
+    });
+    updateProgressFromDOM();
+    saveState();
+  });
+
+  // --- Helpers ---
+  function escapeHtml(str: string): string {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // --- Init ---
+  loadState();
+</script>
