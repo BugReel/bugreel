@@ -1,0 +1,1610 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'QA Checklist Generator',
+    description: 'Generate a comprehensive QA testing checklist in seconds. Select your app type and testing categories, check items off, copy or download as Markdown. Free, no signup required.',
+    url: 'https://bugreel.io/tools/qa-checklist',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'QA Checklist Generator', item: 'https://bugreel.io/tools/qa-checklist' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Free QA Checklist Generator — Comprehensive Testing Checklists | BugReel"
+  description="Generate a comprehensive QA testing checklist in seconds. Select your app type and testing categories, check items off, copy or download as Markdown. Free, no signup required."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>QA Checklist Generator</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-success">Free &middot; No Signup</span>
+        <h1>QA Checklist Generator</h1>
+        <p class="hero-subtitle">Generate a comprehensive testing checklist in seconds. Select your app type and categories.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Tool -->
+  <section class="tool-section">
+    <div class="container">
+
+      <!-- Step 1: App Type -->
+      <div class="step-block" id="step-1">
+        <div class="step-header">
+          <span class="step-badge">Step 1</span>
+          <h2 class="step-title">Select App Type</h2>
+        </div>
+        <div class="app-type-grid" id="app-type-grid">
+          <button class="app-type-card" data-type="web" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="3" y="5" width="26" height="18" rx="3" stroke="currentColor" stroke-width="2"/>
+              <line x1="3" y1="10" x2="29" y2="10" stroke="currentColor" stroke-width="2"/>
+              <circle cx="6.5" cy="7.5" r="1" fill="currentColor"/>
+              <circle cx="9.5" cy="7.5" r="1" fill="currentColor"/>
+              <circle cx="12.5" cy="7.5" r="1" fill="currentColor"/>
+              <line x1="10" y1="27" x2="22" y2="27" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="16" y1="23" x2="16" y2="27" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="app-type-label">Web Application</span>
+          </button>
+          <button class="app-type-card" data-type="mobile" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="8" y="3" width="16" height="26" rx="3" stroke="currentColor" stroke-width="2"/>
+              <line x1="12" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="25" r="1.5" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <span class="app-type-label">Mobile App (iOS/Android)</span>
+          </button>
+          <button class="app-type-card" data-type="api" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="4" y="6" width="24" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+              <rect x="4" y="18" width="24" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+              <circle cx="8" cy="10" r="1.5" fill="currentColor"/>
+              <circle cx="8" cy="22" r="1.5" fill="currentColor"/>
+              <line x1="12" y1="10" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="22" x2="20" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="app-type-label">API / Backend</span>
+          </button>
+          <button class="app-type-card" data-type="desktop" type="button">
+            <svg class="app-type-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="2" y="4" width="28" height="20" rx="3" stroke="currentColor" stroke-width="2"/>
+              <line x1="8" y1="28" x2="24" y2="28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="24" x2="12" y2="28" stroke="currentColor" stroke-width="2"/>
+              <line x1="20" y1="24" x2="20" y2="28" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="app-type-label">Desktop Application</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Categories -->
+      <div class="step-block step-disabled" id="step-2">
+        <div class="step-header">
+          <span class="step-badge">Step 2</span>
+          <h2 class="step-title">Select Categories</h2>
+          <button class="select-all-btn btn btn-sm btn-secondary" id="select-all-btn" type="button">Select All</button>
+        </div>
+        <div class="category-grid" id="category-grid">
+          <button class="category-card" data-category="functional" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">Functional Testing</span>
+          </button>
+          <button class="category-card" data-category="ui-ux" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="7" x2="18" y2="7" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="9.5" width="5" height="3" rx="1" stroke="currentColor" stroke-width="1"/></svg>
+            <span class="category-label">UI/UX Testing</span>
+          </button>
+          <button class="category-card" data-category="performance" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><polyline points="10,4 10,10 14,12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">Performance Testing</span>
+          </button>
+          <button class="category-card" data-category="security" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2L3 6v4c0 4.4 3 8.5 7 9.5 4-1 7-5.1 7-9.5V6l-7-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <span class="category-label">Security Testing</span>
+          </button>
+          <button class="category-card" data-category="accessibility" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h12M10 8v4M7 18l3-6 3 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">Accessibility Testing</span>
+          </button>
+          <button class="category-card" data-category="cross-browser" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><ellipse cx="10" cy="10" rx="4" ry="8" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5"/></svg>
+            <span class="category-label">Cross-browser Testing</span>
+          </button>
+          <button class="category-card" data-category="responsive" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="1" y="3" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="7" width="7" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+            <span class="category-label">Responsive/Mobile Testing</span>
+          </button>
+          <button class="category-card" data-category="api-testing" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 4h10c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.5"/><path d="M7 8l-2 2 2 2M13 8l2 2-2 2M11 7l-2 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">API Testing</span>
+          </button>
+          <button class="category-card" data-category="auth" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 016 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="13" r="1.5" fill="currentColor"/></svg>
+            <span class="category-label">Authentication &amp; Authorization</span>
+          </button>
+          <button class="category-card" data-category="data-validation" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 13l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="category-label">Data Validation</span>
+          </button>
+          <button class="category-card" data-category="error-handling" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2l8 14H2L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="10" y1="8" x2="10" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="13.5" r="0.75" fill="currentColor"/></svg>
+            <span class="category-label">Error Handling</span>
+          </button>
+          <button class="category-card" data-category="localization" type="button">
+            <svg class="category-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M2 10h16M10 2c-2 2.7-3 5.3-3 8s1 5.3 3 8c2-2.7 3-5.3 3-8s-1-5.3-3-8z" stroke="currentColor" stroke-width="1.5"/></svg>
+            <span class="category-label">Localization / i18n</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Generated Checklist -->
+      <div class="step-block step-disabled" id="step-3">
+        <div class="step-header">
+          <span class="step-badge">Step 3</span>
+          <h2 class="step-title">Your Checklist</h2>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-wrapper" id="progress-wrapper">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+          <span class="progress-label" id="progress-label">0 / 0 items checked</span>
+        </div>
+
+        <!-- Checklist Actions (top) -->
+        <div class="checklist-actions" id="checklist-actions-top">
+          <button class="btn btn-primary btn-sm" id="copy-md-btn" type="button">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M3 11V3.5A.5.5 0 013.5 3H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span id="copy-md-text">Copy as Markdown</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" id="download-md-btn" type="button">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 2v7.5M3.5 7L7 10.5 10.5 7M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Download .md
+          </button>
+          <button class="btn btn-secondary btn-sm" id="reset-btn" type="button">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 7a5 5 0 019.3-2.5M12 7a5 5 0 01-9.3 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <polyline points="11,2 11.3,4.5 8.8,4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="3,12 2.7,9.5 5.2,9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Reset
+          </button>
+        </div>
+
+        <!-- Checklist Output -->
+        <div class="checklist-output" id="checklist-output"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Want AI to catch bugs before they reach QA?</p>
+      <h2>Record your screen. AI does the rest.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel turns screen recordings into complete bug reports with steps, screenshots, and severity -- in minutes, not hours.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 700px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 580px;
+  }
+
+  /* ===== Tool Section ===== */
+  .tool-section {
+    padding-bottom: 64px;
+  }
+
+  /* ===== Step Blocks ===== */
+  .step-block {
+    margin-bottom: 48px;
+  }
+
+  .step-block.step-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    filter: grayscale(0.5);
+    transition: opacity var(--transition-slow), filter var(--transition-slow);
+  }
+
+  .step-block.step-active {
+    opacity: 1;
+    pointer-events: auto;
+    filter: none;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-full);
+  }
+
+  .step-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    margin: 0;
+  }
+
+  .select-all-btn {
+    margin-left: auto;
+  }
+
+  /* ===== App Type Cards ===== */
+  .app-type-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .app-type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 16px;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-sans);
+    text-align: center;
+  }
+
+  .app-type-card:hover {
+    border-color: var(--color-border-hover);
+    background: var(--color-surface-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .app-type-card.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-glow);
+    box-shadow: var(--shadow-glow-primary);
+  }
+
+  .app-type-icon {
+    color: var(--color-text-muted);
+    transition: color var(--transition-base);
+  }
+
+  .app-type-card.selected .app-type-icon {
+    color: var(--color-primary);
+  }
+
+  .app-type-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    transition: color var(--transition-base);
+  }
+
+  .app-type-card.selected .app-type-label {
+    color: var(--color-text);
+  }
+
+  /* ===== Category Cards ===== */
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .category-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-sans);
+    text-align: left;
+  }
+
+  .category-card:hover {
+    border-color: var(--color-border-hover);
+    background: var(--color-surface-hover);
+  }
+
+  .category-card.selected {
+    border-color: var(--color-accent);
+    background: var(--color-accent-glow);
+  }
+
+  .category-icon {
+    flex-shrink: 0;
+    color: var(--color-text-dim);
+    transition: color var(--transition-base);
+  }
+
+  .category-card.selected .category-icon {
+    color: var(--color-accent);
+  }
+
+  .category-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    transition: color var(--transition-base);
+    line-height: 1.3;
+  }
+
+  .category-card.selected .category-label {
+    color: var(--color-text);
+  }
+
+  /* ===== Progress Bar ===== */
+  .progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .progress-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    transition: width var(--transition-base), background var(--transition-base);
+  }
+
+  .progress-bar-fill.progress-mid {
+    background: var(--color-warning);
+  }
+
+  .progress-bar-fill.progress-high {
+    background: var(--color-success);
+  }
+
+  .progress-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    min-width: 160px;
+    text-align: right;
+  }
+
+  /* ===== Checklist Actions ===== */
+  .checklist-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  #copy-md-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+
+  /* ===== Checklist Output ===== */
+  .checklist-output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Category sections */
+  .checklist-output :global(.cl-section) {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .checklist-output :global(.cl-section-header) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    transition: background var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-section-header:hover) {
+    background: var(--color-surface-hover);
+  }
+
+  .checklist-output :global(.cl-section-chevron) {
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+    color: var(--color-text-dim);
+  }
+
+  .checklist-output :global(.cl-section-header.collapsed .cl-section-chevron) {
+    transform: rotate(-90deg);
+  }
+
+  .checklist-output :global(.cl-section-title) {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text);
+    flex: 1;
+  }
+
+  .checklist-output :global(.cl-section-count) {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+  }
+
+  .checklist-output :global(.cl-section-body) {
+    padding: 8px 0;
+  }
+
+  .checklist-output :global(.cl-section-body.collapsed) {
+    display: none;
+  }
+
+  /* Checklist items */
+  .checklist-output :global(.cl-item) {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-item:hover) {
+    background: var(--color-surface-hover);
+  }
+
+  .checklist-output :global(.cl-checkbox) {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border: 2px solid var(--color-border-hover);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    background: transparent;
+  }
+
+  .checklist-output :global(.cl-item.checked .cl-checkbox) {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .checklist-output :global(.cl-checkmark) {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-item.checked .cl-checkmark) {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .checklist-output :global(.cl-text) {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    transition: all var(--transition-fast);
+  }
+
+  .checklist-output :global(.cl-item.checked .cl-text) {
+    text-decoration: line-through;
+    color: var(--color-text-dim);
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1024px) {
+    .app-type-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .category-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .app-type-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .category-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .progress-wrapper {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .progress-label {
+      text-align: left;
+      min-width: auto;
+    }
+
+    .checklist-actions {
+      gap: 8px;
+    }
+
+    .step-header {
+      gap: 10px;
+    }
+
+    .select-all-btn {
+      margin-left: 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .app-type-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  // ===== QA Checklist Generator -- Client-Side Logic =====
+
+  const STORAGE_KEY = 'bugreel-qa-checklist';
+
+  // --- Checklist data: category -> app type -> items ---
+  type AppType = 'web' | 'mobile' | 'api' | 'desktop';
+  type CategoryKey = 'functional' | 'ui-ux' | 'performance' | 'security' | 'accessibility' | 'cross-browser' | 'responsive' | 'api-testing' | 'auth' | 'data-validation' | 'error-handling' | 'localization';
+
+  interface ChecklistItem {
+    id: string;
+    text: string;
+    checked: boolean;
+  }
+
+  interface CategoryDef {
+    label: string;
+    items: Record<AppType, string[]>;
+  }
+
+  const CATEGORIES: Record<CategoryKey, CategoryDef> = {
+    functional: {
+      label: 'Functional Testing',
+      items: {
+        web: [
+          'All navigation links work correctly and lead to expected pages',
+          'Forms submit and validate properly with valid data',
+          'Search functionality returns expected results',
+          'Pagination works correctly across all listing pages',
+          'Filters apply and reset properly',
+          'CRUD operations complete successfully and persist to database',
+          'File upload and download work with supported formats',
+          'Browser back/forward buttons maintain correct state',
+        ],
+        mobile: [
+          'All screen transitions and navigation flows work correctly',
+          'Push notifications are received and open the correct screen',
+          'App handles incoming calls and interruptions gracefully',
+          'Gesture controls (swipe, pinch, long press) work as expected',
+          'Background/foreground transitions preserve app state',
+          'Deep links open the correct content within the app',
+          'Offline mode displays appropriate messaging and queues actions',
+          'Camera, gallery, and file picker integrations function correctly',
+        ],
+        api: [
+          'All documented endpoints return correct status codes',
+          'GET requests return the expected data structure and values',
+          'POST requests create resources and return proper response',
+          'PUT/PATCH requests update resources correctly',
+          'DELETE requests remove resources and return confirmation',
+          'Query parameters filter and sort results as documented',
+          'Pagination parameters (limit, offset, cursor) work correctly',
+          'Bulk operations handle large payloads within timeout limits',
+        ],
+        desktop: [
+          'All menu items and toolbar buttons trigger correct actions',
+          'Keyboard shortcuts match documented bindings',
+          'File open/save/save-as dialogs work with all supported formats',
+          'Drag and drop works for supported content types',
+          'Undo/redo operates correctly for all editable actions',
+          'Multi-window management works without data loss',
+          'Clipboard copy/cut/paste works with application content',
+          'Print and export produce correct output',
+        ],
+      },
+    },
+    'ui-ux': {
+      label: 'UI/UX Testing',
+      items: {
+        web: [
+          'All pages match approved design mockups',
+          'Typography hierarchy is consistent (headings, body, captions)',
+          'Color scheme matches brand guidelines and has sufficient contrast',
+          'Interactive elements have visible hover, focus, and active states',
+          'Loading states display spinners or skeleton screens',
+          'Empty states show helpful messaging and actions',
+          'Toast notifications and alerts display correctly and auto-dismiss',
+        ],
+        mobile: [
+          'UI elements match platform conventions (iOS HIG / Material Design)',
+          'Touch targets are at least 44x44pt (iOS) or 48x48dp (Android)',
+          'Animations are smooth with no visible frame drops',
+          'Content is readable without horizontal scrolling',
+          'Keyboard does not obscure active input fields',
+          'Status bar content is visible against the app background',
+          'Tab bar / bottom navigation highlights the active section',
+        ],
+        api: [
+          'Error responses include human-readable messages',
+          'Response structure is consistent across all endpoints',
+          'API documentation matches actual behavior',
+          'Field names follow a consistent naming convention',
+          'Enum values are documented and validated',
+          'Deprecation warnings are included in response headers',
+        ],
+        desktop: [
+          'Window resizing maintains correct layout and element positions',
+          'Dark mode and light mode render all elements correctly',
+          'Tooltips appear for icon-only buttons and toolbar items',
+          'Modal dialogs are centered and block background interaction',
+          'Progress indicators display during long-running operations',
+          'Font rendering is crisp at standard and high-DPI displays',
+          'Scroll behavior is smooth in all scrollable containers',
+        ],
+      },
+    },
+    performance: {
+      label: 'Performance Testing',
+      items: {
+        web: [
+          'Page load time is under 3 seconds on standard connection',
+          'Largest Contentful Paint (LCP) is under 2.5 seconds',
+          'Cumulative Layout Shift (CLS) is under 0.1',
+          'No memory leaks on repeated navigation between pages',
+          'API calls complete within acceptable response time limits',
+          'Images are optimized and lazy-loaded below the fold',
+          'No unnecessary re-renders or DOM thrashing during interaction',
+        ],
+        mobile: [
+          'App launch time (cold start) is under 2 seconds',
+          'Screen transitions complete within 300ms',
+          'Scrolling maintains 60fps on mid-range devices',
+          'Memory usage stays within platform limits under heavy use',
+          'Battery consumption is reasonable during active usage',
+          'App size is within acceptable limits for the platform',
+          'Network requests are batched and cached where appropriate',
+        ],
+        api: [
+          'Response time is under 200ms for simple queries (p95)',
+          'Response time is under 1 second for complex aggregations (p95)',
+          'API handles 100 concurrent requests without errors',
+          'Database queries are optimized (no N+1, proper indexing)',
+          'Rate limiting returns 429 status and Retry-After header',
+          'Large response payloads are paginated or streamed',
+          'Connection pooling is configured for database and HTTP clients',
+        ],
+        desktop: [
+          'Application launches within 3 seconds on recommended hardware',
+          'Large files open without UI freezing',
+          'Memory usage remains stable during extended sessions',
+          'CPU usage drops to near-zero when the app is idle',
+          'Batch operations show progress and can be cancelled',
+          'Auto-save does not cause noticeable UI lag',
+        ],
+      },
+    },
+    security: {
+      label: 'Security Testing',
+      items: {
+        web: [
+          'SQL injection tested on all input fields and URL parameters',
+          'XSS tested on text inputs, URL parameters, and rendered content',
+          'CSRF tokens are present on all state-changing forms',
+          'Sensitive data is not exposed in URLs or browser history',
+          'Authentication tokens expire and refresh correctly',
+          'Rate limiting is enforced on login and password reset endpoints',
+          'HTTP security headers are present (CSP, X-Frame-Options, HSTS)',
+          'Cookies have Secure, HttpOnly, and SameSite attributes',
+        ],
+        mobile: [
+          'Sensitive data is not stored in plaintext on device',
+          'Certificate pinning prevents man-in-the-middle attacks',
+          'Biometric authentication cannot be bypassed',
+          'App data is cleared on logout including cached credentials',
+          'Screenshot prevention is active on sensitive screens',
+          'Jailbreak/root detection alerts the user or restricts features',
+          'API keys and secrets are not hardcoded in the binary',
+        ],
+        api: [
+          'Authentication is required for all non-public endpoints',
+          'Authorization checks prevent access to other users\' data',
+          'Input validation rejects malformed and oversized payloads',
+          'SQL injection and NoSQL injection tested on all parameters',
+          'API keys and tokens are transmitted only via headers, not URLs',
+          'CORS policy restricts allowed origins appropriately',
+          'Sensitive data is encrypted in transit (TLS 1.2+) and at rest',
+          'Rate limiting is enforced to prevent brute-force attacks',
+        ],
+        desktop: [
+          'Application updates are verified with code signing',
+          'Sensitive data is encrypted in the local storage/config files',
+          'Inter-process communication is secured against injection',
+          'Auto-update mechanism uses HTTPS and signature verification',
+          'Temporary files are cleaned up and do not contain secrets',
+          'Privilege escalation is not possible through the application',
+          'Clipboard contents with sensitive data are cleared after use',
+        ],
+      },
+    },
+    accessibility: {
+      label: 'Accessibility Testing',
+      items: {
+        web: [
+          'All images have descriptive alt text',
+          'Page can be navigated entirely with keyboard (Tab, Enter, Escape)',
+          'Focus order follows a logical reading sequence',
+          'ARIA labels are present on all interactive elements without visible text',
+          'Color is not the only means of conveying information',
+          'Contrast ratio meets WCAG AA (4.5:1 for text, 3:1 for large text)',
+          'Screen reader announces dynamic content changes (live regions)',
+          'Form inputs have associated labels and error messages',
+        ],
+        mobile: [
+          'VoiceOver (iOS) and TalkBack (Android) can navigate all screens',
+          'Touch targets meet minimum size requirements for accessibility',
+          'Dynamic type / text scaling does not break the layout',
+          'Content is reachable without relying solely on gestures',
+          'Haptic feedback accompanies important actions where supported',
+          'Screen reader announces screen transitions and modal appearance',
+        ],
+        api: [
+          'Error messages are descriptive enough for assistive technology consumers',
+          'API supports localized error messages for screen reader users',
+          'Documentation is available in accessible formats (not image-only)',
+          'Response includes semantic data that clients can map to accessible UI',
+          'Pagination information is explicit (total count, page number)',
+        ],
+        desktop: [
+          'All controls are keyboard accessible with visible focus indicators',
+          'Screen reader software (JAWS, NVDA, VoiceOver) reads all controls',
+          'High contrast mode does not hide or obscure any content',
+          'Text is resizable without layout breakage',
+          'Audio and video content has captions or transcripts',
+          'Animations can be disabled via system-level reduced motion settings',
+        ],
+      },
+    },
+    'cross-browser': {
+      label: 'Cross-browser Testing',
+      items: {
+        web: [
+          'Chrome (latest 2 versions) renders correctly on Windows and macOS',
+          'Firefox (latest 2 versions) renders correctly on Windows and macOS',
+          'Safari (latest 2 versions) renders correctly on macOS and iOS',
+          'Edge (latest 2 versions) renders correctly on Windows',
+          'No JavaScript console errors specific to any browser',
+          'CSS layout does not break in any supported browser',
+          'Web fonts load and render consistently across browsers',
+          'Form controls (date picker, color picker) degrade gracefully',
+        ],
+        mobile: [
+          'App functions on the minimum supported OS version (iOS/Android)',
+          'App functions on the latest OS version (iOS/Android)',
+          'Webviews render consistently across embedded browser engines',
+          'In-app browser opens external links correctly',
+          'Push notification behavior is consistent across OS versions',
+        ],
+        api: [
+          'API clients on different platforms receive identical responses',
+          'Content negotiation (Accept header) returns correct format',
+          'Character encoding (UTF-8) is consistent across all endpoints',
+          'Date/time formats are consistent (ISO 8601) regardless of client',
+          'API versioning works correctly for all supported versions',
+        ],
+        desktop: [
+          'Application runs correctly on all supported Windows versions',
+          'Application runs correctly on all supported macOS versions',
+          'Linux build runs on major distributions (Ubuntu, Fedora) if supported',
+          'Display scaling (100%, 125%, 150%, 200%) renders correctly',
+          'Locale-specific number and date formatting is handled properly',
+          'File path separators work on both Windows and Unix-based systems',
+        ],
+      },
+    },
+    responsive: {
+      label: 'Responsive/Mobile Testing',
+      items: {
+        web: [
+          'Layout adapts correctly at 320px (small phone)',
+          'Layout adapts correctly at 768px (tablet portrait)',
+          'Layout adapts correctly at 1024px (tablet landscape / small laptop)',
+          'Layout adapts correctly at 1440px+ (large desktop)',
+          'Navigation collapses to a hamburger menu on mobile',
+          'Tables are scrollable or reformatted on narrow screens',
+          'Touch targets are large enough for finger interaction (48px min)',
+          'No horizontal scrollbar appears on any breakpoint',
+        ],
+        mobile: [
+          'Layout adapts to portrait and landscape orientations',
+          'Content is usable on smallest supported screen (iPhone SE / 4" Android)',
+          'Tablet layout uses available space effectively',
+          'Keyboard appearance does not overlap interactive elements',
+          'Safe area insets are respected (notch, home indicator, status bar)',
+          'Split screen / multi-window mode is handled gracefully',
+        ],
+        api: [
+          'Response payloads include all fields needed for mobile layouts',
+          'Image URLs support responsive variants (thumbnails, retina)',
+          'Pagination defaults are suitable for mobile list views',
+          'API supports requesting reduced data for low-bandwidth scenarios',
+          'Webhook payloads are concise enough for mobile processing',
+        ],
+        desktop: [
+          'Window can be resized down to minimum supported dimensions',
+          'UI adapts when side panels are opened or closed',
+          'Multi-monitor setups handle window positioning correctly',
+          'High-DPI (Retina) assets are provided for all icons and images',
+          'Content zoom (Ctrl+/Ctrl-) scales the UI proportionally',
+        ],
+      },
+    },
+    'api-testing': {
+      label: 'API Testing',
+      items: {
+        web: [
+          'All AJAX/fetch calls handle network errors gracefully',
+          'Loading spinners display during pending API requests',
+          'Retry logic handles intermittent 5xx errors',
+          'API responses are cached where appropriate (ETags, Cache-Control)',
+          'Concurrent requests do not cause race conditions in the UI',
+          'Token refresh occurs seamlessly without losing user context',
+        ],
+        mobile: [
+          'API calls retry on network failure with exponential backoff',
+          'Offline queue syncs pending mutations when connectivity returns',
+          'API timeout is configured appropriately for mobile networks',
+          'Background API calls do not prevent the OS from suspending the app',
+          'SSL pinning validates the server certificate',
+          'GraphQL queries request only the fields needed per screen',
+        ],
+        api: [
+          'All endpoints return correct HTTP status codes (200, 201, 400, 401, 403, 404, 500)',
+          'Request body validation returns specific field-level error details',
+          'Response envelope is consistent ({data, meta, errors})',
+          'Idempotency keys prevent duplicate resource creation',
+          'Webhook delivery retries on failure and logs delivery status',
+          'API versioning strategy is enforced (URL path, header, or query param)',
+          'OPTIONS/CORS preflight responds correctly for browser clients',
+          'Health check endpoint (/health or /status) returns service state',
+        ],
+        desktop: [
+          'API calls work through corporate proxy/firewall configurations',
+          'Local cache invalidation triggers on API data changes',
+          'Large file uploads use chunked transfer and resume on failure',
+          'Websocket connections reconnect after network interruption',
+          'API error dialogs display helpful information to the user',
+          'Concurrent API operations do not deadlock or corrupt local state',
+        ],
+      },
+    },
+    auth: {
+      label: 'Authentication & Authorization',
+      items: {
+        web: [
+          'Login with valid credentials succeeds and redirects correctly',
+          'Login with invalid credentials shows a clear error message',
+          'Password reset flow sends email and allows password change',
+          'Session expires after configured inactivity timeout',
+          'Logged-out users cannot access protected routes',
+          'Role-based UI elements (buttons, menus) are hidden for unauthorized users',
+          'OAuth/SSO login completes and maps to the correct user account',
+          'Multi-factor authentication (MFA) flow works end to end',
+        ],
+        mobile: [
+          'Biometric login (Face ID, fingerprint) authenticates correctly',
+          'Login persists across app restarts until explicit logout',
+          'Token refresh occurs without requiring re-login',
+          'Account switching works without data leakage between accounts',
+          'Logout clears all sensitive data from device storage',
+          'Session lock activates after the app is backgrounded for a set period',
+          'Push notification tokens are invalidated on logout',
+        ],
+        api: [
+          'Unauthenticated requests return 401 with a clear error message',
+          'Requests with an expired token return 401 and not 500',
+          'Forbidden actions return 403 with the required permission name',
+          'API keys with restricted scopes cannot access out-of-scope endpoints',
+          'Token revocation immediately invalidates the token',
+          'Brute-force protection locks the account after repeated failures',
+          'Admin endpoints enforce elevated privilege checks',
+        ],
+        desktop: [
+          'Login dialog validates credentials before allowing access',
+          'Remember-me option stores credentials securely in the OS keychain',
+          'License key / activation validates against the server',
+          'Offline login works if credentials were cached from a previous session',
+          'Admin-only features are hidden or disabled for regular users',
+          'Session timeout locks the application and requires re-authentication',
+        ],
+      },
+    },
+    'data-validation': {
+      label: 'Data Validation',
+      items: {
+        web: [
+          'Required fields show validation errors when left empty',
+          'Email fields reject invalid email formats',
+          'Numeric fields reject non-numeric input',
+          'Date fields reject invalid dates and enforce min/max constraints',
+          'Max-length limits are enforced on text inputs',
+          'Special characters are handled correctly (no encoding issues)',
+          'Server-side validation matches client-side validation rules',
+        ],
+        mobile: [
+          'Keyboard type matches the input field (email, number, phone)',
+          'Form validation errors display inline near the offending field',
+          'Paste from clipboard validates the pasted content',
+          'Auto-fill suggestions do not corrupt field values',
+          'Decimal separators respect the device locale (dot vs comma)',
+          'Date and time pickers enforce valid ranges',
+        ],
+        api: [
+          'Missing required fields return 400 with the field name in the error',
+          'Invalid data types return 400 with expected type information',
+          'String length limits are enforced and documented',
+          'Enum fields reject values not in the allowed set',
+          'Nested object validation reports the full field path',
+          'Array fields enforce min/max item count',
+          'Date fields accept only ISO 8601 format and reject ambiguous strings',
+        ],
+        desktop: [
+          'Input masks format data as the user types (phone, currency)',
+          'File imports validate row-by-row and report errors with line numbers',
+          'Copy-paste from spreadsheets parses columns correctly',
+          'Numeric precision is maintained (no floating-point display errors)',
+          'Duplicate detection warns before creating conflicting records',
+          'Undo reverts invalid data changes and restores the previous state',
+        ],
+      },
+    },
+    'error-handling': {
+      label: 'Error Handling',
+      items: {
+        web: [
+          '404 page displays a helpful message and navigation options',
+          '500 errors show a user-friendly error page (no stack traces)',
+          'Network timeout shows a retry option',
+          'Form submission errors preserve user input',
+          'Concurrent edit conflicts (409) display a resolution prompt',
+          'JavaScript errors do not leave the UI in a broken state',
+          'Session expiration redirects to login with a return URL',
+        ],
+        mobile: [
+          'No connectivity shows an offline banner with retry action',
+          'API errors display user-friendly messages (not raw JSON)',
+          'Crash recovery restores the last known good state',
+          'Out-of-memory conditions do not corrupt saved data',
+          'Permission denial (camera, location) shows explanation and settings link',
+          'Background task failure notifies the user appropriately',
+        ],
+        api: [
+          'All error responses follow a consistent JSON structure',
+          'Validation errors return 400 with field-level details',
+          'Authentication errors return 401 (not 403 or 500)',
+          'Unhandled exceptions return 500 with a correlation ID for debugging',
+          'Rate limit exceeded returns 429 with Retry-After header',
+          'Service unavailable returns 503 with an estimated recovery time',
+          'Malformed JSON in request body returns 400 (not 500)',
+        ],
+        desktop: [
+          'File corruption is detected and the user is prompted to restore a backup',
+          'Plugin/extension errors are isolated and do not crash the host app',
+          'Insufficient disk space is detected before write operations',
+          'Permission errors (read-only files) display a clear message',
+          'Crash logs are collected and can be submitted for diagnosis',
+          'Graceful degradation when optional services are unavailable',
+        ],
+      },
+    },
+    localization: {
+      label: 'Localization / i18n',
+      items: {
+        web: [
+          'All user-facing strings are externalized (no hardcoded text)',
+          'RTL languages (Arabic, Hebrew) render layout correctly',
+          'Date and time formatting respects the selected locale',
+          'Number formatting uses locale-appropriate separators',
+          'Currency display matches the region (symbol, position, decimals)',
+          'Pluralization rules work correctly for all supported languages',
+          'Translated strings do not overflow or break the layout',
+        ],
+        mobile: [
+          'App language follows device language settings',
+          'In-app language override persists after restart',
+          'Dynamic content (API responses) displays in the user language',
+          'App Store / Play Store metadata is localized for target markets',
+          'Push notification content is delivered in the user language',
+          'RTL layout mirrors navigation and icon positions correctly',
+        ],
+        api: [
+          'Accept-Language header selects the response language',
+          'Error messages are returned in the requested language',
+          'Locale-specific validation rules apply (postal codes, phone formats)',
+          'Timezone-aware timestamps are returned in UTC with timezone info',
+          'Translation keys are documented for client-side rendering',
+        ],
+        desktop: [
+          'UI language can be changed without restarting the application',
+          'Keyboard layouts and input methods work for all target languages',
+          'Exported files (PDF, CSV) use the correct encoding for the locale',
+          'Sort order respects locale-specific collation rules',
+          'Spell-check dictionaries are available for supported languages',
+          'Date/time pickers display locale-appropriate formats and week start',
+        ],
+      },
+    },
+  };
+
+  const CATEGORY_ORDER: CategoryKey[] = [
+    'functional', 'ui-ux', 'performance', 'security', 'accessibility',
+    'cross-browser', 'responsive', 'api-testing', 'auth',
+    'data-validation', 'error-handling', 'localization',
+  ];
+
+  // --- State ---
+  let selectedAppType: AppType | null = null;
+  let selectedCategories: Set<CategoryKey> = new Set();
+  let checkedItems: Set<string> = new Set();
+
+  // --- DOM ---
+  const appTypeGrid = document.getElementById('app-type-grid')!;
+  const categoryGrid = document.getElementById('category-grid')!;
+  const step2 = document.getElementById('step-2')!;
+  const step3 = document.getElementById('step-3')!;
+  const checklistOutput = document.getElementById('checklist-output')!;
+  const progressBarFill = document.getElementById('progress-bar-fill')!;
+  const progressLabel = document.getElementById('progress-label')!;
+  const copyMdBtn = document.getElementById('copy-md-btn')!;
+  const copyMdText = document.getElementById('copy-md-text')!;
+  const downloadMdBtn = document.getElementById('download-md-btn')!;
+  const resetBtn = document.getElementById('reset-btn')!;
+  const selectAllBtn = document.getElementById('select-all-btn')!;
+
+  const appTypeCards = appTypeGrid.querySelectorAll('.app-type-card');
+  const categoryCards = categoryGrid.querySelectorAll('.category-card');
+
+  // --- localStorage ---
+  function saveState() {
+    try {
+      const state = {
+        appType: selectedAppType,
+        categories: Array.from(selectedCategories),
+        checked: Array.from(checkedItems),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* silent */ }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const state = JSON.parse(raw);
+
+      if (state.appType && ['web', 'mobile', 'api', 'desktop'].includes(state.appType)) {
+        selectedAppType = state.appType;
+        appTypeCards.forEach(card => {
+          card.classList.toggle('selected', (card as HTMLElement).dataset.type === selectedAppType);
+        });
+        step2.classList.remove('step-disabled');
+        step2.classList.add('step-active');
+      }
+
+      if (state.categories && Array.isArray(state.categories)) {
+        state.categories.forEach((c: string) => selectedCategories.add(c as CategoryKey));
+        categoryCards.forEach(card => {
+          card.classList.toggle('selected', selectedCategories.has((card as HTMLElement).dataset.category as CategoryKey));
+        });
+      }
+
+      if (state.checked && Array.isArray(state.checked)) {
+        state.checked.forEach((id: string) => checkedItems.add(id));
+      }
+
+      updateSelectAllBtn();
+
+      if (selectedAppType && selectedCategories.size > 0) {
+        step3.classList.remove('step-disabled');
+        step3.classList.add('step-active');
+        renderChecklist();
+      }
+    } catch (e) { /* silent */ }
+  }
+
+  // --- App Type Selection ---
+  appTypeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const type = (card as HTMLElement).dataset.type as AppType;
+
+      // If changing app type, reset checked items since items change
+      if (selectedAppType !== type) {
+        checkedItems.clear();
+      }
+
+      selectedAppType = type;
+      appTypeCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+
+      // Enable step 2
+      step2.classList.remove('step-disabled');
+      step2.classList.add('step-active');
+
+      // If categories were selected, re-render
+      if (selectedCategories.size > 0) {
+        step3.classList.remove('step-disabled');
+        step3.classList.add('step-active');
+        renderChecklist();
+      }
+
+      saveState();
+    });
+  });
+
+  // --- Category Selection ---
+  categoryCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const cat = (card as HTMLElement).dataset.category as CategoryKey;
+
+      if (selectedCategories.has(cat)) {
+        selectedCategories.delete(cat);
+        card.classList.remove('selected');
+      } else {
+        selectedCategories.add(cat);
+        card.classList.add('selected');
+      }
+
+      updateSelectAllBtn();
+
+      if (selectedCategories.size > 0 && selectedAppType) {
+        step3.classList.remove('step-disabled');
+        step3.classList.add('step-active');
+        renderChecklist();
+      } else {
+        step3.classList.remove('step-active');
+        step3.classList.add('step-disabled');
+        checklistOutput.innerHTML = '';
+        updateProgress(0, 0);
+      }
+
+      saveState();
+    });
+  });
+
+  // --- Select All / Deselect All ---
+  selectAllBtn.addEventListener('click', () => {
+    const allSelected = selectedCategories.size === CATEGORY_ORDER.length;
+    if (allSelected) {
+      selectedCategories.clear();
+      categoryCards.forEach(c => c.classList.remove('selected'));
+    } else {
+      CATEGORY_ORDER.forEach(c => selectedCategories.add(c));
+      categoryCards.forEach(c => c.classList.add('selected'));
+    }
+
+    updateSelectAllBtn();
+
+    if (selectedCategories.size > 0 && selectedAppType) {
+      step3.classList.remove('step-disabled');
+      step3.classList.add('step-active');
+      renderChecklist();
+    } else {
+      step3.classList.remove('step-active');
+      step3.classList.add('step-disabled');
+      checklistOutput.innerHTML = '';
+      updateProgress(0, 0);
+    }
+
+    saveState();
+  });
+
+  function updateSelectAllBtn() {
+    const allSelected = selectedCategories.size === CATEGORY_ORDER.length;
+    selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All';
+  }
+
+  // --- Render Checklist ---
+  function getAllItems(): ChecklistItem[] {
+    if (!selectedAppType) return [];
+    const items: ChecklistItem[] = [];
+    CATEGORY_ORDER.forEach(catKey => {
+      if (!selectedCategories.has(catKey)) return;
+      const cat = CATEGORIES[catKey];
+      const catItems = cat.items[selectedAppType!] || [];
+      catItems.forEach((text, idx) => {
+        const id = `${catKey}-${idx}`;
+        items.push({ id, text, checked: checkedItems.has(id) });
+      });
+    });
+    return items;
+  }
+
+  function renderChecklist() {
+    if (!selectedAppType || selectedCategories.size === 0) {
+      checklistOutput.innerHTML = '';
+      updateProgress(0, 0);
+      return;
+    }
+
+    let html = '';
+    let totalItems = 0;
+    let checkedCount = 0;
+
+    CATEGORY_ORDER.forEach(catKey => {
+      if (!selectedCategories.has(catKey)) return;
+      const cat = CATEGORIES[catKey];
+      const items = cat.items[selectedAppType!] || [];
+      if (items.length === 0) return;
+
+      let sectionChecked = 0;
+      items.forEach((_, idx) => {
+        const id = `${catKey}-${idx}`;
+        if (checkedItems.has(id)) sectionChecked++;
+      });
+
+      totalItems += items.length;
+      checkedCount += sectionChecked;
+
+      html += `<div class="cl-section" data-category="${catKey}">`;
+      html += `<div class="cl-section-header" data-toggle="${catKey}">`;
+      html += `<svg class="cl-section-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      html += `<span class="cl-section-title">${cat.label}</span>`;
+      html += `<span class="cl-section-count" data-count="${catKey}">${sectionChecked}/${items.length}</span>`;
+      html += `</div>`;
+      html += `<div class="cl-section-body" data-body="${catKey}">`;
+
+      items.forEach((text, idx) => {
+        const id = `${catKey}-${idx}`;
+        const isChecked = checkedItems.has(id);
+        html += `<div class="cl-item${isChecked ? ' checked' : ''}" data-id="${id}">`;
+        html += `<div class="cl-checkbox">`;
+        html += `<svg class="cl-checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        html += `</div>`;
+        html += `<span class="cl-text">${escapeHtml(text)}</span>`;
+        html += `</div>`;
+      });
+
+      html += `</div></div>`;
+    });
+
+    checklistOutput.innerHTML = html;
+    updateProgress(checkedCount, totalItems);
+
+    // Bind click events for items
+    checklistOutput.querySelectorAll('.cl-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = (item as HTMLElement).dataset.id!;
+        if (checkedItems.has(id)) {
+          checkedItems.delete(id);
+          item.classList.remove('checked');
+        } else {
+          checkedItems.add(id);
+          item.classList.add('checked');
+        }
+        updateProgressFromDOM();
+        saveState();
+      });
+    });
+
+    // Bind click events for section collapse
+    checklistOutput.querySelectorAll('.cl-section-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const catKey = (header as HTMLElement).dataset.toggle!;
+        const body = checklistOutput.querySelector(`[data-body="${catKey}"]`) as HTMLElement;
+        if (!body) return;
+        const isCollapsed = body.classList.contains('collapsed');
+        if (isCollapsed) {
+          body.classList.remove('collapsed');
+          header.classList.remove('collapsed');
+        } else {
+          body.classList.add('collapsed');
+          header.classList.add('collapsed');
+        }
+      });
+    });
+  }
+
+  // --- Progress ---
+  function updateProgress(checked: number, total: number) {
+    const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressBarFill.style.width = `${pct}%`;
+
+    progressBarFill.classList.remove('progress-mid', 'progress-high');
+    if (pct >= 100) {
+      progressBarFill.classList.add('progress-high');
+    } else if (pct >= 50) {
+      progressBarFill.classList.add('progress-mid');
+    }
+
+    progressLabel.textContent = `${checked} / ${total} items checked`;
+  }
+
+  function updateProgressFromDOM() {
+    const allItems = checklistOutput.querySelectorAll('.cl-item');
+    const checkedCount = checklistOutput.querySelectorAll('.cl-item.checked').length;
+    updateProgress(checkedCount, allItems.length);
+
+    // Update section counts
+    CATEGORY_ORDER.forEach(catKey => {
+      if (!selectedCategories.has(catKey)) return;
+      const section = checklistOutput.querySelector(`[data-category="${catKey}"]`);
+      if (!section) return;
+      const items = section.querySelectorAll('.cl-item');
+      const checked = section.querySelectorAll('.cl-item.checked');
+      const countEl = section.querySelector(`[data-count="${catKey}"]`);
+      if (countEl) {
+        countEl.textContent = `${checked.length}/${items.length}`;
+      }
+    });
+  }
+
+  // --- Generate Markdown ---
+  function generateMarkdown(): string {
+    if (!selectedAppType || selectedCategories.size === 0) return '';
+
+    const appLabels: Record<AppType, string> = {
+      web: 'Web Application',
+      mobile: 'Mobile App (iOS/Android)',
+      api: 'API / Backend',
+      desktop: 'Desktop Application',
+    };
+
+    let md = `# QA Checklist -- ${appLabels[selectedAppType]}\n\n`;
+
+    CATEGORY_ORDER.forEach(catKey => {
+      if (!selectedCategories.has(catKey)) return;
+      const cat = CATEGORIES[catKey];
+      const items = cat.items[selectedAppType!] || [];
+      if (items.length === 0) return;
+
+      md += `## ${cat.label}\n\n`;
+      items.forEach((text, idx) => {
+        const id = `${catKey}-${idx}`;
+        const mark = checkedItems.has(id) ? 'x' : ' ';
+        md += `- [${mark}] ${text}\n`;
+      });
+      md += '\n';
+    });
+
+    md += `---\n*Generated with [BugReel QA Checklist Generator](https://bugreel.io/tools/qa-checklist)*\n`;
+    return md;
+  }
+
+  // --- Copy ---
+  copyMdBtn.addEventListener('click', async () => {
+    const md = generateMarkdown();
+    if (!md) return;
+    try {
+      await navigator.clipboard.writeText(md);
+      copyMdBtn.classList.add('copied');
+      copyMdText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyMdBtn.classList.remove('copied');
+        copyMdText.textContent = 'Copy as Markdown';
+      }, 2000);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = md;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      copyMdBtn.classList.add('copied');
+      copyMdText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyMdBtn.classList.remove('copied');
+        copyMdText.textContent = 'Copy as Markdown';
+      }, 2000);
+    }
+  });
+
+  // --- Download ---
+  downloadMdBtn.addEventListener('click', () => {
+    const md = generateMarkdown();
+    if (!md) return;
+    const appSlug = selectedAppType || 'checklist';
+    const filename = `qa-checklist-${appSlug}.md`;
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // --- Reset ---
+  resetBtn.addEventListener('click', () => {
+    checkedItems.clear();
+    checklistOutput.querySelectorAll('.cl-item.checked').forEach(item => {
+      item.classList.remove('checked');
+    });
+    updateProgressFromDOM();
+    saveState();
+  });
+
+  // --- Helpers ---
+  function escapeHtml(str: string): string {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // --- Init ---
+  loadState();
+</script>

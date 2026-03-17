@@ -1,0 +1,1270 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Bug Reporting Time Saved Calculator',
+    description: 'Calculate how much time and money your team saves with AI-automated bug reporting vs manual. Free ROI calculator for QA and engineering teams.',
+    url: 'https://bugreel.io/tools/time-saved-calculator',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Time Saved Calculator', item: 'https://bugreel.io/tools/time-saved-calculator' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Bug Reporting Time Saved Calculator — ROI of AI Bug Reports | BugReel"
+  description="Calculate how much time and money your team saves with AI-automated bug reporting vs manual. Free ROI calculator for QA and engineering teams."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Time Saved Calculator</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-accent">Free &middot; No Signup</span>
+        <h1>Bug Reporting Time Saved Calculator</h1>
+        <p class="hero-subtitle">See how much time your team wastes on manual bug reports — and how much you'd save with AI automation.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calculator -->
+  <section class="tool-section">
+    <div class="container">
+      <div class="calc-layout">
+
+        <!-- LEFT: Inputs -->
+        <div class="input-panel">
+          <div class="panel-card">
+            <h2 class="panel-title">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Your Team
+            </h2>
+
+            <!-- Team Size -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="team-size" class="slider-label">Team Size</label>
+                <span class="slider-value" id="team-size-value">10</span>
+              </div>
+              <p class="slider-hint">QA engineers and developers who report bugs</p>
+              <input
+                type="range"
+                id="team-size"
+                min="1"
+                max="50"
+                value="10"
+                class="calc-slider"
+              />
+              <div class="slider-range">
+                <span>1</span>
+                <span>50</span>
+              </div>
+            </div>
+
+            <!-- Bugs Per Week -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="bugs-per-week" class="slider-label">Bugs Per Week</label>
+                <span class="slider-value" id="bugs-per-week-value">20</span>
+              </div>
+              <p class="slider-hint">Average bugs reported per week</p>
+              <input
+                type="range"
+                id="bugs-per-week"
+                min="1"
+                max="100"
+                value="20"
+                class="calc-slider"
+              />
+              <div class="slider-range">
+                <span>1</span>
+                <span>100</span>
+              </div>
+            </div>
+
+            <!-- Time Per Report -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="time-per-report" class="slider-label">Time Per Report (Manual)</label>
+                <span class="slider-value" id="time-per-report-value">15<small>min</small></span>
+              </div>
+              <p class="slider-hint">Minutes spent writing one bug report manually</p>
+              <input
+                type="range"
+                id="time-per-report"
+                min="5"
+                max="30"
+                value="15"
+                class="calc-slider"
+              />
+              <div class="slider-range">
+                <span>5 min</span>
+                <span>30 min</span>
+              </div>
+            </div>
+
+            <!-- Hourly Cost -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="hourly-cost" class="slider-label">Average Hourly Cost</label>
+                <span class="slider-value slider-value--money" id="hourly-cost-value">$75</span>
+              </div>
+              <p class="slider-hint">Fully loaded cost per engineer hour</p>
+              <input
+                type="range"
+                id="hourly-cost"
+                min="30"
+                max="200"
+                value="75"
+                class="calc-slider calc-slider--money"
+              />
+              <div class="slider-range">
+                <span>$30</span>
+                <span>$200</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Results -->
+        <div class="results-panel">
+          <div class="results-sticky">
+
+            <!-- Time Comparison Table -->
+            <div class="panel-card">
+              <h2 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M10 6v4.5l3 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Time Comparison
+              </h2>
+              <div class="table-wrapper">
+                <table class="results-table">
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      <th class="col-manual">Manual</th>
+                      <th class="col-ai">With AI</th>
+                      <th class="col-saved">Saved</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Time per report</td>
+                      <td class="col-manual" id="r-time-manual">15 min</td>
+                      <td class="col-ai" id="r-time-ai">2 min</td>
+                      <td class="col-saved" id="r-time-saved">13 min</td>
+                    </tr>
+                    <tr>
+                      <td>Weekly hours</td>
+                      <td class="col-manual" id="r-weekly-manual">5.0 hrs</td>
+                      <td class="col-ai" id="r-weekly-ai">0.7 hrs</td>
+                      <td class="col-saved" id="r-weekly-saved">4.3 hrs</td>
+                    </tr>
+                    <tr>
+                      <td>Monthly hours</td>
+                      <td class="col-manual" id="r-monthly-manual">21.7 hrs</td>
+                      <td class="col-ai" id="r-monthly-ai">2.9 hrs</td>
+                      <td class="col-saved highlight" id="r-monthly-saved">18.8 hrs</td>
+                    </tr>
+                    <tr>
+                      <td>Yearly hours</td>
+                      <td class="col-manual" id="r-yearly-manual">260.0 hrs</td>
+                      <td class="col-ai" id="r-yearly-ai">34.7 hrs</td>
+                      <td class="col-saved highlight" id="r-yearly-saved">225.3 hrs</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Visual Bar Chart -->
+            <div class="panel-card">
+              <h2 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <rect x="3" y="10" width="4" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="8" y="6" width="4" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="13" y="3" width="4" height="14" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                Weekly Hours Comparison
+              </h2>
+              <div class="bar-chart">
+                <div class="bar-row">
+                  <div class="bar-label">Manual</div>
+                  <div class="bar-track">
+                    <div class="bar-fill bar-fill--manual" id="bar-manual" style="width: 100%">
+                      <span class="bar-value" id="bar-manual-value">5.0 hrs</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="bar-row">
+                  <div class="bar-label">With AI</div>
+                  <div class="bar-track">
+                    <div class="bar-fill bar-fill--ai" id="bar-ai" style="width: 13%">
+                      <span class="bar-value" id="bar-ai-value">0.7 hrs</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cost Savings -->
+            <div class="panel-card savings-card">
+              <h2 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M10 5.5v9M12.5 8c0-1.1-1.1-2-2.5-2S7.5 6.9 7.5 8s1.1 2 2.5 2 2.5.9 2.5 2-1.1 2-2.5 2-2.5-.9-2.5-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Cost Savings
+              </h2>
+              <div class="savings-grid">
+                <div class="savings-item">
+                  <span class="savings-label">Monthly Savings</span>
+                  <span class="savings-amount" id="savings-monthly">$1,413</span>
+                </div>
+                <div class="savings-item">
+                  <span class="savings-label">Yearly Savings</span>
+                  <span class="savings-amount savings-amount--big" id="savings-yearly">$16,950</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Key Insight -->
+            <div class="insight-card">
+              <svg class="insight-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 2a5.5 5.5 0 00-2 10.63V14a1 1 0 001 1h2a1 1 0 001-1v-1.37A5.5 5.5 0 0010 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 17h4M9 15v2M11 15v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <p id="insight-text">
+                Your team of <strong>10</strong> spends <strong>21.7 hours per month</strong> writing bug reports. With AI automation, that drops to <strong>2.9 hours</strong> — saving <strong>18.8 hours</strong> and <strong>$1,413</strong> every month.
+              </p>
+            </div>
+
+            <!-- Actions -->
+            <div class="results-actions">
+              <button class="btn btn-secondary btn-sm" id="share-btn" type="button">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M6 9.5l4-3M5 6a2 2 0 110-4 2 2 0 010 4zM11 10a2 2 0 110 4 2 2 0 010-4zM5 12a2 2 0 110-4 2 2 0 010 4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="5" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/>
+                  <circle cx="11" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                  <circle cx="11" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M6.8 5.2L9.2 6.8M6.8 10.8l2.4-1.6" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span id="share-text">Share Results</span>
+              </button>
+              <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 12l8-8M4 4h8v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Get Started Free
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Assumptions -->
+  <section class="section-sm assumptions-section">
+    <div class="container" style="max-width: 800px;">
+      <button class="collapse-toggle" id="toggle-assumptions" aria-expanded="false" type="button">
+        <svg class="collapse-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Assumptions and Methodology
+      </button>
+      <div class="collapse-content" id="assumptions-content" hidden>
+        <div class="assumptions-list">
+          <div class="assumption-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 5v3M8 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <strong>AI-assisted report time: 2 minutes.</strong>
+              <span>Record your screen, BugReel generates the full report. Review and submit.</span>
+            </div>
+          </div>
+          <div class="assumption-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 5v3M8 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <strong>4.33 weeks per month, 52 weeks per year.</strong>
+              <span>Standard industry conversion factors.</span>
+            </div>
+          </div>
+          <div class="assumption-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 5v3M8 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <strong>Manual time based on industry averages.</strong>
+              <span>Studies show engineers spend 10-30 minutes per manual bug report including reproduction, screenshots, and writing.</span>
+            </div>
+          </div>
+          <div class="assumption-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 5v3M8 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <strong>Actual savings may vary.</strong>
+              <span>Complex bugs may take longer. Simple bugs may be faster. These are averages for planning purposes.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Stop wasting engineering time on manual reports</p>
+      <h2>Record your screen. AI does the rest.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel turns screen recordings into complete bug reports with steps, screenshots, and severity -- automatically.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 720px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 600px;
+  }
+
+  /* ===== Calculator Layout ===== */
+  .tool-section {
+    padding-bottom: 64px;
+  }
+
+  .calc-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ===== Panel Card ===== */
+  .panel-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--color-text);
+  }
+
+  .panel-title svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  /* ===== Slider Groups ===== */
+  .slider-group {
+    margin-bottom: 28px;
+  }
+
+  .slider-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .slider-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .slider-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .slider-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+    letter-spacing: -0.02em;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  .slider-value small {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    margin-left: 2px;
+  }
+
+  .slider-value--money {
+    color: var(--color-success);
+  }
+
+  .slider-hint {
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+
+  .slider-range {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    margin-top: 6px;
+    font-family: var(--font-mono);
+  }
+
+  /* ===== Custom Slider ===== */
+  .calc-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-border);
+    outline: none;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .calc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 3px solid var(--color-bg);
+    box-shadow: 0 0 0 2px var(--color-primary), 0 2px 8px rgba(99, 102, 241, 0.3);
+    cursor: pointer;
+    transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .calc-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px var(--color-primary-hover), 0 2px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .calc-slider::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+  }
+
+  .calc-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 3px solid var(--color-bg);
+    box-shadow: 0 0 0 2px var(--color-primary), 0 2px 8px rgba(99, 102, 241, 0.3);
+    cursor: pointer;
+    transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .calc-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px var(--color-primary-hover), 0 2px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .calc-slider::-moz-range-track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-border);
+  }
+
+  .calc-slider--money::-webkit-slider-thumb {
+    background: var(--color-success);
+    box-shadow: 0 0 0 2px var(--color-success), 0 2px 8px rgba(34, 197, 94, 0.3);
+  }
+
+  .calc-slider--money::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 2px var(--color-success), 0 2px 12px rgba(34, 197, 94, 0.4);
+  }
+
+  .calc-slider--money::-moz-range-thumb {
+    background: var(--color-success);
+    box-shadow: 0 0 0 2px var(--color-success), 0 2px 8px rgba(34, 197, 94, 0.3);
+  }
+
+  .calc-slider--money::-moz-range-thumb:hover {
+    box-shadow: 0 0 0 2px var(--color-success), 0 2px 12px rgba(34, 197, 94, 0.4);
+  }
+
+  /* ===== Results Sticky ===== */
+  .results-panel {
+    position: relative;
+  }
+
+  .results-sticky {
+    position: sticky;
+    top: 24px;
+  }
+
+  /* ===== Results Table ===== */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .results-table th {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-dim);
+    background: var(--color-bg);
+    padding: 10px 16px;
+  }
+
+  .results-table th:first-child,
+  .results-table td:first-child {
+    text-align: left;
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .results-table td {
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+  }
+
+  .results-table .col-manual {
+    color: var(--color-error);
+  }
+
+  .results-table .col-ai {
+    color: var(--color-accent);
+  }
+
+  .results-table .col-saved {
+    color: var(--color-success);
+    font-weight: 600;
+  }
+
+  .results-table .col-saved.highlight {
+    font-size: 0.9375rem;
+    color: var(--color-success);
+    font-weight: 700;
+  }
+
+  .results-table th.col-manual {
+    color: var(--color-error);
+    opacity: 0.8;
+  }
+
+  .results-table th.col-ai {
+    color: var(--color-accent);
+    opacity: 0.8;
+  }
+
+  .results-table th.col-saved {
+    color: var(--color-success);
+    opacity: 0.8;
+  }
+
+  .results-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* ===== Bar Chart ===== */
+  .bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bar-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    min-width: 64px;
+    text-align: right;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 36px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 12px;
+    min-width: 60px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .bar-fill--manual {
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.4));
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .bar-fill--ai {
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.4));
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .bar-value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+
+  .bar-fill--manual .bar-value {
+    color: var(--color-error);
+  }
+
+  .bar-fill--ai .bar-value {
+    color: var(--color-success);
+  }
+
+  /* ===== Savings Card ===== */
+  .savings-card {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), rgba(34, 211, 238, 0.05));
+    border-color: rgba(34, 197, 94, 0.2);
+  }
+
+  .savings-card .panel-title svg {
+    color: var(--color-success);
+  }
+
+  .savings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .savings-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .savings-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+    font-weight: 500;
+  }
+
+  .savings-amount {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-success);
+    font-family: var(--font-mono);
+    letter-spacing: -0.02em;
+  }
+
+  .savings-amount--big {
+    font-size: 2.25rem;
+  }
+
+  /* ===== Insight Card ===== */
+  .insight-card {
+    display: flex;
+    gap: 14px;
+    padding: 20px;
+    background: var(--color-surface);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    align-items: flex-start;
+  }
+
+  .insight-icon {
+    color: var(--color-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .insight-card p {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--color-text-muted);
+  }
+
+  .insight-card strong {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  /* ===== Results Actions ===== */
+  .results-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
+  #share-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+  }
+
+  #share-btn.copied:hover {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+  }
+
+  /* ===== Assumptions ===== */
+  .assumptions-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .collapse-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    text-align: left;
+  }
+
+  .collapse-toggle:hover {
+    color: var(--color-text);
+  }
+
+  .collapse-icon {
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+  }
+
+  .collapse-toggle[aria-expanded="true"] .collapse-icon {
+    transform: rotate(180deg);
+  }
+
+  .collapse-content {
+    margin-top: 20px;
+  }
+
+  .collapse-content[hidden] {
+    display: none;
+  }
+
+  .assumptions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .assumption-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .assumption-item svg {
+    color: var(--color-text-dim);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .assumption-item strong {
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  .assumption-item span {
+    display: block;
+    color: var(--color-text-dim);
+    font-size: 0.8125rem;
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1024px) {
+    .calc-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .results-sticky {
+      position: static;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .panel-card {
+      padding: 20px;
+    }
+
+    .slider-value {
+      font-size: 1.25rem;
+    }
+
+    .savings-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .savings-amount {
+      font-size: 1.5rem;
+    }
+
+    .savings-amount--big {
+      font-size: 1.75rem;
+    }
+
+    .results-actions {
+      flex-direction: column;
+    }
+
+    .results-actions .btn {
+      width: 100%;
+    }
+
+    .bar-label {
+      min-width: 50px;
+      font-size: 0.75rem;
+    }
+
+    .results-table th,
+    .results-table td {
+      padding: 10px 8px;
+      font-size: 0.75rem;
+    }
+
+    .results-table .col-saved.highlight {
+      font-size: 0.8125rem;
+    }
+  }
+</style>
+
+<script>
+  // ===== Time Saved Calculator — Client-Side Logic =====
+
+  const AI_TIME_PER_REPORT = 2; // minutes
+  const WEEKS_PER_MONTH = 4.33;
+  const WEEKS_PER_YEAR = 52;
+
+  // --- DOM Elements ---
+  const sliders = {
+    teamSize: document.getElementById('team-size') as HTMLInputElement,
+    bugsPerWeek: document.getElementById('bugs-per-week') as HTMLInputElement,
+    timePerReport: document.getElementById('time-per-report') as HTMLInputElement,
+    hourlyCost: document.getElementById('hourly-cost') as HTMLInputElement,
+  };
+
+  const valueDisplays = {
+    teamSize: document.getElementById('team-size-value') as HTMLElement,
+    bugsPerWeek: document.getElementById('bugs-per-week-value') as HTMLElement,
+    timePerReport: document.getElementById('time-per-report-value') as HTMLElement,
+    hourlyCost: document.getElementById('hourly-cost-value') as HTMLElement,
+  };
+
+  const resultEls = {
+    timeManual: document.getElementById('r-time-manual') as HTMLElement,
+    timeAi: document.getElementById('r-time-ai') as HTMLElement,
+    timeSaved: document.getElementById('r-time-saved') as HTMLElement,
+    weeklyManual: document.getElementById('r-weekly-manual') as HTMLElement,
+    weeklyAi: document.getElementById('r-weekly-ai') as HTMLElement,
+    weeklySaved: document.getElementById('r-weekly-saved') as HTMLElement,
+    monthlyManual: document.getElementById('r-monthly-manual') as HTMLElement,
+    monthlyAi: document.getElementById('r-monthly-ai') as HTMLElement,
+    monthlySaved: document.getElementById('r-monthly-saved') as HTMLElement,
+    yearlyManual: document.getElementById('r-yearly-manual') as HTMLElement,
+    yearlyAi: document.getElementById('r-yearly-ai') as HTMLElement,
+    yearlySaved: document.getElementById('r-yearly-saved') as HTMLElement,
+  };
+
+  const barManual = document.getElementById('bar-manual') as HTMLElement;
+  const barAi = document.getElementById('bar-ai') as HTMLElement;
+  const barManualValue = document.getElementById('bar-manual-value') as HTMLElement;
+  const barAiValue = document.getElementById('bar-ai-value') as HTMLElement;
+
+  const savingsMonthly = document.getElementById('savings-monthly') as HTMLElement;
+  const savingsYearly = document.getElementById('savings-yearly') as HTMLElement;
+  const insightText = document.getElementById('insight-text') as HTMLElement;
+
+  const shareBtn = document.getElementById('share-btn') as HTMLButtonElement;
+  const shareText = document.getElementById('share-text') as HTMLElement;
+
+  const toggleAssumptions = document.getElementById('toggle-assumptions') as HTMLButtonElement;
+  const assumptionsContent = document.getElementById('assumptions-content') as HTMLElement;
+
+  // --- Animated Number State ---
+  const animationFrames: Record<string, number> = {};
+
+  function animateValue(element: HTMLElement, start: number, end: number, suffix: string, duration: number = 400, prefix: string = ''): void {
+    const key = element.id;
+    if (animationFrames[key]) {
+      cancelAnimationFrame(animationFrames[key]);
+    }
+
+    const startTime = performance.now();
+    const diff = end - start;
+
+    function step(currentTime: number): void {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = start + diff * eased;
+
+      if (suffix === ' min') {
+        element.textContent = prefix + Math.round(current) + suffix;
+      } else if (prefix === '$') {
+        element.textContent = prefix + formatNumber(Math.round(current));
+      } else {
+        element.textContent = prefix + formatHours(current) + suffix;
+      }
+
+      if (progress < 1) {
+        animationFrames[key] = requestAnimationFrame(step);
+      }
+    }
+
+    animationFrames[key] = requestAnimationFrame(step);
+  }
+
+  function formatHours(h: number): string {
+    return h.toFixed(1);
+  }
+
+  function formatNumber(n: number): string {
+    return n.toLocaleString('en-US');
+  }
+
+  function formatMoney(n: number): string {
+    return '$' + formatNumber(Math.round(n));
+  }
+
+  // --- Previous values for animation ---
+  const prevValues: Record<string, number> = {};
+
+  function updateAnimated(el: HTMLElement, newVal: number, suffix: string, prefix: string = ''): void {
+    const key = el.id;
+    const oldVal = prevValues[key] ?? newVal;
+    prevValues[key] = newVal;
+
+    if (Math.abs(oldVal - newVal) < 0.05) {
+      if (suffix === ' min') {
+        el.textContent = prefix + Math.round(newVal) + suffix;
+      } else if (prefix === '$') {
+        el.textContent = prefix + formatNumber(Math.round(newVal));
+      } else {
+        el.textContent = prefix + formatHours(newVal) + suffix;
+      }
+      return;
+    }
+
+    animateValue(el, oldVal, newVal, suffix, 400, prefix);
+  }
+
+  // --- Slider track fill ---
+  function updateSliderFill(slider: HTMLInputElement): void {
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+    const val = parseFloat(slider.value);
+    const pct = ((val - min) / (max - min)) * 100;
+    const isMoney = slider.classList.contains('calc-slider--money');
+    const color = isMoney ? 'rgba(34, 197, 94, 0.5)' : 'rgba(99, 102, 241, 0.5)';
+    slider.style.background = `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, var(--color-border) ${pct}%, var(--color-border) 100%)`;
+  }
+
+  // --- Core Calculation ---
+  function calculate(): void {
+    const teamSize = parseInt(sliders.teamSize.value);
+    const bugsPerWeek = parseInt(sliders.bugsPerWeek.value);
+    const timePerReport = parseInt(sliders.timePerReport.value);
+    const hourlyCost = parseInt(sliders.hourlyCost.value);
+
+    // Update value displays
+    valueDisplays.teamSize.textContent = String(teamSize);
+    valueDisplays.bugsPerWeek.textContent = String(bugsPerWeek);
+    valueDisplays.timePerReport.innerHTML = timePerReport + '<small>min</small>';
+    valueDisplays.hourlyCost.textContent = '$' + hourlyCost;
+
+    // Update slider fills
+    updateSliderFill(sliders.teamSize);
+    updateSliderFill(sliders.bugsPerWeek);
+    updateSliderFill(sliders.timePerReport);
+    updateSliderFill(sliders.hourlyCost);
+
+    // Calculate hours
+    const weeklyMinManual = bugsPerWeek * timePerReport;
+    const weeklyMinAi = bugsPerWeek * AI_TIME_PER_REPORT;
+
+    const weeklyHrsManual = weeklyMinManual / 60;
+    const weeklyHrsAi = weeklyMinAi / 60;
+    const weeklyHrsSaved = weeklyHrsManual - weeklyHrsAi;
+
+    const monthlyHrsManual = weeklyHrsManual * WEEKS_PER_MONTH;
+    const monthlyHrsAi = weeklyHrsAi * WEEKS_PER_MONTH;
+    const monthlyHrsSaved = monthlyHrsManual - monthlyHrsAi;
+
+    const yearlyHrsManual = weeklyHrsManual * WEEKS_PER_YEAR;
+    const yearlyHrsAi = weeklyHrsAi * WEEKS_PER_YEAR;
+    const yearlyHrsSaved = yearlyHrsManual - yearlyHrsAi;
+
+    const timeSavedMin = timePerReport - AI_TIME_PER_REPORT;
+
+    // Cost savings
+    const monthlyCostSaved = monthlyHrsSaved * hourlyCost;
+    const yearlyCostSaved = yearlyHrsSaved * hourlyCost;
+
+    // Update table with animations
+    updateAnimated(resultEls.timeManual, timePerReport, ' min');
+    updateAnimated(resultEls.timeAi, AI_TIME_PER_REPORT, ' min');
+    updateAnimated(resultEls.timeSaved, timeSavedMin, ' min');
+
+    updateAnimated(resultEls.weeklyManual, weeklyHrsManual, ' hrs');
+    updateAnimated(resultEls.weeklyAi, weeklyHrsAi, ' hrs');
+    updateAnimated(resultEls.weeklySaved, weeklyHrsSaved, ' hrs');
+
+    updateAnimated(resultEls.monthlyManual, monthlyHrsManual, ' hrs');
+    updateAnimated(resultEls.monthlyAi, monthlyHrsAi, ' hrs');
+    updateAnimated(resultEls.monthlySaved, monthlyHrsSaved, ' hrs');
+
+    updateAnimated(resultEls.yearlyManual, yearlyHrsManual, ' hrs');
+    updateAnimated(resultEls.yearlyAi, yearlyHrsAi, ' hrs');
+    updateAnimated(resultEls.yearlySaved, yearlyHrsSaved, ' hrs');
+
+    // Update savings
+    updateAnimated(savingsMonthly, monthlyCostSaved, '', '$');
+    updateAnimated(savingsYearly, yearlyCostSaved, '', '$');
+
+    // Update bar chart
+    const maxHrs = weeklyHrsManual;
+    const manualPct = 100;
+    const aiPct = maxHrs > 0 ? Math.max(5, (weeklyHrsAi / maxHrs) * 100) : 5;
+    barManual.style.width = manualPct + '%';
+    barAi.style.width = aiPct + '%';
+    barManualValue.textContent = formatHours(weeklyHrsManual) + ' hrs';
+    barAiValue.textContent = formatHours(weeklyHrsAi) + ' hrs';
+
+    // Update insight
+    insightText.innerHTML =
+      'Your team of <strong>' + teamSize + '</strong> spends <strong>' + formatHours(monthlyHrsManual) + ' hours per month</strong> writing bug reports. ' +
+      'With AI automation, that drops to <strong>' + formatHours(monthlyHrsAi) + ' hours</strong> ' +
+      '&mdash; saving <strong>' + formatHours(monthlyHrsSaved) + ' hours</strong> and <strong>' + formatMoney(monthlyCostSaved) + '</strong> every month.';
+  }
+
+  // --- Event Listeners ---
+  Object.values(sliders).forEach(slider => {
+    slider.addEventListener('input', calculate);
+  });
+
+  // --- Share ---
+  shareBtn.addEventListener('click', function () {
+    const teamSize = sliders.teamSize.value;
+    const bugsPerWeek = sliders.bugsPerWeek.value;
+    const timePerReport = sliders.timePerReport.value;
+    const hourlyCost = sliders.hourlyCost.value;
+
+    const weeklyMinManual = parseInt(bugsPerWeek) * parseInt(timePerReport);
+    const weeklyMinAi = parseInt(bugsPerWeek) * AI_TIME_PER_REPORT;
+    const monthlyHrsSaved = ((weeklyMinManual - weeklyMinAi) / 60) * WEEKS_PER_MONTH;
+    const yearlySavings = monthlyHrsSaved * parseInt(hourlyCost);
+
+    const text = [
+      'Bug Reporting ROI Calculator Results',
+      '---',
+      'Team: ' + teamSize + ' engineers',
+      'Bugs/week: ' + bugsPerWeek,
+      'Manual time/report: ' + timePerReport + ' min',
+      'AI time/report: ' + AI_TIME_PER_REPORT + ' min',
+      '',
+      'Monthly time saved: ' + formatHours(monthlyHrsSaved) + ' hours',
+      'Yearly cost saved: ' + formatMoney(yearlySavings),
+      '',
+      'Calculate yours: https://bugreel.io/tools/time-saved-calculator',
+    ].join('\n');
+
+    navigator.clipboard.writeText(text).then(function () {
+      shareBtn.classList.add('copied');
+      shareText.textContent = 'Copied!';
+      setTimeout(function () {
+        shareBtn.classList.remove('copied');
+        shareText.textContent = 'Share Results';
+      }, 2000);
+    });
+  });
+
+  // --- Assumptions Toggle ---
+  toggleAssumptions.addEventListener('click', function () {
+    const expanded = toggleAssumptions.getAttribute('aria-expanded') === 'true';
+    toggleAssumptions.setAttribute('aria-expanded', String(!expanded));
+    if (expanded) {
+      assumptionsContent.hidden = true;
+    } else {
+      assumptionsContent.hidden = false;
+    }
+  });
+
+  // --- Initial Calculation ---
+  calculate();
+</script>

@@ -1,0 +1,1277 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Bug Severity Calculator',
+    description: 'Determine the right severity and priority for any bug. Answer 5 questions, get a consistent rating with a shareable assessment.',
+    url: 'https://bugreel.io/tools/severity-calculator',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Severity Calculator', item: 'https://bugreel.io/tools/severity-calculator' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Bug Severity Calculator — Consistent Bug Ratings | BugReel"
+  description="Determine the right severity and priority for any bug. Answer 5 questions, get a consistent rating with a shareable assessment. Free, no signup required."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Severity Calculator</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-success">Free &middot; No Signup</span>
+        <h1>Bug Severity Calculator</h1>
+        <p class="hero-subtitle">Determine the right severity and priority for any bug. Answer 5 questions, get a consistent rating.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calculator -->
+  <section class="tool-section">
+    <div class="container">
+
+      <!-- Progress -->
+      <div class="progress-bar" id="progress-bar">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-label" id="progress-label">Question 0 of 5</span>
+      </div>
+
+      <!-- Questions -->
+      <div class="questions-container" id="questions-container">
+
+        <!-- Q1: User Impact -->
+        <div class="question-card card" data-question="0">
+          <div class="question-header">
+            <span class="question-number">1</span>
+            <div>
+              <h3>User Impact</h3>
+              <p>How many users are affected?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="0" data-value="4" data-label="All users" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">All users</span>
+              <span class="option-pts">4 pts</span>
+            </button>
+            <button class="option-row" data-question="0" data-value="3" data-label="Most users" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Most users</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+            <button class="option-row" data-question="0" data-value="2" data-label="Some users" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Some users</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="0" data-value="1" data-label="Few users" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Few users</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q2: Functionality Impact -->
+        <div class="question-card card" data-question="1">
+          <div class="question-header">
+            <span class="question-number">2</span>
+            <div>
+              <h3>Functionality Impact</h3>
+              <p>How does the bug affect functionality?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="1" data-value="4" data-label="Complete blocker" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Complete blocker &mdash; cannot use the feature at all</span>
+              <span class="option-pts">4 pts</span>
+            </button>
+            <button class="option-row" data-question="1" data-value="3" data-label="Major" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Major &mdash; core functionality broken but workaround exists</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+            <button class="option-row" data-question="1" data-value="2" data-label="Minor" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Minor &mdash; feature works but with issues</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="1" data-value="1" data-label="Cosmetic" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Cosmetic &mdash; visual/UI issue only</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q3: Data Impact -->
+        <div class="question-card card" data-question="2">
+          <div class="question-header">
+            <span class="question-number">3</span>
+            <div>
+              <h3>Data Impact</h3>
+              <p>Is user data affected?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="2" data-value="4" data-label="Data loss or corruption" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Data loss or corruption</span>
+              <span class="option-pts">4 pts</span>
+            </button>
+            <button class="option-row" data-question="2" data-value="3" data-label="Data displayed incorrectly" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Data displayed incorrectly</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+            <button class="option-row" data-question="2" data-value="1" data-label="No data impact" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">No data impact</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q4: Frequency -->
+        <div class="question-card card" data-question="3">
+          <div class="question-header">
+            <span class="question-number">4</span>
+            <div>
+              <h3>Frequency</h3>
+              <p>How often does the bug occur?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="3" data-value="4" data-label="Every time" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Every time</span>
+              <span class="option-pts">4 pts</span>
+            </button>
+            <button class="option-row" data-question="3" data-value="3" data-label="Frequently" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Frequently</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+            <button class="option-row" data-question="3" data-value="2" data-label="Sometimes" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Sometimes</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="3" data-value="1" data-label="Rarely" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Rarely</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q5: Business Impact -->
+        <div class="question-card card" data-question="4">
+          <div class="question-header">
+            <span class="question-number">5</span>
+            <div>
+              <h3>Business Impact</h3>
+              <p>What's the business impact?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="4" data-value="4" data-label="Revenue/security affected" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Revenue/security affected</span>
+              <span class="option-pts">4 pts</span>
+            </button>
+            <button class="option-row" data-question="4" data-value="3" data-label="Key workflow disrupted" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Key workflow disrupted</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+            <button class="option-row" data-question="4" data-value="2" data-label="Minor inconvenience" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Minor inconvenience</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="4" data-value="1" data-label="No business impact" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">No business impact</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Result Panel -->
+      <div class="result-panel" id="result-panel" hidden>
+        <div class="result-card" id="result-card">
+          <div class="result-header">
+            <div class="result-severity">
+              <span class="severity-dot-lg" id="result-dot"></span>
+              <div>
+                <span class="result-level" id="result-severity-text">Critical</span>
+                <span class="result-priority" id="result-priority-text">P1 Urgent</span>
+              </div>
+            </div>
+            <div class="result-score">
+              <span class="result-score-number" id="result-score-number">20</span>
+              <span class="result-score-total">/20</span>
+            </div>
+          </div>
+
+          <!-- Score Breakdown -->
+          <div class="result-breakdown" id="result-breakdown">
+            <!-- Filled by JS -->
+          </div>
+
+          <!-- Recommendation -->
+          <div class="result-recommendation" id="result-recommendation">
+            <!-- Filled by JS -->
+          </div>
+
+          <!-- Actions -->
+          <div class="result-actions">
+            <button class="btn btn-primary" id="copy-assessment-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3 11V3.5A.5.5 0 013.5 3H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span id="copy-assessment-text">Copy Assessment</span>
+            </button>
+            <button class="btn btn-secondary" id="reset-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2.5 8a5.5 5.5 0 019.3-3.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M13.5 8a5.5 5.5 0 01-9.3 3.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 2v2.5h-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 13.5V11h2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Severity vs Priority Explanation -->
+  <section class="section-sm explanation-section">
+    <div class="container">
+      <h2 class="explanation-title">Severity vs Priority</h2>
+      <p class="explanation-subtitle">Two different dimensions. Both matter.</p>
+      <div class="explanation-grid">
+        <div class="explanation-card card">
+          <div class="explanation-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3>Severity</h3>
+          <p class="explanation-definition">The technical impact of the bug on the system.</p>
+          <ul>
+            <li><strong>Critical</strong> &mdash; System crash, data loss, security breach</li>
+            <li><strong>High</strong> &mdash; Major feature broken, no workaround for core flow</li>
+            <li><strong>Medium</strong> &mdash; Feature impaired but workaround exists</li>
+            <li><strong>Low</strong> &mdash; Cosmetic issue, minor inconvenience</li>
+          </ul>
+          <p class="explanation-note">Severity is objective. It doesn't change based on business context.</p>
+        </div>
+        <div class="explanation-card card">
+          <div class="explanation-icon explanation-icon--accent">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 4h18M3 4v16l4-2 4 2 4-2 4 2V4M3 4l4 2 4-2 4 2 4-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3>Priority</h3>
+          <p class="explanation-definition">How urgently the bug should be fixed, given business context.</p>
+          <ul>
+            <li><strong>P1 Urgent</strong> &mdash; Fix immediately, drop everything</li>
+            <li><strong>P2 High</strong> &mdash; Fix in current sprint</li>
+            <li><strong>P3 Medium</strong> &mdash; Fix in next sprint</li>
+            <li><strong>P4 Low</strong> &mdash; Backlog, fix when convenient</li>
+          </ul>
+          <p class="explanation-note">Priority is subjective. A low-severity typo on a landing page might be P1 before a launch.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pro Tips -->
+  <section class="section-sm tips-section">
+    <div class="container">
+      <h2 class="tips-title">Pro Tips for Consistent Severity Ratings</h2>
+      <div class="tips-grid">
+        <div class="tip-card card">
+          <div class="tip-number">1</div>
+          <h3>Rate severity first, priority second</h3>
+          <p>Severity is based on technical impact and doesn't change. Priority depends on business context and timelines. Separate the two to avoid bias. A critical bug in a rarely-used feature might still be P3.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">2</div>
+          <h3>Use the same scale across your team</h3>
+          <p>The biggest source of inconsistency is different people using different mental models. Share this calculator with your team so "Critical" means the same thing to everyone, every time.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">3</div>
+          <h3>Consider the workaround cost</h3>
+          <p>A bug with a simple workaround is less severe than one with no path forward. But if the workaround is complex or error-prone, that raises the effective severity. Factor in the user's effort, not just whether a workaround exists.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Want to auto-detect severity from screen recordings?</p>
+      <h2>Record your screen. AI rates the bug.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel analyzes your screen recordings and automatically suggests severity, priority, and a complete bug report &mdash; in seconds.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 700px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 560px;
+  }
+
+  /* ===== Progress Bar ===== */
+  .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+
+  /* ===== Questions ===== */
+  .questions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .question-card {
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  }
+
+  .question-card.answered {
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+
+  .question-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .question-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all var(--transition-base);
+  }
+
+  .question-card.answered .question-number {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-color: transparent;
+    color: #fff;
+  }
+
+  .question-header h3 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .question-header p {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+
+  /* ===== Option Rows ===== */
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .option-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+  }
+
+  .option-row:hover {
+    border-color: var(--color-border-hover);
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+
+  .option-row.selected {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--color-text);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+
+  .option-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--color-border);
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+  }
+
+  .option-row.selected .option-indicator {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    box-shadow: inset 0 0 0 3px rgba(99, 102, 241, 0.08);
+  }
+
+  .option-row.selected .option-indicator::after {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  .option-text {
+    flex: 1;
+  }
+
+  .option-pts {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+
+  .option-row.selected .option-pts {
+    color: var(--color-primary);
+  }
+
+  /* ===== Result Panel ===== */
+  .result-panel {
+    max-width: 800px;
+    margin: 40px auto 0;
+  }
+
+  .result-panel[hidden] {
+    display: none;
+  }
+
+  .result-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--color-text-dim);
+    overflow: hidden;
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  .result-card.severity-critical {
+    border-left-color: #ef4444;
+  }
+
+  .result-card.severity-high {
+    border-left-color: #f97316;
+  }
+
+  .result-card.severity-medium {
+    border-left-color: #f59e0b;
+  }
+
+  .result-card.severity-low {
+    border-left-color: #22c55e;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 32px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .result-severity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .severity-dot-lg {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .severity-dot-lg.dot-critical {
+    background: #ef4444;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+  }
+
+  .severity-dot-lg.dot-high {
+    background: #f97316;
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.5);
+  }
+
+  .severity-dot-lg.dot-medium {
+    background: #f59e0b;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+  }
+
+  .severity-dot-lg.dot-low {
+    background: #22c55e;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+  }
+
+  .result-level {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .result-priority {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  .result-score {
+    text-align: right;
+  }
+
+  .result-score-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .result-score-total {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+  }
+
+  /* Score Breakdown */
+  .result-breakdown {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.875rem;
+  }
+
+  .breakdown-row + .breakdown-row {
+    border-top: 1px solid rgba(30, 30, 46, 0.5);
+  }
+
+  .breakdown-label {
+    color: var(--color-text-muted);
+  }
+
+  .breakdown-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .breakdown-answer {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .breakdown-pts {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    background: var(--color-primary-glow);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+  }
+
+  /* Recommendation */
+  .result-recommendation {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .result-recommendation p {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  .result-recommendation strong {
+    color: var(--color-text);
+  }
+
+  /* Result Actions */
+  .result-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 32px;
+    background: var(--color-bg);
+  }
+
+  #copy-assessment-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+
+  /* ===== Explanation Section ===== */
+  .explanation-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .explanation-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .explanation-subtitle {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin-bottom: 48px;
+  }
+
+  .explanation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .explanation-card {
+    padding: 32px;
+  }
+
+  .explanation-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-glow);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: var(--color-primary);
+    margin-bottom: 20px;
+  }
+
+  .explanation-icon--accent {
+    background: var(--color-accent-glow);
+    border-color: rgba(34, 211, 238, 0.2);
+    color: var(--color-accent);
+  }
+
+  .explanation-card h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .explanation-definition {
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .explanation-card ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+  }
+
+  .explanation-card li {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(30, 30, 46, 0.5);
+    line-height: 1.5;
+  }
+
+  .explanation-card li:last-child {
+    border-bottom: none;
+  }
+
+  .explanation-card li strong {
+    color: var(--color-text);
+  }
+
+  .explanation-note {
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+    font-style: italic;
+    line-height: 1.5;
+    margin-bottom: 0;
+  }
+
+  /* ===== Pro Tips ===== */
+  .tips-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tips-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .tip-card {
+    position: relative;
+    padding-top: 48px;
+  }
+
+  .tip-number {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-lg) 0 var(--radius-md) 0;
+  }
+
+  .tip-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .tip-card p {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Animation ===== */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .question-card {
+      padding: 24px;
+    }
+
+    .option-row {
+      padding: 10px 14px;
+      font-size: 0.875rem;
+    }
+
+    .result-header {
+      padding: 20px 24px;
+    }
+
+    .result-breakdown,
+    .result-recommendation {
+      padding: 20px 24px;
+    }
+
+    .result-actions {
+      padding: 16px 24px;
+      flex-wrap: wrap;
+    }
+
+    .result-score-number {
+      font-size: 2rem;
+    }
+
+    .explanation-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tips-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .progress-bar {
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .progress-label {
+      text-align: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .question-header {
+      gap: 12px;
+    }
+
+    .option-pts {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // ===== Bug Severity Calculator — Client-Side Logic =====
+
+  const TOTAL_QUESTIONS = 5;
+  const answers: (number | null)[] = [null, null, null, null, null];
+  const answerLabels: (string | null)[] = [null, null, null, null, null];
+
+  const questionNames = [
+    'User Impact',
+    'Functionality',
+    'Data',
+    'Frequency',
+    'Business',
+  ];
+
+  const questionMaxPts = [4, 4, 4, 4, 4];
+
+  // --- DOM ---
+  const progressFill = document.getElementById('progress-fill') as HTMLDivElement;
+  const progressLabel = document.getElementById('progress-label') as HTMLSpanElement;
+  const questionsContainer = document.getElementById('questions-container')!;
+  const resultPanel = document.getElementById('result-panel') as HTMLDivElement;
+  const resultCard = document.getElementById('result-card') as HTMLDivElement;
+  const resultDot = document.getElementById('result-dot') as HTMLSpanElement;
+  const resultSeverityText = document.getElementById('result-severity-text')!;
+  const resultPriorityText = document.getElementById('result-priority-text')!;
+  const resultScoreNumber = document.getElementById('result-score-number')!;
+  const resultBreakdown = document.getElementById('result-breakdown')!;
+  const resultRecommendation = document.getElementById('result-recommendation')!;
+  const copyAssessmentBtn = document.getElementById('copy-assessment-btn')!;
+  const copyAssessmentText = document.getElementById('copy-assessment-text')!;
+  const resetBtn = document.getElementById('reset-btn')!;
+
+  const allOptionButtons = questionsContainer.querySelectorAll('.option-row') as NodeListOf<HTMLButtonElement>;
+  const allQuestionCards = questionsContainer.querySelectorAll('.question-card') as NodeListOf<HTMLDivElement>;
+
+  // --- Scoring ---
+  interface SeverityResult {
+    severity: string;
+    severityLabel: string;
+    priority: string;
+    priorityLabel: string;
+    colorClass: string;
+    dotClass: string;
+  }
+
+  function calcResult(total: number): SeverityResult {
+    if (total >= 17) {
+      return {
+        severity: 'critical',
+        severityLabel: 'Critical',
+        priority: 'P1',
+        priorityLabel: 'P1 Urgent',
+        colorClass: 'severity-critical',
+        dotClass: 'dot-critical',
+      };
+    } else if (total >= 13) {
+      return {
+        severity: 'high',
+        severityLabel: 'High',
+        priority: 'P2',
+        priorityLabel: 'P2 High',
+        colorClass: 'severity-high',
+        dotClass: 'dot-high',
+      };
+    } else if (total >= 8) {
+      return {
+        severity: 'medium',
+        severityLabel: 'Medium',
+        priority: 'P3',
+        priorityLabel: 'P3 Medium',
+        colorClass: 'severity-medium',
+        dotClass: 'dot-medium',
+      };
+    } else {
+      return {
+        severity: 'low',
+        severityLabel: 'Low',
+        priority: 'P4',
+        priorityLabel: 'P4 Low',
+        colorClass: 'severity-low',
+        dotClass: 'dot-low',
+      };
+    }
+  }
+
+  function getRecommendation(result: SeverityResult, total: number): string {
+    switch (result.severity) {
+      case 'critical':
+        return '<strong>Immediate action required.</strong> This bug has widespread impact, blocks core functionality, and may involve data loss or security risk. Escalate to the on-call team. All other work should be paused until this is resolved or a reliable workaround is in place.';
+      case 'high':
+        return '<strong>Fix in the current sprint.</strong> This bug significantly impacts users and disrupts key workflows. Assign a dedicated developer and ensure it is resolved before the next release. If a workaround exists, document it and communicate it to affected users.';
+      case 'medium':
+        return '<strong>Schedule for the next sprint.</strong> This bug causes noticeable friction but does not block core functionality. Users can work around it. Prioritize it alongside feature work and fix it before it compounds into a larger problem.';
+      case 'low':
+        return '<strong>Add to the backlog.</strong> This is a minor issue with limited impact. Fix it when bandwidth allows, or batch it with similar polish tasks. It should not displace higher-priority work.';
+      default:
+        return '';
+    }
+  }
+
+  // --- Progress ---
+  function updateProgress() {
+    const answered = answers.filter(a => a !== null).length;
+    const pct = (answered / TOTAL_QUESTIONS) * 100;
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = `Question ${answered} of ${TOTAL_QUESTIONS}`;
+  }
+
+  // --- Option Click ---
+  function handleOptionClick(btn: HTMLButtonElement) {
+    const qIdx = parseInt(btn.getAttribute('data-question')!);
+    const value = parseInt(btn.getAttribute('data-value')!);
+    const label = btn.getAttribute('data-label')!;
+
+    // Deselect siblings
+    const siblings = questionsContainer.querySelectorAll(`.option-row[data-question="${qIdx}"]`);
+    siblings.forEach(s => s.classList.remove('selected'));
+
+    // Select this
+    btn.classList.add('selected');
+
+    // Store answer
+    answers[qIdx] = value;
+    answerLabels[qIdx] = label;
+
+    // Mark card as answered
+    allQuestionCards[qIdx].classList.add('answered');
+
+    updateProgress();
+
+    // Check if all answered
+    const allAnswered = answers.every(a => a !== null);
+    if (allAnswered) {
+      showResult();
+    }
+  }
+
+  allOptionButtons.forEach(btn => {
+    btn.addEventListener('click', () => handleOptionClick(btn));
+  });
+
+  // --- Show Result ---
+  function showResult() {
+    const total = answers.reduce((sum, a) => sum! + (a ?? 0), 0) as number;
+    const result = calcResult(total);
+    const recommendation = getRecommendation(result, total);
+
+    // Update result card
+    resultCard.className = 'result-card ' + result.colorClass;
+    resultDot.className = 'severity-dot-lg ' + result.dotClass;
+    resultSeverityText.textContent = result.severityLabel;
+    resultPriorityText.textContent = result.priorityLabel;
+    resultScoreNumber.textContent = String(total);
+
+    // Breakdown
+    let breakdownHtml = '';
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      breakdownHtml += `
+        <div class="breakdown-row">
+          <span class="breakdown-label">${questionNames[i]}</span>
+          <div class="breakdown-value">
+            <span class="breakdown-answer">${answerLabels[i] || '—'}</span>
+            <span class="breakdown-pts">${answers[i] ?? 0}/${questionMaxPts[i]}</span>
+          </div>
+        </div>
+      `;
+    }
+    resultBreakdown.innerHTML = breakdownHtml;
+
+    // Recommendation
+    resultRecommendation.innerHTML = `<p>${recommendation}</p>`;
+
+    // Show
+    resultPanel.hidden = false;
+
+    // Smooth scroll to result
+    setTimeout(() => {
+      resultPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+
+  // --- Copy Assessment ---
+  function buildAssessmentText(): string {
+    const total = answers.reduce((sum, a) => sum! + (a ?? 0), 0) as number;
+    const result = calcResult(total);
+
+    let text = `Severity: ${result.severityLabel} | Priority: ${result.priorityLabel}\n`;
+    text += `Score: ${total}/20\n`;
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      text += `- ${questionNames[i]}: ${answerLabels[i] || '—'} (${answers[i] ?? 0}/${questionMaxPts[i]})\n`;
+    }
+    return text.trim();
+  }
+
+  copyAssessmentBtn.addEventListener('click', async () => {
+    const text = buildAssessmentText();
+    try {
+      await navigator.clipboard.writeText(text);
+      copyAssessmentBtn.classList.add('copied');
+      copyAssessmentText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyAssessmentBtn.classList.remove('copied');
+        copyAssessmentText.textContent = 'Copy Assessment';
+      }, 2000);
+    } catch {
+      // Fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      copyAssessmentBtn.classList.add('copied');
+      copyAssessmentText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyAssessmentBtn.classList.remove('copied');
+        copyAssessmentText.textContent = 'Copy Assessment';
+      }, 2000);
+    }
+  });
+
+  // --- Reset ---
+  resetBtn.addEventListener('click', () => {
+    // Clear answers
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      answers[i] = null;
+      answerLabels[i] = null;
+    }
+
+    // Deselect all options
+    allOptionButtons.forEach(btn => btn.classList.remove('selected'));
+
+    // Remove answered state from cards
+    allQuestionCards.forEach(card => card.classList.remove('answered'));
+
+    // Hide result
+    resultPanel.hidden = true;
+
+    // Reset progress
+    updateProgress();
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // --- Initial state ---
+  updateProgress();
+</script>
