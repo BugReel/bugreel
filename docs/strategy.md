@@ -1,9 +1,9 @@
 # BugReel — Commercial Product Strategy
 
 > Date: 2026-03-17
-> Status: Pre-development
+> Status: Deployed
 > Origin: internal-tool (internal tool, production since Dec 2025)
-> Domain: bugreel.io (pending purchase)
+> Domain: bugreel.io (live)
 
 ---
 
@@ -309,30 +309,30 @@ Monday.com, Notion, Basecamp, Shortcut.
 ### What's needed for public launch
 
 **Core (2-3 weeks):**
-- [ ] New repository initialized
-- [ ] All Internal hardcodes removed (18 files, list in §3.1)
-- [ ] Config-driven architecture (.env for everything)
-- [ ] Dockerfile + docker-compose (one-command setup)
-- [ ] Auth: OAuth via Jira + GitHub + invite links (§3.2)
-- [ ] Extension token (link extension to user account)
-- [ ] English UI (dashboard + extension + GPT prompt)
+- [x] New repository initialized
+- [x] All Internal hardcodes removed (18 files, list in §3.1)
+- [x] Config-driven architecture (.env for everything)
+- [x] Dockerfile + docker-compose (one-command setup)
+- [x] Auth: OAuth via Jira + GitHub + invite links (§3.2)
+- [x] Extension token (link extension to user account)
+- [x] English UI (dashboard + extension + GPT prompt)
 
 **Integrations (1-2 weeks):**
-- [ ] Jira Cloud (OAuth 2.0 + create issue + multipart attachments)
-- [ ] Linear (OAuth 2.0 PKCE + GraphQL + attachments)
-- [ ] GitHub Issues (OAuth 2.0 + create issue + embedded image links)
-- [ ] Generic Webhook (POST JSON)
-- [ ] YouTrack (refactor to plugin interface)
+- [x] Jira Cloud (OAuth 2.0 + create issue + multipart attachments)
+- [x] Linear (OAuth 2.0 PKCE + GraphQL + attachments)
+- [x] GitHub Issues (OAuth 2.0 + create issue + embedded image links)
+- [x] Generic Webhook (POST JSON)
+- [x] YouTrack (refactor to plugin interface)
 
 **Extension (1 week):**
-- [ ] Rebrand: BugReel
-- [ ] Configurable server URL (already works)
+- [x] Rebrand: BugReel
+- [x] Configurable server URL (already works)
 - [ ] Chrome Web Store submission
 - [ ] Firefox Add-ons submission
 
 **Landing + Marketing (1-2 weeks):**
-- [ ] Landing page (hero + features + pricing + docs)
-- [ ] GitHub repo (open core)
+- [x] Landing page (hero + features + pricing + docs)
+- [x] GitHub repo (open core)
 - [ ] Product Hunt launch page
 - [ ] 3-5 SEO articles
 
@@ -624,39 +624,39 @@ bugreel.io
 | Meaning | bug + reel (video clip) — exactly what the product does |
 | Associations | Instagram Reels, highlight reel — modern, clear |
 | Conflicts | None (verified: no TM, no GitHub, no npm, no competing products) |
-| Domain | bugreel.io — available (pending purchase) |
+| Domain | bugreel.io — purchased and live (Reg.ru) |
 | Pronunciation | Unambiguous in any language |
 | Length | 7 characters |
 
-**GitHub organization:** `bugreel` or `getbugreel`
+**GitHub organization:** `BugReel` (owner: owner) — [github.com/BugReel](https://github.com/BugReel)
 
 ---
 
 ## 10. Roadmap
 
 ### Phase 0: Setup (week 1-2)
-- [ ] Buy domain bugreel.io (+ bugreel.com if available)
-- [ ] Create GitHub organization + private repo
-- [ ] Copy internal-tool codebase
-- [ ] Basic rebranding (package.json, README)
-- [ ] Initialize project structure
+- [x] Buy domain bugreel.io (+ bugreel.com if available)
+- [x] Create GitHub organization + public repo
+- [x] Copy internal-tool codebase
+- [x] Basic rebranding (package.json, README)
+- [x] Initialize project structure
 
 ### Phase 1: Core Abstraction (week 2-4)
-- [ ] Remove all Internal hardcodes (18 files)
-- [ ] Config-driven architecture (.env)
-- [ ] Dockerfile + docker-compose
-- [ ] English UI (dashboard + extension + prompt)
-- [ ] Auth: OAuth via Jira + GitHub + invite links
-- [ ] User management (DB tables + API)
-- [ ] Integration plugin interface
+- [x] Remove all Internal hardcodes (18 files)
+- [x] Config-driven architecture (.env)
+- [x] Dockerfile + docker-compose
+- [x] English UI (dashboard + extension + prompt)
+- [x] Auth: OAuth via Jira + GitHub + invite links
+- [x] User management (DB tables + API)
+- [x] Integration plugin interface
 - [ ] **Switch Internal Tool to run as BugReel instance + custom.env**
 
 ### Phase 2: Integrations + Landing (week 4-6)
-- [ ] Jira Cloud integration
-- [ ] Linear integration
-- [ ] GitHub Issues integration
-- [ ] Generic Webhook
-- [ ] Landing page (hero + features + pricing + docs)
+- [x] Jira Cloud integration
+- [x] Linear integration
+- [x] GitHub Issues integration
+- [x] Generic Webhook
+- [x] Landing page (hero + features + pricing + docs)
 - [ ] Chrome Web Store submission
 - [ ] 2-3 SEO articles
 
@@ -712,15 +712,19 @@ bugreel.io
 
 ## 13. Infrastructure
 
-| Component | Current (Internal) | BugReel | Cost |
-|---|---|---|---|
-| **Landing** | — | Vercel (static) | $0 |
-| **Docs** | — | Vercel (VitePress) | $0 |
-| **Demo SaaS** | — | Hetzner EU (VPS) | ~$5/mo |
-| **GitHub** | — | github.com/bugreel | $0 |
-| **Chrome Web Store** | — | developer.chrome.com | $5 one-time |
-| **Domain** | — | bugreel.io | ~$30/yr |
-| **Email** | — | hello@bugreel.io (Cloudflare) | $0 |
+| Component | Current (Internal) | BugReel | URL | Cost |
+|---|---|---|---|---|
+| **Landing** | — | Vercel (Astro 6 static) | [bugreel.io](https://bugreel.io) | $0 |
+| **Docs** | — | Vercel (VitePress) | TBD | $0 |
+| **Demo SaaS** | — | Hetzner EU (VPS) | TBD | ~$5/mo |
+| **GitHub** | — | Public repo | [github.com/BugReel/bugreel](https://github.com/BugReel/bugreel) | $0 |
+| **Chrome Web Store** | — | developer.chrome.com | Not submitted yet | $5 one-time |
+| **Domain** | — | bugreel.io (Reg.ru, DNS: A → 76.76.21.21, CNAME www → cname.vercel-dns.com) | [bugreel.io](https://bugreel.io) | ~$30/yr |
+| **Email** | — | hello@bugreel.io (Cloudflare) | — | $0 |
+
+**Vercel project:** "landing" under scope "your-vercel-scope". www.bugreel.io redirects to bugreel.io.
+
+**GitHub org:** BugReel (owner: owner). Public repo, 107 files, 27K+ lines.
 
 **Total launch cost: ~$40 + $5/mo.**
 

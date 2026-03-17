@@ -2,6 +2,8 @@
 
 **Record a bug. Get a complete report. Automatically.**
 
+**Website:** [bugreel.io](https://bugreel.io) | **GitHub:** [github.com/BugReel/bugreel](https://github.com/BugReel/bugreel)
+
 BugReel is an open-source, self-hosted, AI-powered bug reporting tool. Record your screen, narrate the bug, and AI generates a complete card with title, steps to reproduce, key frame screenshots, and severity — in minutes, not hours.
 
 ## How it works
@@ -25,7 +27,7 @@ BugReel is an open-source, self-hosted, AI-powered bug reporting tool. Record yo
 ## Quick start
 
 ```bash
-git clone https://github.com/bugreel/bugreel.git
+git clone https://github.com/BugReel/bugreel.git
 cd bugreel
 cp .env.example .env
 # Edit .env — add your OpenAI API key (GPT_API_KEY)

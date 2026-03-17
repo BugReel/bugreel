@@ -3,9 +3,16 @@
 > AI-powered bug reporting tool: screen recording → transcription → AI analysis → bug card → tracker export.
 > Commercial product based on internal-tool codebase.
 
-## Project Status: Pre-development
+## Project Status: Deployed
 
-Code is being migrated from `../internal/internal-tool/` (internal tool) → this repo (commercial product).
+Code migrated from `../internal/internal-tool/` (internal tool) → this repo (commercial product). Landing and GitHub repo are live.
+
+**Live URLs:**
+- **Landing:** https://bugreel.io (Vercel, Astro 6 static, SSL working)
+- **GitHub:** https://github.com/BugReel/bugreel (public, BugReel org, 107 files, 27K+ lines)
+- **Vercel:** auto-deploys from GitHub on push to main (project "landing" under scope "your-vercel-scope")
+- **Chrome Web Store:** not submitted yet
+- **Firefox Add-ons:** not submitted yet
 
 ## Architecture
 
@@ -60,10 +67,10 @@ Original code: `../internal/internal-tool/` (~10K lines JS, 6 npm deps, 5 SQLite
 
 | Phase | Focus | Status |
 |---|---|---|
-| **0. Setup** | Repo, copy code, rebrand | **Current** |
-| **1. Core** | Remove hardcodes, config, Docker, English UI, auth | Planned |
-| **2. Integrations** | Jira, Linear, GitHub Issues, Webhook | Planned |
-| **3. Launch** | Landing, Chrome Web Store, Product Hunt | Planned |
+| **0. Setup** | Repo, copy code, rebrand | **Done** |
+| **1. Core** | Remove hardcodes, config, Docker, English UI, auth | **Done** |
+| **2. Integrations** | Jira, Linear, GitHub Issues, Webhook, Landing | **Done** |
+| **3. Launch** | Chrome Web Store, Product Hunt, SEO articles | **Current** |
 
 ## Auth Model
 

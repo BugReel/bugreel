@@ -372,6 +372,23 @@ These constraints affect what we can honestly claim:
 
 ---
 
+## Deployment
+
+| Component | URL | Platform | Status |
+|---|---|---|---|
+| **Landing page** | [bugreel.io](https://bugreel.io) | Vercel (Astro 6 static) | Live |
+| **GitHub repo** | [github.com/BugReel/bugreel](https://github.com/BugReel/bugreel) | GitHub (public, BugReel org) | Live |
+| **Chrome Web Store** | — | Not submitted yet | Pending |
+| **Firefox Add-ons** | — | Not submitted yet | Pending |
+| **Hosted SaaS (app.bugreel.io)** | — | Does not exist yet | Not started |
+
+**Domain:** bugreel.io (Reg.ru). DNS: A @ -> 76.76.21.21, CNAME www -> cname.vercel-dns.com. www.bugreel.io redirects to bugreel.io. SSL working.
+
+**Vercel project:** "landing" under scope "your-vercel-scope".
+
+---
+
 ## Revision History
 
+- 2026-03-17: Added Deployment section with live URLs. Landing deployed to Vercel, GitHub repo public.
 - 2026-03-17: Initial version. Comprehensive audit of codebase, landing page, README, and strategy document. Identified 8 inconsistencies to fix.
