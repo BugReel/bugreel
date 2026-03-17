@@ -498,6 +498,68 @@ p {
   font-weight: 600;
 }
 
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 0.875rem;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.prose tbody {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.prose table th,
+.prose table td {
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  white-space: normal;
+  vertical-align: top;
+}
+
+.prose table th {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  position: sticky;
+  top: 0;
+}
+
+.prose table td {
+  color: var(--color-text-muted);
+}
+
+.prose table tr:hover td {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.prose table td:first-child {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 32px 0;
+}
+
 /* --- Animations --- */
 @keyframes fadeInUp {
   from {

@@ -6,3 +6,4 @@ data/
 dist/
 *.zip
 extension/build/
+.vercel
