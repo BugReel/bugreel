@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "siteName": "BugReel",
+    "defaultTitle": "BugReel — AI-Powered Bug Reporting from Screen Recordings",
+    "defaultDescription": "Record a bug, get a complete report. BugReel uses AI to turn screen recordings into detailed bug reports with steps, screenshots, and priority — in minutes, not hours."
+  },
+  "nav": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "docs": "Docs",
+    "blog": "Blog",
+    "github": "GitHub",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "badge": "Open Source · Self-Hosted · AI-Powered",
+    "headline": "Record a bug. Get a complete report. Automatically.",
+    "subheadline": "BugReel uses AI to turn screen recordings into detailed bug reports with steps, screenshots, and priority — in minutes, not hours.",
+    "ctaPrimary": "Install Extension (Free)",
+    "ctaSecondary": "View on GitHub",
+    "demoAlt": "BugReel demo — recording a bug and generating a report"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "subtitle": "From screen recording to bug report in three steps.",
+    "step1Title": "Record",
+    "step1Description": "Install the Chrome extension, click Record, reproduce the bug, and stop. That's it.",
+    "step2Title": "AI Analyzes",
+    "step2Description": "Speech transcription, context analysis, automatic key frame extraction, and severity assessment — all in seconds.",
+    "step3Title": "Export",
+    "step3Description": "Review the generated card, tweak if needed, and export to your tracker with one click. Done."
+  },
+  "features": {
+    "title": "Built for Modern Teams",
+    "subtitle": "Everything you need to capture, understand, and route bugs — without writing a single line in the report.",
+    "aiAnalysis": {
+      "title": "AI-Powered Analysis",
+      "description": "Automatic transcription, step extraction, and severity assessment from your recording."
+    },
+    "smartScreenshots": {
+      "title": "Smart Screenshots",
+      "description": "Key frames extracted at exactly the right moments. No manual screenshots needed."
+    },
+    "oneClickExport": {
+      "title": "One-Click Export",
+      "description": "Send to Jira, Linear, GitHub Issues, YouTrack, or any tracker via webhook."
+    },
+    "selfHosted": {
+      "title": "Self-Hosted",
+      "description": "Your data stays on your server. One-command Docker setup, full control."
+    },
+    "complexityScoring": {
+      "title": "Complexity Scoring",
+      "description": "5-dimension scoring system for accurate task estimation and sprint planning."
+    },
+    "consoleCapture": {
+      "title": "Console & Action Capture",
+      "description": "JS errors, user clicks, URL changes — all captured and synced to the recording timeline."
+    }
+  },
+  "integrations": {
+    "title": "Integrations",
+    "subtitle": "Export bug reports directly to the tools your team already uses.",
+    "jira": "Jira",
+    "linear": "Linear",
+    "github": "GitHub Issues",
+    "youtrack": "YouTrack",
+    "webhook": "Webhook",
+    "moreComing": "More coming soon"
+  },
+  "pricing": {
+    "title": "Simple, Transparent Pricing",
+    "subtitle": "Start free. Scale when you need to.",
+    "monthly": "/user/month",
+    "community": {
+      "name": "Community",
+      "price": "Free",
+      "description": "For individuals and open-source teams.",
+      "features": [
+        "Up to 5 users",
+        "Unlimited recordings",
+        "AI-powered analysis",
+        "Smart screenshots",
+        "Webhook + YouTrack export",
+        "Self-hosted deployment",
+        "GitHub Issues support"
+      ],
+      "cta": "Get Started Free"
+    },
+    "team": {
+      "name": "Team",
+      "price": "$8",
+      "description": "For growing teams that need more integrations.",
+      "features": [
+        "Everything in Community",
+        "Unlimited users",
+        "Jira, Linear, GitHub Issues, YouTrack export",
+        "OAuth via tracker",
+        "Custom webhook integrations",
+        "Complexity scoring",
+        "Remove BugReel branding",
+        "Priority support"
+      ],
+      "cta": "Get Started"
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "price": "Custom",
+      "description": "For organizations with advanced needs.",
+      "features": [
+        "Everything in Team",
+        "SSO / SAML authentication (coming soon)",
+        "Custom AI model integration",
+        "On-premise deployment support",
+        "SLA guarantee (coming soon)",
+        "Dedicated support"
+      ],
+      "cta": "Contact Sales"
+    },
+    "popular": "Most Popular"
+  },
+  "comparison": {
+    "title": "How BugReel Compares",
+    "subtitle": "See how BugReel stacks up against other bug reporting tools.",
+    "headers": {
+      "feature": "Feature",
+      "bugreel": "BugReel",
+      "jam": "Jam.dev",
+      "marker": "Marker.io",
+      "bird": "Bird Eats Bug",
+      "loom": "Loom"
+    },
+    "rows": {
+      "aiAnalysis": "AI analysis & steps",
+      "autoScreenshots": "Auto screenshots",
+      "selfHosted": "Self-hosted option",
+      "openSource": "Open source",
+      "consoleCapture": "Console log capture",
+      "complexityScoring": "Complexity scoring",
+      "price": "Starting price"
+    },
+    "values": {
+      "yes": "Yes",
+      "no": "No",
+      "partial": "Partial",
+      "free": "Free / $8 per user",
+      "paid": "Paid"
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Everything you need to know about BugReel.",
+    "items": [
+      {
+        "question": "Is BugReel really free?",
+        "answer": "The Community edition is free and open source under the BSL (Business Source License). It includes AI analysis, smart screenshots, and Webhook + YouTrack export for up to 5 users. For Jira, Linear, and GitHub Issues integration, the Team plan starts at $8/user/month."
+      },
+      {
+        "question": "Where is my data stored?",
+        "answer": "BugReel is self-hosted — all data stays on your own server. Recordings, transcriptions, and reports never leave your infrastructure. You have full control over your data."
+      },
+      {
+        "question": "Which browsers are supported?",
+        "answer": "The BugReel Chrome extension works on all Chromium-based browsers: Google Chrome, Microsoft Edge, Brave, Arc, and Opera. Firefox support is on the roadmap for 2026. Safari has technical limitations with screen recording APIs."
+      },
+      {
+        "question": "Can I use my own OpenAI API key?",
+        "answer": "Absolutely. BugReel supports bring-your-own-key for OpenAI, and also works with any OpenAI-compatible API (Azure OpenAI, local models via Ollama, etc.). This gives you full control over costs and data privacy."
+      },
+      {
+        "question": "How does the AI analysis work?",
+        "answer": "BugReel records your screen and audio, then processes the recording through multiple AI stages: speech-to-text transcription, visual analysis for key frame extraction, step-by-step reproduction path generation, and severity/complexity assessment. The entire pipeline runs in minutes, not hours."
+      },
+      {
+        "question": "What issue trackers are supported?",
+        "answer": "The Community edition includes Webhook and YouTrack export. The Team plan ($8/user/month) adds Jira, Linear, and GitHub Issues. You can also use the webhook integration to connect to any tool with an API — Asana, ClickUp, Notion, Trello, and more."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Stop Writing Bug Reports Manually",
+    "subtitle": "Try BugReel free — self-hosted, open source, AI-powered.",
+    "ctaPrimary": "Install Extension (Free)",
+    "ctaSecondary": "Read the Docs"
+  },
+  "footer": {
+    "product": "Product",
+    "resources": "Resources",
+    "company": "Company",
+    "features": "Features",
+    "pricing": "Pricing",
+    "integrations": "Integrations",
+    "changelog": "Changelog",
+    "docs": "Documentation",
+    "blog": "Blog",
+    "guides": "Guides",
+    "apiReference": "API Reference",
+    "about": "About",
+    "github": "GitHub",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copyright": "BugReel. Open source under BSL (Business Source License).",
+    "madeWith": "Made for developers who hate writing bug reports."
+  }
+}

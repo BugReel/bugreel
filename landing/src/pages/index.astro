@@ -1,0 +1,53 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Features from '../components/Features.astro';
+import Integrations from '../components/Integrations.astro';
+import Comparison from '../components/Comparison.astro';
+import Pricing from '../components/Pricing.astro';
+import FAQ from '../components/FAQ.astro';
+import CTA from '../components/CTA.astro';
+import strings from '../i18n/en.json';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'BugReel',
+    url: 'https://bugreel.io',
+    logo: 'https://bugreel.io/favicon.svg',
+    sameAs: ['https://github.com/nicrmn/bugreel'],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'BugReel',
+    url: 'https://bugreel.io',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Chrome, Edge, Brave, Arc, Opera',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    description: strings.meta.defaultDescription,
+    screenshot: 'https://bugreel.io/og-image.png',
+  },
+];
+---
+
+<Base
+  title={strings.meta.defaultTitle}
+  description={strings.meta.defaultDescription}
+  schema={schema}
+>
+  <Hero />
+  <HowItWorks />
+  <Features />
+  <Integrations />
+  <Comparison />
+  <Pricing />
+  <FAQ />
+  <CTA />
+</Base>

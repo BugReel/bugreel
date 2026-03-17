@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cards - BugReel</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container page">
+    <div class="page-header">
+      <h1>Cards Queue</h1>
+      <p class="page-desc">Task cards generated from recordings</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="filterStatus">
+          <option value="">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="scored">Scored</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Priority</label>
+        <select id="filterPriority">
+          <option value="">All priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Assigned to</label>
+        <input type="text" id="filterAssigned" placeholder="Filter by assignee...">
+      </div>
+      <div class="sort-bar">
+        <label>Sort by</label>
+        <select id="sortBy">
+          <option value="date">Date</option>
+          <option value="cs">CS Score</option>
+          <option value="priority">Priority</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Cards grid -->
+    <div id="cardsContainer">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getCards } from '/js/api.js';
+    import {
+      renderHeader, formatDate, statusLabel, categoryLabel, csCircleHTML,
+      escapeHTML, icons, timeAgo
+    } from '/js/shared.js';
+
+    document.getElementById('header').innerHTML = renderHeader('cards');
+
+    // State
+    let allCards = [];
+    let debounceTimer = null;
+
+    // Elements
+    const filterStatus = document.getElementById('filterStatus');
+    const filterPriority = document.getElementById('filterPriority');
+    const filterAssigned = document.getElementById('filterAssigned');
+    const sortBy = document.getElementById('sortBy');
+    const container = document.getElementById('cardsContainer');
+
+    async function loadCards() {
+      container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+      try {
+        const params = {
+          status: filterStatus.value || undefined,
+          priority: filterPriority.value || undefined,
+          assigned_to: filterAssigned.value.trim() || undefined,
+          limit: 100,
+          offset: 0,
+        };
+
+        const data = await getCards(params);
+        allCards = data.cards;
+        renderCards();
+      } catch (err) {
+        container.innerHTML = `
+          <div class="empty-state">
+            ${icons.alertTriangle}
+            <p>Failed to load cards: ${escapeHTML(err.message)}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderCards() {
+      let cards = [...allCards];
+
+      // Sort
+      const sort = sortBy.value;
+      if (sort === 'cs') {
+        cards.sort((a, b) => (b.cs_total || 0) - (a.cs_total || 0));
+      } else if (sort === 'priority') {
+        const order = { urgent: 0, high: 1, medium: 2, low: 3 };
+        cards.sort((a, b) => (order[a.priority] ?? 4) - (order[b.priority] ?? 4));
+      }
+      // default: date (already sorted by API)
+
+      if (!cards.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            ${icons.inbox}
+            <p>No cards found</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="cards-grid">
+          ${cards.map(card => renderCardItem(card)).join('')}
+        </div>
+      `;
+
+      // Click handler
+      container.querySelectorAll('.card-item').forEach(el => {
+        el.addEventListener('click', () => {
+          window.location.href = `/card/${el.dataset.id}`;
+        });
+      });
+    }
+
+    function renderCardItem(card) {
+      const priorityMap = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' };
+
+      return `
+        <div class="card-item" data-id="${card.id}">
+          <div class="card-item-header">
+            ${card.first_frame && card.recording_id
+              ? `<img class="card-item-thumb" src="/api/recordings/${encodeURIComponent(card.recording_id)}/frames/${encodeURIComponent(card.first_frame)}" alt="" loading="lazy">`
+              : ''
+            }
+            <div style="flex:1; min-width:0;">
+              <div class="card-item-title">${escapeHTML(card.title || 'Untitled')}</div>
+              ${card.summary ? `<div class="card-item-summary">${escapeHTML(card.summary)}</div>` : ''}
+            </div>
+            ${card.cs_total != null ? csCircleHTML(card.cs_total, card.cs_category, 'cs-circle-sm') : ''}
+          </div>
+          <div class="card-item-meta">
+            ${card.type ? `<span class="badge badge-${card.type}">${escapeHTML(card.type)}</span>` : ''}
+            ${card.cs_category ? `<span class="badge badge-${card.cs_category}">${categoryLabel(card.cs_category)}</span>` : ''}
+            ${card.priority ? `<span class="badge badge-priority-${card.priority}">${priorityMap[card.priority] || card.priority}</span>` : ''}
+            ${card.status ? `<span class="badge badge-${card.status}">${statusLabel(card.status)}</span>` : ''}
+          </div>
+          <div class="card-item-footer">
+            <span class="meta-text">
+              ${card.assigned_to ? `${icons.user} ${escapeHTML(card.assigned_to)}` : '<span class="text-dim">Unassigned</span>'}
+            </span>
+            <span class="meta-text">${timeAgo(card.created_at)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Events
+    filterStatus.addEventListener('change', loadCards);
+    filterPriority.addEventListener('change', loadCards);
+    sortBy.addEventListener('change', renderCards);
+
+    filterAssigned.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(loadCards, 400);
+    });
+
+    document.addEventListener('DOMContentLoaded', loadCards);
+  </script>
+</body>
+</html>

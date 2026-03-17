@@ -1,0 +1,9 @@
+services:
+  bugreel:
+    build: .
+    ports:
+      - "3500:3500"
+    volumes:
+      - ./data:/app/data
+    env_file: .env
+    restart: unless-stopped

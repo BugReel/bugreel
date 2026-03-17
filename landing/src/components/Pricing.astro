@@ -1,0 +1,172 @@
+---
+import strings from '../i18n/en.json';
+
+const p = strings.pricing;
+
+const tiers = [
+  {
+    ...p.community,
+    highlighted: false,
+    priceLabel: '',
+    href: 'https://github.com/nicrmn/bugreel',
+  },
+  {
+    ...p.team,
+    highlighted: true,
+    priceLabel: p.monthly,
+    href: 'https://github.com/nicrmn/bugreel',
+  },
+  {
+    ...p.enterprise,
+    highlighted: false,
+    priceLabel: '',
+    href: 'mailto:hello@bugreel.io',
+  },
+];
+---
+
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <h2>{p.title}</h2>
+      <p>{p.subtitle}</p>
+    </div>
+
+    <div class="pricing-grid">
+      {tiers.map((tier) => (
+        <div class:list={['pricing-card', 'card', tier.highlighted && 'pricing-card-highlighted']}>
+          {tier.highlighted && <div class="badge badge-accent pricing-popular">{p.popular}</div>}
+          <div class="pricing-header">
+            <h3 class="pricing-name">{tier.name}</h3>
+            <p class="pricing-description">{tier.description}</p>
+          </div>
+          <div class="pricing-price">
+            <span class="price-amount">{tier.price}</span>
+            {tier.priceLabel && <span class="price-period">{tier.priceLabel}</span>}
+          </div>
+          <ul class="pricing-features">
+            {tier.features.map((feature: string) => (
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                {feature}
+              </li>
+            ))}
+          </ul>
+          <a
+            href={tier.href}
+            class:list={['btn', tier.highlighted ? 'btn-primary' : 'btn-secondary', 'pricing-cta']}
+          >
+            {tier.cta}
+          </a>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .pricing-card {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: relative;
+    padding: 40px 32px;
+  }
+
+  .pricing-card-highlighted {
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-glow-accent);
+    transform: scale(1.02);
+  }
+
+  .pricing-popular {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .pricing-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pricing-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .pricing-description {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .pricing-price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .price-amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.02em;
+  }
+
+  .price-period {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .pricing-features {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-grow: 1;
+  }
+
+  .pricing-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+  }
+
+  .pricing-features svg {
+    color: var(--color-success);
+    flex-shrink: 0;
+  }
+
+  .pricing-cta {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 1024px) {
+    .pricing-card-highlighted {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .pricing-grid {
+      grid-template-columns: 1fr;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+  }
+</style>

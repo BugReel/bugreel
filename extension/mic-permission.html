@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BugReel — Microphone Access</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #0f172a; color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+      padding: 40px; max-width: 400px; text-align: center;
+    }
+    h1 {
+      font-size: 20px; margin-bottom: 8px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    p { color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 12px 0; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer;
+      transition: all 0.2s; margin-top: 12px;
+    }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled { background: #334155; color: #64748b; cursor: default; }
+    .success { color: #22c55e; font-weight: 600; font-size: 15px; }
+    .error { color: #ef4444; font-size: 13px; margin-top: 8px; }
+    .mic-icon { width: 48px; height: 48px; color: #3b82f6; margin-bottom: 12px; }
+    .hint { font-size: 12px; color: #64748b; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" y1="19" x2="12" y2="23"/>
+      <line x1="8" y1="23" x2="16" y2="23"/>
+    </svg>
+    <h1>BugReel</h1>
+    <p>Microphone access is needed for voice recording.<br>Click the button and allow access in the browser dialog.</p>
+
+    <div id="content">
+      <button class="btn btn-primary" id="btn-allow">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        Allow Microphone
+      </button>
+    </div>
+    <div id="error" class="error" style="display:none;"></div>
+    <p class="hint">This tab can be closed after granting access.</p>
+  </div>
+
+  <script src="mic-permission.js"></script>
+</body>
+</html>

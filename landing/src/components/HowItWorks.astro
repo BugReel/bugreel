@@ -1,0 +1,108 @@
+---
+import strings from '../i18n/en.json';
+
+const h = strings.howItWorks;
+
+const steps = [
+  { num: '1', title: h.step1Title, description: h.step1Description, icon: 'M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z' },
+  { num: '2', title: h.step2Title, description: h.step2Description, icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z' },
+  { num: '3', title: h.step3Title, description: h.step3Description, icon: 'M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5' },
+];
+---
+
+<section class="section how-it-works" id="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <h2>{h.title}</h2>
+      <p>{h.subtitle}</p>
+    </div>
+
+    <div class="steps-grid">
+      {steps.map((step, i) => (
+        <div class="step-card" style={`animation-delay: ${i * 0.1}s`}>
+          <div class="step-number">{step.num}</div>
+          <div class="step-icon-wrapper">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d={step.icon} />
+            </svg>
+          </div>
+          <h3>{step.title}</h3>
+          <p>{step.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="steps-connector" aria-hidden="true">
+      <div class="connector-line"></div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .how-it-works {
+    position: relative;
+  }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px;
+    position: relative;
+  }
+
+  .step-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .step-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    margin-top: 8px;
+  }
+
+  .step-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .step-card p {
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+    max-width: 320px;
+    line-height: 1.6;
+  }
+
+  .steps-connector {
+    display: none;
+  }
+
+  @media (min-width: 769px) {
+    .steps-connector {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .steps-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+  }
+</style>

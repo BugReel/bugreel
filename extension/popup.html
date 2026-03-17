@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugReel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #060a14; color: #e2e8f0; padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .popup-inner { padding: 0 16px 16px; }
+
+    .brand {
+      text-align: center;
+      padding: 18px 16px 14px;
+      background: linear-gradient(180deg, rgba(59,130,246,0.08) 0%, transparent 100%);
+      border-bottom: 1px solid rgba(51,65,85,0.3);
+      margin-bottom: 14px;
+    }
+    .brand-logo {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 8px; margin-bottom: 6px;
+      box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+    }
+    .brand-logo svg { width: 16px; height: 16px; color: white; }
+    .brand h1 { font-size: 16px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.02em; }
+    .brand .subtitle { font-size: 10px; color: #475569; margin-top: 2px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .field select { width: 100%; padding: 8px 10px; background: #0e1525; border: 1px solid #1e2d48; border-radius: 8px; color: #e2e8f0; font-size: 12px; font-family: inherit; outline: none; appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; transition: border-color 0.15s; }
+    .field select:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.12); }
+
+    .source-selector { display: flex; background: #0e1525; border-radius: 8px; border: 1px solid #1e2d48; overflow: hidden; }
+    .source-option { flex: 1; padding: 7px 0; text-align: center; font-size: 11px; font-weight: 500; color: #64748b; cursor: pointer; border: none; background: transparent; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.15s; }
+    .source-option:not(:last-child) { border-right: 1px solid #1e2d48; }
+    .source-option:hover { color: #e2e8f0; background: #151d30; }
+    .source-option.active { background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; }
+    .source-option svg { width: 13px; height: 13px; }
+
+    .audio-toggles { margin-bottom: 10px; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; }
+    .toggle-label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8; }
+    .toggle-label svg { width: 13px; height: 13px; }
+    .toggle { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
+    .toggle input { display: none; }
+    .toggle-slider { position: absolute; inset: 0; background: #1e2d48; border-radius: 9px; cursor: pointer; transition: 0.2s; }
+    .toggle-slider::after { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background: #64748b; border-radius: 50%; transition: 0.2s; }
+    .toggle input:checked + .toggle-slider { background: #22c55e; }
+    .toggle input:checked + .toggle-slider::after { transform: translateX(16px); background: white; }
+
+    .mic-level-container { margin-top: 3px; padding-left: 19px; height: 14px; display: flex; align-items: center; gap: 6px; }
+    .mic-level-track { flex: 1; height: 3px; background: #0e1525; border-radius: 2px; overflow: hidden; }
+    .mic-level-bar { height: 100%; width: 0%; background: #22c55e; border-radius: 2px; transition: width 0.05s linear; }
+    .mic-level-label { font-size: 9px; color: #334155; white-space: nowrap; min-width: 20px; }
+    .mic-level-container.inactive .mic-level-bar { width: 0% !important; background: #334155; }
+
+    .mic-warn { background: #1c1306; border: 1px solid #854d0e; border-radius: 6px; padding: 6px 8px; margin-top: 6px; font-size: 10px; color: #fbbf24; line-height: 1.4; display: flex; align-items: flex-start; gap: 5px; }
+    .mic-warn svg { width: 12px; height: 12px; flex-shrink: 0; margin-top: 1px; }
+    .mic-warn a { color: #3b82f6; text-decoration: underline; cursor: pointer; }
+
+    .divider { height: 1px; background: linear-gradient(90deg, transparent, #1e2d48, transparent); margin: 12px 0; }
+    .record-section { text-align: center; }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 6px; }
+    .btn-full { width: 100%; }
+    .btn { padding: 10px 12px; border: none; border-radius: 10px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-row .btn { flex: 1; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: scale(0.98) translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-red { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; box-shadow: 0 2px 8px rgba(220,38,38,0.3); }
+    .btn-amber { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; box-shadow: 0 2px 8px rgba(245,158,11,0.2); }
+    .btn-blue { background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+    .btn-outline { background: transparent; border: 1px solid #1e2d48; color: #94a3b8; }
+    .btn-outline:hover { border-color: #334155; color: #e2e8f0; background: #0e1525; }
+
+    .rec-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #fff; flex-shrink: 0; }
+    .rec-dot.pulse { animation: pulse-rec 1.2s ease-in-out infinite; }
+    @keyframes pulse-rec { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,255,255,0.5); } 50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(255,255,255,0); } }
+
+    .timer { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; color: #f1f5f9; margin: 10px 0 4px; letter-spacing: 1px; }
+    .timer.inactive { color: #1e2d48; }
+    .timer.paused { color: #f59e0b; }
+
+    .rec-audio-status { display: flex; justify-content: center; gap: 14px; margin-top: 4px; min-height: 18px; }
+    .rec-audio-badge { display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; }
+    .rec-audio-badge svg { width: 12px; height: 12px; }
+    .rec-audio-badge.on { color: #22c55e; }
+    .rec-audio-badge.off { color: #ef4444; }
+
+    .info-banner { font-size: 11px; color: #64748b; background: #0e1525; border: 1px solid #1e2d48; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; text-align: left; }
+
+    .status-bar { margin-top: 8px; padding: 7px 10px; background: #0e1525; border-radius: 8px; font-size: 11px; display: flex; align-items: center; gap: 8px; border: 1px solid #1e2d48; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot.gray { background: #334155; } .status-dot.red { background: #ef4444; animation: pd 1s infinite; } .status-dot.yellow { background: #eab308; animation: pd 1.5s infinite; } .status-dot.green { background: #22c55e; } .status-dot.blue { background: #3b82f6; }
+    @keyframes pd { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .status-text { color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    .status-link { color: #3b82f6; text-decoration: none; font-weight: 600; cursor: pointer; }
+    .status-link:hover { color: #60a5fa; text-decoration: underline; }
+
+    /* Dashboard link */
+    .dashboard-link { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 10px; font-size: 10px; color: #334155; text-decoration: none; transition: color 0.15s; letter-spacing: 0.03em; }
+    .dashboard-link:hover { color: #3b82f6; }
+    .dashboard-link svg { width: 11px; height: 11px; }
+
+    .recent-item { display:flex; align-items:center; gap:6px; padding:5px 8px; background:#0e1525; border:1px solid #1e2d48; border-radius:6px; margin-bottom:3px; font-size:10px; cursor:pointer; transition:border-color 0.15s; text-decoration:none; color:#94a3b8; }
+    .recent-item:hover { border-color:#334155; color:#e2e8f0; }
+    .recent-item .ri-id { font-family:monospace; color:#64748b; }
+    .recent-item .ri-title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .recent-item .ri-status { font-size:9px; padding:1px 5px; border-radius:3px; font-weight:600; }
+    .ri-status.processing { background:rgba(245,158,11,0.12); color:#f59e0b; }
+    .ri-status.complete { background:rgba(34,197,94,0.12); color:#22c55e; }
+    .ri-status.error { background:rgba(239,68,68,0.12); color:#ef4444; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="brand">
+    <div class="brand-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+    </div>
+    <h1>BugReel</h1>
+    <div class="subtitle">Screen Recorder</div>
+  </div>
+
+  <!-- Controls (hidden during recording) -->
+  <div id="controls" class="popup-inner">
+    <!-- User info / auth status -->
+    <div id="user-info-area" style="margin-bottom:10px;">
+      <div id="user-connected" class="hidden" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0e1525;border:1px solid #1e2d48;border-radius:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="user-display-name" style="font-size:11px;color:#e2e8f0;flex:1;"></span>
+      </div>
+      <div id="user-not-connected" class="hidden" style="padding:6px 10px;background:#1c1306;border:1px solid #854d0e;border-radius:8px;font-size:11px;color:#fbbf24;">
+        Not connected &mdash; <a href="#" id="link-setup-auth" style="color:#3b82f6;text-decoration:underline;cursor:pointer;">Set up account</a>
+      </div>
+    </div>
+    <!-- Legacy author dropdown (hidden when token auth is active) -->
+    <div class="field hidden" id="author-field">
+      <label>Author</label>
+      <select id="input-author"><option value="">Loading...</option></select>
+    </div>
+    <div class="field">
+      <label>Source</label>
+      <div class="source-selector" id="source-selector">
+        <button class="source-option active" data-mode="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Tab
+        </button>
+        <button class="source-option" data-mode="desktop">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 16 21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Screen
+        </button>
+      </div>
+    </div>
+    <div class="audio-toggles">
+      <div class="toggle-row">
+        <span class="toggle-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Microphone</span>
+        <label class="toggle"><input type="checkbox" id="toggle-mic" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="mic-level-container inactive" id="mic-level-container">
+        <div class="mic-level-track"><div class="mic-level-bar" id="mic-level-bar"></div></div>
+        <span class="mic-level-label" id="mic-level-label"></span>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> System audio</span>
+        <label class="toggle"><input type="checkbox" id="toggle-system" checked><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+    <div class="mic-warn hidden" id="mic-permission-warn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Microphone not allowed. <a id="grant-mic-btn">Grant access</a></span>
+    </div>
+  </div>
+
+  <div class="popup-inner">
+  <div class="divider"></div>
+
+  <div class="record-section">
+    <!-- State: idle -->
+    <div id="state-idle" class="hidden">
+      <button class="btn btn-red btn-full" id="btn-start">
+        <span class="rec-dot"></span> Start Recording
+      </button>
+    </div>
+
+    <!-- State: recording -->
+    <div id="state-recording" class="hidden">
+      <div class="rec-hint" id="rec-hint" style="font-size:10px;color:#64748b;background:#0e1525;border:1px solid #1e2d48;border-radius:8px;padding:7px 10px;margin-bottom:8px;text-align:left;line-height:1.5;transition:opacity 0.3s;">
+        <span style="color:#94a3b8;font-weight:600;">Say:</span>
+        <span style="color:#e2e8f0;">WHAT</span> you're doing &middot;
+        <span style="color:#e2e8f0;">WHAT</span> you see &middot;
+        <span style="color:#e2e8f0;">WHAT</span> you expected &middot;
+        <span style="color:#f59e0b;">WHY</span> it matters
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-amber" id="btn-pause">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          Pause
+        </button>
+        <button class="btn btn-outline" id="btn-stop">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          Stop
+        </button>
+      </div>
+    </div>
+
+    <!-- State: paused -->
+    <div id="state-paused" class="hidden">
+      <div class="btn-row">
+        <button class="btn btn-red" id="btn-resume">
+          <span class="rec-dot pulse"></span> Resume
+        </button>
+        <button class="btn btn-blue" id="btn-finish">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Finish
+        </button>
+      </div>
+      <div style="text-align:center;margin-top:6px;">
+        <button id="btn-discard" style="background:none;border:none;color:#475569;font-size:11px;cursor:pointer;padding:2px 8px;text-decoration:underline;">Discard recording</button>
+      </div>
+    </div>
+
+    <!-- State: ready — recording saved, needs review -->
+    <div id="state-ready" class="hidden">
+      <button class="btn btn-blue btn-full" id="btn-open-review" style="margin-bottom:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Review &amp; Upload
+      </button>
+      <button class="btn btn-outline btn-full" id="btn-new-recording" style="font-size:11px;">
+        New recording (discards current)
+      </button>
+    </div>
+
+    <div class="timer inactive" id="timer">00:00</div>
+
+    <div class="rec-audio-status hidden" id="rec-audio-status">
+      <span class="rec-audio-badge" id="badge-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Mic</span>
+      <span class="rec-audio-badge" id="badge-system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> System</span>
+    </div>
+  </div>
+
+  <div id="status-bar-wrap" class="hidden">
+    <div class="status-bar">
+      <span class="status-dot gray" id="status-dot"></span>
+      <span class="status-text" id="status-text">Ready</span>
+    </div>
+  </div>
+
+  <div id="recent-recordings" class="hidden" style="margin-top:8px;">
+    <div style="font-size:10px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Recent</div>
+    <div id="recent-list"></div>
+  </div>
+
+  <a href="#" class="dashboard-link" id="dashboard-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    Open Dashboard
+  </a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

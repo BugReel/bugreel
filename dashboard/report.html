@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report - BugReel</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Report-specific gallery */
+    .report-gallery {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 0 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .report-gallery::-webkit-scrollbar { height: 4px; }
+    .report-gallery::-webkit-scrollbar-track { background: transparent; }
+    .report-gallery::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .report-gallery-item {
+      flex-shrink: 0;
+      width: 160px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+      position: relative;
+    }
+    .report-gallery-item:hover {
+      border-color: var(--blue);
+      transform: translateY(-2px);
+    }
+    .report-gallery-item img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+    }
+    .report-gallery-item .gallery-time {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      background: rgba(0,0,0,0.75);
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .lightbox.visible { opacity: 1; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.2); }
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .lightbox-nav:hover { background: rgba(255,255,255,0.25); }
+    .lightbox-prev { left: 16px; }
+    .lightbox-next { right: 16px; }
+    .lightbox-caption {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+    }
+    .lightbox-counter {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="content">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+
+  <script type="module">
+    import { getRecording, videoUrl, frameUrl } from '/js/api.js';
+    import {
+      extractParam, formatDate, formatDuration, formatTimecode,
+      renderDescription, escapeHTML, icons
+    } from '/js/shared.js';
+    import { createTimeline } from '/js/timeline.js';
+
+    function formatFileSize(bytes) {
+      if (!bytes) return '';
+      if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+      return `${(bytes / 1048576).toFixed(1)} MB`;
+    }
+
+    const content = document.getElementById('content');
+    const recordingId = extractParam('/report/');
+    let lightboxFrames = [];
+    let lightboxIndex = 0;
+
+    if (!recordingId) {
+      content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>No recording ID in URL</p></div>`;
+    }
+
+    async function load() {
+      try {
+        const data = await getRecording(recordingId);
+        render(data);
+        document.title = data.card
+          ? `${data.card.title} — BugReel`
+          : `Report: ${recordingId}`;
+      } catch (err) {
+        content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>Failed to load: ${escapeHTML(err.message)}</p></div>`;
+      }
+    }
+
+    function render({ recording, frames, card }) {
+      const r = recording;
+      const analysis = r.analysis || {};
+      const validFrames = (frames || []).filter(f => f.filename);
+      lightboxFrames = validFrames;
+
+      content.innerHTML = `
+        <div class="container page">
+          <!-- Header -->
+          <div class="report-header">
+            <div class="logo">
+              <div class="logo-icon">${icons.target}</div>
+              <span>BugReel</span>
+            </div>
+            <span class="text-dim" style="margin-left:auto; font-size:0.8rem;">${escapeHTML(r.id)}</span>
+          </div>
+
+          <!-- Title -->
+          <h1 style="margin-bottom:4px;">${escapeHTML(card?.title || analysis.title || r.id)}</h1>
+          ${card?.summary ? `<p class="card-summary">${escapeHTML(card.summary)}</p>` : ''}
+          <div class="report-meta mb-24">
+            ${card?.type ? `<span class="badge badge-${card.type}">${escapeHTML(card.type)}</span>` : ''}
+            <span class="detail-meta-item">${icons.user} ${escapeHTML(r.author || '--')}</span>
+            <span class="detail-meta-item">${icons.calendar} ${formatDate(r.created_at)}</span>
+            <span class="detail-meta-item">${icons.clock} ${formatDuration(r.duration_seconds)}</span>
+            <a href="${videoUrl(r.id)}" download="${r.id}.webm" class="btn btn-sm" style="margin-left:auto; gap:6px; font-size:0.75rem;">
+              ${icons.video} Download
+              <span style="font-size:0.65rem; color:var(--text3);">${formatFileSize(r.file_size_bytes)}</span>
+            </a>
+          </div>
+
+          <!-- Two-column: video+gallery left, analysis right -->
+          <div class="report-layout">
+            <div>
+              <!-- Video -->
+              <div class="video-container">
+                <video id="videoPlayer" controls preload="metadata">
+                  <source src="${videoUrl(r.id)}" type="video/webm">
+                </video>
+              </div>
+
+              <!-- Timeline -->
+              ${validFrames.length ? `<div id="timelineContainer"></div>` : ''}
+
+              <!-- Screenshot gallery under video -->
+              ${validFrames.length ? `
+                <div class="report-gallery" id="gallery">
+                  ${validFrames.map((f, i) => `
+                    <div class="report-gallery-item" data-index="${i}">
+                      <img src="${frameUrl(r.id, f.filename)}" alt="Frame ${i + 1}" loading="lazy">
+                      <span class="gallery-time">${formatTimecode(f.time_seconds)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Right: analysis -->
+            <div>
+              ${renderReportAnalysis(analysis, card)}
+            </div>
+          </div>
+        </div>
+
+        <!-- Lightbox -->
+        <div class="lightbox" id="lightbox" style="display:none;">
+          <button class="lightbox-close" id="lb-close">&times;</button>
+          <button class="lightbox-nav lightbox-prev" id="lb-prev">${icons.chevronLeft}</button>
+          <button class="lightbox-nav lightbox-next" id="lb-next">${icons.chevronRight}</button>
+          <img id="lb-img" src="" alt="">
+          <div class="lightbox-caption" id="lb-caption"></div>
+          <div class="lightbox-counter" id="lb-counter"></div>
+        </div>
+      `;
+
+      setupTimeline(validFrames, r.duration_seconds);
+      setupGallery(validFrames);
+      setupLightbox();
+    }
+
+    function renderReportAnalysis(a, card) {
+      const sec = (title, text) => text ? `<div class="report-section"><h3>${title}</h3><p>${escapeHTML(text)}</p></div>` : '';
+      const secList = (title, items, ordered) => {
+        if (!items?.length) return '';
+        const tag = ordered ? 'ol' : 'ul';
+        return `<div class="report-section"><h3>${title}</h3><${tag} style="color:var(--text2); font-size:0.9rem; line-height:1.8; padding-left:16px;">${items.map(s => `<li>${escapeHTML(s)}</li>`).join('')}</${tag}></div>`;
+      };
+
+      const type = a.type || 'bug';
+      let html = '';
+
+      if (type === 'bug') {
+        html += secList('Steps to Reproduce', a.steps, true);
+        html += sec('Expected Result', a.expected);
+        html += sec('Actual Result', a.actual);
+      } else if (type === 'feature') {
+        html += sec('Proposal', a.proposal);
+        html += sec('Use Case', a.use_case);
+      } else if (type === 'enhancement') {
+        html += sec('Current Behavior', a.current_behavior);
+        html += sec('Proposed Change', a.proposed_change);
+      } else if (type === 'demo') {
+        html += secList('Key Points', a.key_points, false);
+        html += sec('Details', a.details);
+      }
+
+      // Fallback for old recordings
+      if (!html && a.steps?.length) {
+        html += secList('Steps to reproduce', a.steps, true);
+        html += sec('Expected result', a.expected);
+        html += sec('Actual result', a.actual);
+      }
+
+      html += sec('Context', a.context);
+
+      if (!html && card?.description) {
+        html += `<div class="report-section"><h3>Description</h3><div class="formatted-text">${renderDescription(card.description)}</div></div>`;
+      }
+
+      return html;
+    }
+
+    function setupTimeline(frames, duration) {
+      const container = document.getElementById('timelineContainer');
+      const video = document.getElementById('videoPlayer');
+      if (!container || !video || !frames.length) return;
+
+      createTimeline({
+        container,
+        videoElement: video,
+        frames,
+        duration: duration || 60,
+        recordingId,
+        editable: false,
+        onKeyframeSelect: (frameId, time) => {
+          video.currentTime = time;
+        },
+      });
+    }
+
+    function setupGallery(frames) {
+      const gallery = document.getElementById('gallery');
+      if (!gallery) return;
+
+      gallery.querySelectorAll('.report-gallery-item').forEach(item => {
+        item.addEventListener('click', () => {
+          openLightbox(parseInt(item.dataset.index));
+        });
+      });
+    }
+
+    function setupLightbox() {
+      const lb = document.getElementById('lightbox');
+      if (!lb) return;
+
+      document.getElementById('lb-close').addEventListener('click', closeLightbox);
+      document.getElementById('lb-prev').addEventListener('click', () => navigateLightbox(-1));
+      document.getElementById('lb-next').addEventListener('click', () => navigateLightbox(1));
+
+      lb.addEventListener('click', (e) => {
+        if (e.target === lb) closeLightbox();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (lb.style.display === 'none') return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') navigateLightbox(-1);
+        if (e.key === 'ArrowRight') navigateLightbox(1);
+      });
+    }
+
+    function openLightbox(index) {
+      lightboxIndex = index;
+      const lb = document.getElementById('lightbox');
+      lb.style.display = '';
+      updateLightbox();
+      requestAnimationFrame(() => lb.classList.add('visible'));
+    }
+
+    function closeLightbox() {
+      const lb = document.getElementById('lightbox');
+      lb.classList.remove('visible');
+      setTimeout(() => { lb.style.display = 'none'; }, 200);
+    }
+
+    function navigateLightbox(dir) {
+      lightboxIndex = (lightboxIndex + dir + lightboxFrames.length) % lightboxFrames.length;
+      updateLightbox();
+    }
+
+    function updateLightbox() {
+      const f = lightboxFrames[lightboxIndex];
+      if (!f) return;
+      document.getElementById('lb-img').src = frameUrl(recordingId, f.filename);
+      document.getElementById('lb-caption').textContent =
+        `${formatTimecode(f.time_seconds)}${f.description ? ' — ' + f.description : ''}`;
+      document.getElementById('lb-counter').textContent =
+        `${lightboxIndex + 1} / ${lightboxFrames.length}`;
+
+      document.getElementById('lb-prev').style.display = lightboxFrames.length > 1 ? '' : 'none';
+      document.getElementById('lb-next').style.display = lightboxFrames.length > 1 ? '' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (recordingId) load();
+    });
+  </script>
+</body>
+</html>

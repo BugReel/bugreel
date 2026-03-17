@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BugReel — Recorder</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f172a; color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    .recorder-ui {
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      padding: 48px; max-width: 480px; text-align: center;
+    }
+    .brand {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 12px; margin-bottom: 8px;
+      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+    }
+    .brand svg { width: 24px; height: 24px; color: white; }
+    .status-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #334155; flex-shrink: 0;
+    }
+    .dot.rec { background: #dc2626; animation: pulse 1.2s ease-in-out infinite; }
+    .dot.waiting { background: #f59e0b; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .label { font-size: 16px; font-weight: 600; }
+    .timer {
+      font-size: 36px; font-weight: 700; color: #f1f5f9;
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .hint {
+      font-size: 13px; color: #64748b; line-height: 1.6;
+    }
+    .hint.error { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="recorder-ui">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+    </div>
+    <div class="status-row">
+      <span class="dot waiting" id="dot"></span>
+      <span class="label" id="label">Preparing...</span>
+    </div>
+    <div class="timer" id="timer" style="display:none;">00:00</div>
+    <div class="hint" id="hint">Loading recording module...</div>
+  </div>
+  <script src="idb-helper.js"></script>
+  <script src="recorder.js"></script>
+</body>
+</html>

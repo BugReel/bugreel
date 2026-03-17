@@ -1,0 +1,228 @@
+---
+import strings from '../i18n/en.json';
+
+const nav = strings.nav;
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="/" class="logo" aria-label="BugReel Home">
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#6366f1"/>
+        <circle cx="16" cy="12" r="4" fill="#fff"/>
+        <path d="M8 26c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <circle cx="22" cy="10" r="6" fill="#ef4444"/>
+        <path d="M19.5 10h5M22 7.5v5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">BugReel</span>
+    </a>
+
+    <nav class="nav-desktop" aria-label="Main navigation">
+      <a href="/#features" class="nav-link">{nav.features}</a>
+      <a href="/pricing" class="nav-link" class:list={[{ active: currentPath === '/pricing/' || currentPath === '/pricing' }]}>{nav.pricing}</a>
+      <a href="https://docs.bugreel.io" class="nav-link" target="_blank" rel="noopener">{nav.docs}</a>
+      <a href="/blog" class="nav-link" class:list={[{ active: currentPath.startsWith('/blog') }]}>{nav.blog}</a>
+      <a href="https://github.com/nicrmn/bugreel" class="nav-link" target="_blank" rel="noopener">{nav.github}</a>
+    </nav>
+
+    <div class="header-actions">
+      <a href="https://github.com/nicrmn/bugreel" class="btn btn-primary btn-sm">{nav.getStarted}</a>
+      <button class="mobile-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+    </div>
+  </div>
+
+  <nav class="nav-mobile" aria-label="Mobile navigation" hidden>
+    <a href="/#features" class="nav-mobile-link">{nav.features}</a>
+    <a href="/pricing" class="nav-mobile-link">{nav.pricing}</a>
+    <a href="https://docs.bugreel.io" class="nav-mobile-link" target="_blank" rel="noopener">{nav.docs}</a>
+    <a href="/blog" class="nav-mobile-link">{nav.blog}</a>
+    <a href="https://github.com/nicrmn/bugreel" class="nav-mobile-link" target="_blank" rel="noopener">{nav.github}</a>
+    <a href="https://github.com/nicrmn/bugreel" class="btn btn-primary" style="margin-top: 8px;">{nav.getStarted}</a>
+  </nav>
+</header>
+
+<script>
+  const toggle = document.querySelector('.mobile-toggle') as HTMLButtonElement;
+  const mobileNav = document.querySelector('.nav-mobile') as HTMLElement;
+
+  toggle?.addEventListener('click', () => {
+    const isOpen = mobileNav.hidden === false;
+    mobileNav.hidden = isOpen;
+    toggle.setAttribute('aria-expanded', String(!isOpen));
+    toggle.classList.toggle('is-open', !isOpen);
+  });
+
+  // Close mobile nav on link click
+  mobileNav?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      mobileNav.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.classList.remove('is-open');
+    });
+  });
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    gap: 32px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+  }
+
+  .nav-desktop {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-link {
+    padding: 6px 14px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast), background var(--transition-fast);
+    text-decoration: none;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    color: var(--color-text);
+    background: var(--color-surface);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .hamburger,
+  .hamburger::before,
+  .hamburger::after {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--color-text);
+    border-radius: 1px;
+    transition: all var(--transition-base);
+    position: relative;
+  }
+
+  .hamburger::before,
+  .hamburger::after {
+    content: '';
+    position: absolute;
+    left: 0;
+  }
+
+  .hamburger::before {
+    top: -6px;
+  }
+
+  .hamburger::after {
+    top: 6px;
+  }
+
+  .mobile-toggle.is-open .hamburger {
+    background: transparent;
+  }
+
+  .mobile-toggle.is-open .hamburger::before {
+    top: 0;
+    transform: rotate(45deg);
+  }
+
+  .mobile-toggle.is-open .hamburger::after {
+    top: 0;
+    transform: rotate(-45deg);
+  }
+
+  .nav-mobile {
+    flex-direction: column;
+    padding: 16px var(--container-padding) 24px;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    display: none;
+  }
+
+  .nav-mobile:not([hidden]) {
+    display: flex;
+  }
+
+  .nav-mobile-link {
+    padding: 12px 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-border);
+    transition: color var(--transition-fast);
+  }
+
+  .nav-mobile-link:hover {
+    color: var(--color-text);
+  }
+
+  @media (min-width: 769px) {
+    .nav-mobile {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .nav-desktop {
+      display: none;
+    }
+
+    .header-actions .btn {
+      display: none;
+    }
+
+    .mobile-toggle {
+      display: flex;
+    }
+  }
+</style>

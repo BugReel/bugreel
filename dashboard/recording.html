@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recording - BugReel</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container page">
+    <div id="content">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import {
+      getRecording, videoUrl, frameUrl,
+      updateKeyframes, addKeyframe, deleteKeyframe,
+      updateCard, updateTranscript, updateContext,
+      exportToYoutrack, searchYoutrackIssues, linkToYoutrack,
+      preLinkYoutrack, clearPreLink
+    } from '/js/api.js';
+    import {
+      renderHeader, extractParam, formatDate, formatDuration, formatTimecode,
+      statusLabel, categoryLabel, csCircleHTML,
+      renderDescription, escapeHTML, icons, timeAgo
+    } from '/js/shared.js';
+    import { createTimeline } from '/js/timeline.js';
+
+    document.getElementById('header').innerHTML = renderHeader('recordings');
+
+    const content = document.getElementById('content');
+    const recordingId = extractParam('/recording/');
+    const config_youtrackUrl = window.__BUGREEL_CONFIG__?.youtrackUrl || '';
+    let timeline = null;
+    let currentData = null;
+
+    if (!recordingId) {
+      content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>No recording ID in URL</p></div>`;
+    }
+
+    async function load() {
+      try {
+        const data = await getRecording(recordingId);
+        currentData = data;
+        render(data);
+        document.title = data.card
+          ? `${data.card.title} - BugReel`
+          : `${recordingId} - BugReel`;
+      } catch (err) {
+        content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>Failed to load recording: ${escapeHTML(err.message)}</p></div>`;
+      }
+    }
+
+    function render({ recording, frames, card, comments }) {
+      const r = recording;
+      const analysis = r.analysis || {};
+      const transcript = r.transcript || {};
+      content.innerHTML = `
+        <!-- Back link -->
+        <a href="/" class="back-link">${icons.arrowLeft} Back to recordings</a>
+
+        <!-- Header -->
+        <div class="detail-header" style="align-items:flex-start;">
+          ${card && card.cs_total != null ? `<div style="margin-top:4px;">${csCircleHTML(card.cs_total, card.cs_category, 'cs-circle-lg')}</div>` : ''}
+          <div style="flex:1;">
+            <h1>${card ? escapeHTML(card.title || 'Untitled') : `<span style="font-family:'JetBrains Mono','Fira Code',monospace;">${escapeHTML(r.id)}</span>`}</h1>
+            ${card?.summary ? `<p class="card-summary">${escapeHTML(card.summary)}</p>` : ''}
+          </div>
+          ${r.status === 'complete' && card ? `
+            <a href="/report/${encodeURIComponent(r.id)}" class="btn btn-sm" title="Share report" target="_blank" style="margin-top:4px;">
+              ${icons.share}
+            </a>
+          ` : ''}
+        </div>
+
+        <!-- Meta (single line: badge + author + date + duration + youtrack) -->
+        <div class="detail-meta mb-16">
+          ${card?.type ? `<span class="badge badge-${card.type}">${escapeHTML(card.type)}</span>` : ''}
+          ${card?.cs_category ? `<span class="badge badge-${card.cs_category}">${categoryLabel(card.cs_category)}</span>` : ''}
+          <span class="detail-meta-item">${icons.user} ${escapeHTML(r.author || '--')}</span>
+          <span class="detail-meta-item">${icons.calendar} ${formatDate(r.created_at)}</span>
+          <span class="detail-meta-item">${icons.clock} ${formatDuration(r.duration_seconds)}</span>
+          ${renderYouTrackSection(r, card)}
+        </div>
+
+        <!-- Processing status banner -->
+        ${r.status !== 'complete' && r.status !== 'error' ? `
+          <div class="processing-banner mb-16" id="processingBanner">
+            <div class="processing-banner-content">
+              <div class="spinner-sm"></div>
+              <div>
+                <div class="processing-banner-title">Processing recording...</div>
+                <div class="processing-banner-status">${renderPipelineStatus(r.status)}</div>
+              </div>
+            </div>
+            <div class="processing-progress">
+              ${renderPipelineProgress(r.status)}
+            </div>
+          </div>
+        ` : ''}
+        ${r.status === 'error' ? `
+          <div class="processing-banner processing-banner-error mb-16">
+            <div class="processing-banner-content">
+              ${icons.alertTriangle}
+              <div>
+                <div class="processing-banner-title">Processing error</div>
+                <div class="processing-banner-status">Try uploading the recording again</div>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Video + Key Frames Index -->
+        <div class="video-keyframes-row mb-16">
+          <!-- LEFT: Video + Timeline -->
+          <div class="video-col">
+            <div class="video-container">
+              <video id="videoPlayer" controls preload="metadata">
+                <source src="${videoUrl(r.id)}" type="video/webm">
+              </video>
+            </div>
+            <div id="urlBar" class="url-bar hidden">
+              <span class="url-bar-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+              </span>
+              <span id="urlBarText" class="url-bar-text"></span>
+            </div>
+            <div id="timelineContainer"></div>
+            <div class="timeline-actions" style="margin-top:4px;">
+              <span class="text-dim text-xs" id="timelineStatus"></span>
+            </div>
+          </div>
+
+          <!-- RIGHT: Key Frames Index -->
+          <div class="keyframes-index" id="keyframesIndex">
+            <div class="keyframes-index-header">
+              <span>Key Moments</span>
+              <span class="text-dim text-xs">${frames.length}</span>
+            </div>
+            <div class="keyframes-index-list" id="keyframesList">
+              ${frames.length > 0 ? frames.map(f => `
+                <div class="keyframe-item" data-frame-id="${f.id}" data-time="${f.time_seconds}">
+                  <img class="keyframe-thumb" src="${frameUrl(r.id, f.filename)}" alt="" loading="lazy" />
+                  <div class="keyframe-info">
+                    <div class="keyframe-title">${escapeHTML(f.description || '')}</div>
+                    ${f.detail ? `<div class="keyframe-detail">${escapeHTML(f.detail)}</div>` : ''}
+                    <span class="keyframe-time">${formatTimecode(f.time_seconds)}</span>
+                  </div>
+                  <button class="keyframe-delete" data-frame-id="${f.id}" title="Delete">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              `).join('') : '<div class="keyframes-empty text-dim">No key frames</div>'}
+            </div>
+          </div>
+        </div>
+
+        <!-- Three columns: Description | Transcript | Context -->
+        <div class="three-columns mb-16">
+          <!-- Column 1: Description (editable via modal) -->
+          <div class="column-panel">
+            <div class="column-panel-header">
+              <span class="column-panel-label">${icons.sparkle} Description</span>
+              ${card ? `<button class="column-edit-btn" id="btnEditDesc" title="Edit">${icons.pencil}</button>` : ''}
+            </div>
+            <div class="column-panel-body">
+              ${Object.keys(analysis).length > 0 ? renderAnalysisFields(analysis) : '<div class="text-dim">No analysis data</div>'}
+            </div>
+          </div>
+
+          <!-- Column 2: Transcript (word-level editing) -->
+          <div class="column-panel">
+            <div class="column-panel-header">
+              <span class="column-panel-label">${icons.messageCircle} Transcript</span>
+              ${transcript.words?.length ? `<button class="column-edit-btn" id="btnEditTranscript" title="Edit">${icons.pencil}</button>` : ''}
+            </div>
+            <div class="column-panel-body">
+              <div id="transcriptView">
+                ${transcript.text ? `
+                  <div id="transcriptBox" style="font-size:0.85rem; line-height:1.7; color:var(--text2);">
+                    ${renderTranscript(transcript)}
+                  </div>
+                ` : '<div class="text-dim">No transcript</div>'}
+              </div>
+              <div id="transcriptEdit" class="hidden column-edit-form">
+                <div class="transcript-words-editor" id="wordsEditor"></div>
+                <div class="column-edit-actions">
+                  <button class="btn btn-edit-save" id="btnSaveTranscript">Save</button>
+                  <button class="btn btn-edit-cancel" id="btnCancelTranscript">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: Context (editable — delete items) -->
+          <div class="column-panel">
+            <div class="column-panel-header">
+              <span class="column-panel-label">${icons.layers} Context</span>
+              <button class="column-edit-btn" id="btnEditContext" title="Edit">${icons.pencil}</button>
+            </div>
+            <div class="column-panel-body">
+              <div id="contextView">
+                ${renderContextTab(r)}
+              </div>
+              <div id="contextEdit" class="hidden">
+                <div id="contextEditList"></div>
+                <div class="column-edit-actions">
+                  <button class="btn btn-edit-save" id="btnSaveContext">Save</button>
+                  <button class="btn btn-edit-cancel" id="btnCancelContext">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description edit modal -->
+        ${card ? `
+        <div class="modal-overlay hidden" id="descModal">
+          <div class="modal-dialog">
+            <div class="modal-header">
+              <h3>${icons.sparkle} Edit Description</h3>
+              <button class="modal-close" id="btnCloseDescModal">${icons.x}</button>
+            </div>
+            <div class="modal-body">
+              <div class="modal-row">
+                <div class="modal-field" style="flex:1;">
+                  <label class="column-edit-label">Title</label>
+                  <input type="text" id="editTitle" class="edit-field" value="${escapeHTML(card.title || '')}" />
+                </div>
+                <div class="modal-field" style="width:160px;">
+                  <label class="column-edit-label">Type</label>
+                  <select id="editType" class="edit-field">
+                    <option value="bug" ${card.type === 'bug' ? 'selected' : ''}>Bug</option>
+                    <option value="feature" ${card.type === 'feature' ? 'selected' : ''}>Feature</option>
+                    <option value="enhancement" ${card.type === 'enhancement' ? 'selected' : ''}>Enhancement</option>
+                    <option value="demo" ${card.type === 'demo' ? 'selected' : ''}>Demo</option>
+                  </select>
+                </div>
+              </div>
+              <label class="column-edit-label">Description</label>
+              <textarea id="editDescription" class="edit-field" rows="14">${escapeHTML(card.description || '')}</textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-edit-cancel" id="btnCancelDesc">Cancel</button>
+              <button class="btn btn-edit-save" id="btnSaveDesc">Save</button>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+      `;
+
+      setupVideoInteractions(frames, transcript);
+      setupKeyframesIndex(frames);
+      // Auto-refresh if still processing
+      if (r.status !== 'complete' && r.status !== 'error') {
+        startAutoRefresh();
+      }
+      if (card) {
+        setupDescriptionEdit(card);
+      }
+      setupTranscriptEdit(transcript);
+      setupContextEdit(r);
+      setupYoutrackPanel(r, card);
+    }
+
+    // --- YouTrack section rendering (4 states) ---
+    function renderYouTrackSection(r, card) {
+      // State A: Already sent to YouTrack
+      if (card?.youtrack_issue_id) {
+        return `<a href="${config_youtrackUrl}/issue/${card.youtrack_issue_id}" target="_blank" class="detail-meta-item yt-exported">${icons.checkCircle} ${escapeHTML(card.youtrack_issue_id)}</a>`;
+      }
+
+      // State B: Pre-linked, card exists → ready for review
+      if (r.pending_youtrack_issue_id && card) {
+        return `<div class="yt-prelinked" style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+          <a href="${config_youtrackUrl}/issue/${r.pending_youtrack_issue_id}" target="_blank" class="detail-meta-item yt-pending">${icons.clock} ${escapeHTML(r.pending_youtrack_issue_id)}</a>
+          <button class="btn btn-sm btn-primary" id="btnSendPreLinked" style="gap:6px;">${icons.send} Send</button>
+          <button class="btn btn-sm" id="btnClearPreLink" title="Unlink">&times;</button>
+        </div>`;
+      }
+
+      // State C: Pre-linked, still processing → show pre-link badge
+      if (r.pending_youtrack_issue_id && !card) {
+        return `<div class="yt-prelinked" style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+          <span class="detail-meta-item yt-pending">${icons.clock} ${escapeHTML(r.pending_youtrack_issue_id)} (processing...)</span>
+          <button class="btn btn-sm" id="btnClearPreLink" title="Unlink">&times;</button>
+        </div>`;
+      }
+
+      // State D: No link — show YouTrack dropdown (during processing OR after)
+      if (r.status !== 'error') {
+        const showCreateNew = !!card; // only show "create new" if card exists
+        return `<div class="yt-dropdown" style="margin-left:auto;">
+          <button class="btn btn-sm btn-primary" id="btnYouTrack" style="gap:6px;">${icons.externalLink} YouTrack</button>
+          <div class="yt-popover hidden" id="ytPopover">
+            <div class="yt-popover-header">
+              <input type="text" id="ytSearch" placeholder="Search by ID or title..." autocomplete="off" />
+            </div>
+            <div class="yt-popover-filters">
+              <select id="ytAuthorFilter"></select>
+              <select id="ytProjectFilter">
+                <option value="">All projects</option>
+              </select>
+              <select id="ytStateFilter">
+                <option value="">All unresolved</option>
+                <option value="In Review">In Review</option>
+                <option value="Open">Open</option>
+                <option value="Reopened">Reopened</option>
+                <option value="In Progress">In Progress</option>
+                <option value="*">All (incl. resolved)</option>
+              </select>
+            </div>
+            <div class="yt-popover-list" id="ytIssueList"></div>
+            ${showCreateNew ? `<div class="yt-popover-footer">
+              <div class="yt-export-meta" id="ytExportMeta"></div>
+              <button class="btn btn-sm" id="ytCreateNew">${icons.send} Create new issue</button>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }
+
+      return '';
+    }
+
+    // --- Pipeline status rendering ---
+    const PIPELINE_STEPS = [
+      { key: 'uploaded', doing: 'Extracting audio from video...' },
+      { key: 'audio_extracted', doing: 'Extracting audio from video...' },
+      { key: 'transcribing', doing: 'Transcribing speech...' },
+      { key: 'transcribed', doing: 'Analyzing transcript...' },
+      { key: 'analyzed', doing: 'Extracting key frames...' },
+      { key: 'frames_extracted', doing: 'Creating card...' },
+      { key: 'complete', doing: 'Done' },
+    ];
+
+    function renderPipelineStatus(status) {
+      const step = PIPELINE_STEPS.find(s => s.key === status);
+      return step?.doing || status;
+    }
+
+    function renderPipelineProgress(status) {
+      const idx = PIPELINE_STEPS.findIndex(s => s.key === status);
+      const total = PIPELINE_STEPS.length - 1; // exclude 'complete'
+      const pct = Math.round((Math.max(idx, 0) / total) * 100);
+      return `<div class="processing-bar"><div class="processing-bar-fill" style="width:${pct}%"></div></div>
+              <div class="processing-bar-label">${Math.max(idx, 0) + 1} / ${total}</div>`;
+    }
+
+    // Auto-refresh while processing — update only the banner, not the whole page
+    let refreshTimer = null;
+    let lastStatus = null;
+    function startAutoRefresh() {
+      if (refreshTimer) return;
+      refreshTimer = setInterval(async () => {
+        try {
+          const data = await getRecording(recordingId);
+          const newStatus = data.recording.status;
+          if (newStatus === 'complete' || newStatus === 'error') {
+            // Pipeline finished — full re-render to show card, analysis, etc.
+            clearInterval(refreshTimer);
+            refreshTimer = null;
+            currentData = data;
+            render(data);
+            return;
+          }
+          if (newStatus !== lastStatus) {
+            // Status changed but still processing — update only the banner
+            lastStatus = newStatus;
+            const banner = document.getElementById('processingBanner');
+            if (banner) {
+              banner.querySelector('.processing-banner-status').textContent = renderPipelineStatus(newStatus);
+              banner.querySelector('.processing-progress').innerHTML = renderPipelineProgress(newStatus);
+            }
+          }
+        } catch {}
+      }, 3000);
+    }
+
+    // --- Analysis fields by type ---
+    function renderAnalysisFields(a) {
+      const field = (title, text) => text ? `<div class="analysis-field"><h4>${title}</h4><p>${escapeHTML(text)}</p></div>` : '';
+      const list = (title, items) => items?.length ? `<div class="analysis-field"><h4>${title}</h4><ol class="analysis-steps">${items.map(s => `<li>${escapeHTML(s)}</li>`).join('')}</ol></div>` : '';
+      const bullets = (title, items) => items?.length ? `<div class="analysis-field"><h4>${title}</h4><ul style="margin:0;padding-left:18px;">${items.map(s => `<li>${escapeHTML(s)}</li>`).join('')}</ul></div>` : '';
+
+      const type = a.type || 'bug';
+      let html = '';
+
+      if (type === 'bug') {
+        html += list('Steps to Reproduce', a.steps);
+        html += field('Expected Result', a.expected);
+        html += field('Actual Result', a.actual);
+      } else if (type === 'feature') {
+        html += field('Proposal', a.proposal);
+        html += field('Use Case', a.use_case);
+      } else if (type === 'enhancement') {
+        html += field('Current Behavior', a.current_behavior);
+        html += field('Proposed Change', a.proposed_change);
+      } else if (type === 'demo') {
+        html += bullets('Key Points', a.key_points);
+        html += field('Details', a.details);
+      }
+
+      // Fallback: if GPT returned old-style fields, show them
+      if (!html && a.steps?.length) {
+        html += list('Steps', a.steps);
+        html += field('Expected', a.expected);
+        html += field('Actual', a.actual);
+      }
+
+      html += field('Context', a.context);
+      return html;
+    }
+
+    // --- Transcript rendering ---
+    function renderTranscript(transcript) {
+      if (transcript.words && transcript.words.length) {
+        return transcript.words.map(w =>
+          `<span class="transcript-word" data-start="${w.start}" data-end="${w.end}">${escapeHTML(w.word)}</span>`
+        ).join(' ');
+      }
+      return `<p>${escapeHTML(transcript.text || '')}</p>`;
+    }
+
+    // --- Context tab rendering ---
+    function renderContextTab(recording) {
+      let html = '';
+
+      // Environment
+      const meta = recording.metadata;
+      if (meta) {
+        const ua = meta.userAgent || '';
+        const chromeMatch = ua.match(/Chrome\/([\d.]+)/);
+        const browser = chromeMatch ? `Chrome ${chromeMatch[1].split('.')[0]}` : 'Unknown';
+        const macMatch = ua.match(/Mac OS X ([\d_]+)/);
+        const winMatch = ua.match(/Windows NT ([\d.]+)/);
+        const os = macMatch ? `macOS ${macMatch[1].replace(/_/g, '.')}` : winMatch ? 'Windows' : 'Unknown';
+        const sw = meta.screenWidth || meta.screen?.width;
+        const sh = meta.screenHeight || meta.screen?.height;
+        const dpr = meta.devicePixelRatio || meta.screen?.devicePixelRatio;
+
+        html += `<div class="context-section">
+          <h4 class="context-section-title">${icons.cards} Environment</h4>
+          <div class="context-env">
+            <span class="context-env-item">${escapeHTML(browser)}</span>
+            <span class="context-env-item">${escapeHTML(os)}</span>
+            ${sw && sh ? `<span class="context-env-item">${sw}&times;${sh}${dpr > 1 ? ` @${dpr}x` : ''}</span>` : ''}
+            ${meta.language ? `<span class="context-env-item">${escapeHTML(meta.language)}</span>` : ''}
+          </div>
+        </div>`;
+
+        // CRM Profile (who was testing)
+        if (meta.crmProfile) {
+          const p = meta.crmProfile;
+          const items = [
+            p.name ? `<span class="context-env-item" title="User">${escapeHTML(p.name)}</span>` : '',
+            p.email ? `<span class="context-env-item" title="Email">${escapeHTML(p.email)}</span>` : '',
+            p.user_id ? `<span class="context-env-item" title="User ID">user: ${escapeHTML(String(p.user_id))}</span>` : '',
+            p.account_id ? `<span class="context-env-item" title="Account ID">account: ${escapeHTML(String(p.account_id))}</span>` : '',
+            p.source ? `<span class="context-env-item" title="Source">${escapeHTML(p.source)}</span>` : '',
+          ].filter(Boolean).join('');
+          html += `<div class="context-section">
+            <h4 class="context-section-title">${icons.user} CRM Profile</h4>
+            <div class="context-env">${items}</div>
+          </div>`;
+        }
+      }
+
+      // URL Events
+      const urlEvents = recording.url_events || [];
+      if (urlEvents.length > 0) {
+        html += `<div class="context-section">
+          <h4 class="context-section-title">${icons.externalLink} Pages visited (${urlEvents.length})</h4>
+          <div class="context-list">`;
+        for (const ev of urlEvents) {
+          const mins = Math.floor(ev.ts / 60);
+          const secs = Math.floor(ev.ts % 60);
+          const time = `${mins}:${String(secs).padStart(2, '0')}`;
+          const typeBadge = ev.type === 'initial' ? 'initial' : ev.type === 'tab_switch' ? 'tab' : 'nav';
+          let displayUrl = ev.url;
+          try { displayUrl = new URL(ev.url).pathname + new URL(ev.url).search; } catch {}
+          if (displayUrl.length > 60) displayUrl = displayUrl.slice(0, 57) + '...';
+          html += `<div class="context-event context-event-url" data-time="${ev.ts}">
+            <span class="context-time">${time}</span>
+            <span class="context-badge context-badge-${typeBadge}">${typeBadge}</span>
+            <span class="context-url" title="${escapeHTML(ev.url)}">${escapeHTML(ev.title || displayUrl)}</span>
+          </div>`;
+        }
+        html += `</div></div>`;
+      }
+
+      // Console Events
+      const consoleEvents = recording.console_events || [];
+      if (consoleEvents.length > 0) {
+        html += `<div class="context-section">
+          <h4 class="context-section-title">${icons.alertTriangle} Console (${consoleEvents.length})</h4>
+          <div class="context-list">`;
+        for (const ev of consoleEvents) {
+          const mins = Math.floor(ev.ts / 60);
+          const secs = Math.floor(ev.ts % 60);
+          const time = `${mins}:${String(secs).padStart(2, '0')}`;
+          const levelClass = ev.level === 'error' ? 'error' : 'warning';
+          html += `<div class="context-event context-event-${levelClass}" data-time="${ev.ts}">
+            <span class="context-time">${time}</span>
+            <span class="context-badge context-badge-${levelClass}">${ev.level}</span>
+            <span class="context-text" title="${escapeHTML(ev.stack || ev.text)}">${escapeHTML(ev.text)}</span>
+            ${ev.source && ev.source !== 'unknown' ? `<span class="context-source">${escapeHTML(ev.source)}</span>` : ''}
+          </div>`;
+        }
+        html += `</div></div>`;
+      }
+
+      // Action Events
+      const actionEvents = recording.action_events || [];
+      if (actionEvents.length > 0) {
+        const ACTION_ICONS = { click: '🖱', modal_open: '📂', modal_close: '📁', form_submit: '📤' };
+        const ACTION_LABELS = { click: 'click', modal_open: 'open', modal_close: 'close', form_submit: 'submit' };
+        html += `<div class="context-section">
+          <h4 class="context-section-title">${icons.activity} Actions (${actionEvents.length})</h4>
+          <div class="context-list">`;
+        for (const ev of actionEvents) {
+          const mins = Math.floor(ev.ts / 60);
+          const secs = Math.floor(ev.ts % 60);
+          const time = `${mins}:${String(secs).padStart(2, '0')}`;
+          const typeClass = ev.eventType === 'modal_open' || ev.eventType === 'modal_close' ? 'nav' : ev.eventType === 'form_submit' ? 'warning' : 'initial';
+          const label = ACTION_LABELS[ev.eventType] || ev.eventType;
+          const displayId = ev.id || (ev.role ? `[${ev.role}]` : '');
+          const title = [ev.path, ev.ariaLabel, ev.text].filter(Boolean).join(' | ');
+          const displayText = ev.ariaLabel || ev.text || ev.path.split('>').pop().trim() || ev.tag;
+          html += `<div class="context-event context-event-url" data-time="${ev.ts}" title="${escapeHTML(title)}">
+            <span class="context-time">${time}</span>
+            <span class="context-badge context-badge-${typeClass}">${label}</span>
+            <span class="context-url">${escapeHTML(displayText.slice(0, 50))}</span>
+            ${displayId ? `<span class="context-source">${escapeHTML(displayId)}</span>` : ''}
+            <span class="context-source" style="font-family:monospace;opacity:0.5;">${escapeHTML(ev.path.split('>').pop().trim().slice(0, 30))}</span>
+          </div>`;
+        }
+        html += `</div></div>`;
+      }
+
+      if (!html) {
+        html = '<div class="text-dim">No context data captured. Update Chrome extension to capture URL events and console errors.</div>';
+      }
+
+      return html;
+    }
+
+    // --- Key Frames Index ---
+    function setupKeyframesIndex(frames) {
+      const list = document.getElementById('keyframesList');
+      const video = document.getElementById('videoPlayer');
+      if (!list || !video) return;
+
+      // Click on keyframe item → seek video
+      list.querySelectorAll('.keyframe-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          if (e.target.closest('.keyframe-delete')) return;
+          const time = parseFloat(item.dataset.time);
+          video.currentTime = time;
+          video.play();
+          highlightKeyframe(parseInt(item.dataset.frameId));
+        });
+      });
+
+      // Delete buttons
+      list.querySelectorAll('.keyframe-delete').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const frameId = parseInt(btn.dataset.frameId);
+          const status = document.getElementById('timelineStatus');
+          try {
+            if (status) status.textContent = 'Deleting...';
+            await deleteKeyframe(recordingId, frameId);
+            const data = await getRecording(recordingId);
+            currentData = data;
+            render(data);
+          } catch (err) {
+            if (status) status.textContent = 'Error: ' + err.message;
+          }
+        });
+      });
+    }
+
+    function highlightKeyframe(frameId) {
+      const list = document.getElementById('keyframesList');
+      if (!list) return;
+      list.querySelectorAll('.keyframe-item').forEach(item => {
+        const isActive = parseInt(item.dataset.frameId) === frameId;
+        item.classList.toggle('active', isActive);
+        if (isActive) {
+          item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      });
+    }
+
+    // --- Video, timeline, frame/transcript interactions ---
+    function setupVideoInteractions(frames, transcript) {
+      const video = document.getElementById('videoPlayer');
+      if (!video) return;
+
+      // Timeline
+      const timelineContainer = document.getElementById('timelineContainer');
+      if (timelineContainer) {
+        const duration = currentData.recording.duration_seconds || 60;
+        timeline = createTimeline({
+          container: timelineContainer,
+          videoElement: video,
+          frames: frames,
+          duration: duration,
+          recordingId: recordingId,
+          editable: true,
+          onKeyframeChange: async (frameId, newTime) => {
+            const status = document.getElementById('timelineStatus');
+            try {
+              status.textContent = 'Saving...';
+              const allFrames = timeline.getFrames();
+              await updateKeyframes(recordingId, allFrames.map(f => ({ id: f.id, time_seconds: f.time_seconds })));
+              status.textContent = 'Saved';
+              setTimeout(() => { status.textContent = ''; }, 2000);
+            } catch (err) {
+              status.textContent = 'Error: ' + err.message;
+            }
+          },
+          onKeyframeSelect: (frameId, time) => {
+            highlightKeyframe(frameId);
+          },
+          onKeyframeDelete: async (frameId) => {
+            const status = document.getElementById('timelineStatus');
+            try {
+              if (status) status.textContent = 'Deleting...';
+              await deleteKeyframe(recordingId, frameId);
+              const data = await getRecording(recordingId);
+              currentData = data;
+              render(data);
+            } catch (err) {
+              if (status) status.textContent = 'Error: ' + err.message;
+            }
+          },
+          onKeyframeAdd: async (time) => {
+            const status = document.getElementById('timelineStatus');
+            try {
+              status.textContent = 'Extracting frame...';
+              const result = await addKeyframe(recordingId, time, '');
+              // Reload to show new thumbnail on timeline + in frames tab
+              const data = await getRecording(recordingId);
+              currentData = data;
+              render(data);
+            } catch (err) {
+              status.textContent = 'Error: ' + err.message;
+            }
+          },
+        });
+      }
+
+      // Transcript word click → seek video
+      const transcriptBox = document.getElementById('transcriptBox');
+      if (transcriptBox) {
+        transcriptBox.querySelectorAll('.transcript-word').forEach(word => {
+          word.addEventListener('click', () => {
+            video.currentTime = parseFloat(word.dataset.start);
+            video.play();
+          });
+        });
+
+        if (transcript.words && transcript.words.length) {
+          video.addEventListener('timeupdate', () => {
+            const ct = video.currentTime;
+            transcriptBox.querySelectorAll('.transcript-word').forEach(word => {
+              const s = parseFloat(word.dataset.start);
+              const e = parseFloat(word.dataset.end);
+              word.classList.toggle('active', ct >= s && ct <= e);
+            });
+          });
+        }
+      }
+
+      // URL bar sync
+      const urlBar = document.getElementById('urlBar');
+      const urlBarText = document.getElementById('urlBarText');
+      const urlEvents = currentData.recording.url_events || [];
+
+      if (urlBar && urlEvents.length > 0) {
+        urlBar.classList.remove('hidden');
+        urlBarText.textContent = urlEvents[0].url;
+
+        video.addEventListener('timeupdate', () => {
+          const ct = video.currentTime;
+          let currentUrl = urlEvents[0];
+          for (const ev of urlEvents) {
+            if (ev.ts <= ct) currentUrl = ev;
+            else break;
+          }
+          if (currentUrl) {
+            urlBarText.textContent = currentUrl.url;
+            urlBarText.title = currentUrl.title || currentUrl.url;
+          }
+        });
+      }
+
+      // Context events click → seek video
+      document.querySelectorAll('.context-event[data-time]').forEach(el => {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', () => {
+          video.currentTime = parseFloat(el.dataset.time);
+          video.play();
+        });
+      });
+    }
+
+    // --- Description edit modal ---
+    function setupDescriptionEdit(card) {
+      const btnEdit = document.getElementById('btnEditDesc');
+      const modal = document.getElementById('descModal');
+      const btnClose = document.getElementById('btnCloseDescModal');
+      const btnSave = document.getElementById('btnSaveDesc');
+      const btnCancel = document.getElementById('btnCancelDesc');
+      if (!btnEdit || !modal) return;
+
+      function openModal() {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        const titleEl = document.getElementById('editTitle');
+        if (titleEl) setTimeout(() => titleEl.focus(), 100);
+      }
+
+      function closeModal() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+
+      btnEdit.addEventListener('click', openModal);
+      btnClose.addEventListener('click', closeModal);
+      btnCancel.addEventListener('click', closeModal);
+
+      // Close on overlay click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+      });
+
+      btnSave.addEventListener('click', async () => {
+        const fields = {};
+        const titleEl = document.getElementById('editTitle');
+        const typeEl = document.getElementById('editType');
+        const descEl = document.getElementById('editDescription');
+
+        if (titleEl) fields.title = titleEl.value;
+        if (typeEl) fields.type = typeEl.value;
+        if (descEl) fields.description = descEl.value;
+
+        btnSave.disabled = true;
+        btnSave.textContent = 'Saving...';
+
+        try {
+          await updateCard(card.id, fields);
+          closeModal();
+          const data = await getRecording(recordingId);
+          currentData = data;
+          render(data);
+        } catch (err) {
+          alert('Error: ' + err.message);
+          btnSave.disabled = false;
+          btnSave.textContent = 'Save';
+        }
+      });
+    }
+
+    // --- Transcript word-level inline edit ---
+    function setupTranscriptEdit(transcript) {
+      const btnEdit = document.getElementById('btnEditTranscript');
+      const tView = document.getElementById('transcriptView');
+      const tEdit = document.getElementById('transcriptEdit');
+      const btnSave = document.getElementById('btnSaveTranscript');
+      const btnCancel = document.getElementById('btnCancelTranscript');
+      const wordsEditor = document.getElementById('wordsEditor');
+      if (!btnEdit || !tView || !tEdit || !wordsEditor) return;
+
+      let editWords = [];
+
+      btnEdit.addEventListener('click', () => {
+        editWords = (transcript.words || []).map(w => ({ ...w }));
+        renderWordsEditor();
+        tView.classList.add('hidden');
+        tEdit.classList.remove('hidden');
+        btnEdit.classList.add('hidden');
+      });
+
+      function renderWordsEditor() {
+        // Group words into segments of ~3 seconds
+        const SEGMENT_DURATION = 3;
+        const segments = [];
+        let currentSegment = { start: 0, words: [] };
+        for (const w of editWords) {
+          if (currentSegment.words.length > 0 && w.start - currentSegment.start >= SEGMENT_DURATION) {
+            segments.push(currentSegment);
+            currentSegment = { start: w.start, words: [] };
+          }
+          if (currentSegment.words.length === 0) currentSegment.start = w.start;
+          currentSegment.words.push(w);
+        }
+        if (currentSegment.words.length > 0) segments.push(currentSegment);
+
+        wordsEditor.innerHTML = segments.map((seg, si) => {
+          const time = formatTimecode(seg.start);
+          const wordsHtml = seg.words.map((w, wi) => {
+            const globalIdx = editWords.indexOf(w);
+            return `<span class="word-edit-chip" contenteditable="true" data-idx="${globalIdx}">${escapeHTML(w.word)}</span>`;
+          }).join('');
+          return `<div class="word-segment">
+            <span class="word-segment-time">${time}</span>
+            <div class="word-segment-words">${wordsHtml}</div>
+          </div>`;
+        }).join('');
+
+        // Listen for edits
+        wordsEditor.querySelectorAll('.word-edit-chip').forEach(chip => {
+          chip.addEventListener('blur', () => {
+            const idx = parseInt(chip.dataset.idx);
+            if (editWords[idx]) editWords[idx].word = chip.textContent.trim();
+          });
+          chip.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); chip.blur(); }
+          });
+        });
+      }
+
+      btnCancel.addEventListener('click', () => {
+        tEdit.classList.add('hidden');
+        tView.classList.remove('hidden');
+        btnEdit.classList.remove('hidden');
+      });
+
+      btnSave.addEventListener('click', async () => {
+        // Collect final word values from chips
+        wordsEditor.querySelectorAll('.word-edit-chip').forEach(chip => {
+          const idx = parseInt(chip.dataset.idx);
+          if (editWords[idx]) editWords[idx].word = chip.textContent.trim();
+        });
+
+        btnSave.disabled = true;
+        btnSave.textContent = 'Saving...';
+
+        try {
+          await updateTranscript(recordingId, editWords);
+          const data = await getRecording(recordingId);
+          currentData = data;
+          render(data);
+        } catch (err) {
+          alert('Error: ' + err.message);
+          btnSave.disabled = false;
+          btnSave.textContent = 'Save';
+        }
+      });
+    }
+
+    // --- Context column edit (delete items) ---
+    function setupContextEdit(recording) {
+      const btnEdit = document.getElementById('btnEditContext');
+      const cView = document.getElementById('contextView');
+      const cEdit = document.getElementById('contextEdit');
+      const cList = document.getElementById('contextEditList');
+      const btnSave = document.getElementById('btnSaveContext');
+      const btnCancel = document.getElementById('btnCancelContext');
+      if (!btnEdit || !cView || !cEdit) return;
+
+      let editUrlEvents, editConsoleEvents, editActionEvents;
+
+      btnEdit.addEventListener('click', () => {
+        editUrlEvents = [...(recording.url_events || [])];
+        editConsoleEvents = [...(recording.console_events || [])];
+        editActionEvents = [...(recording.action_events || [])];
+        renderContextEditor();
+        cView.classList.add('hidden');
+        cEdit.classList.remove('hidden');
+        btnEdit.classList.add('hidden');
+      });
+
+      function renderContextEditor() {
+        let html = '';
+
+        if (editUrlEvents.length > 0) {
+          html += `<div class="context-edit-section">
+            <h4 class="context-section-title">${icons.externalLink} Pages (${editUrlEvents.length})</h4>
+            ${editUrlEvents.map((ev, i) => {
+              const time = formatTimecode(ev.ts);
+              let displayUrl = ev.url;
+              try { displayUrl = new URL(ev.url).pathname; } catch {}
+              return `<div class="context-edit-item" data-type="url" data-idx="${i}">
+                <span class="context-time">${time}</span>
+                <span class="context-edit-text">${escapeHTML(ev.title || displayUrl)}</span>
+                <button class="context-delete-btn" data-type="url" data-idx="${i}">${icons.x}</button>
+              </div>`;
+            }).join('')}
+          </div>`;
+        }
+
+        if (editConsoleEvents.length > 0) {
+          html += `<div class="context-edit-section">
+            <h4 class="context-section-title">${icons.alertTriangle} Console (${editConsoleEvents.length})</h4>
+            ${editConsoleEvents.map((ev, i) => {
+              const time = formatTimecode(ev.ts);
+              return `<div class="context-edit-item" data-type="console" data-idx="${i}">
+                <span class="context-time">${time}</span>
+                <span class="context-badge context-badge-${ev.level === 'error' ? 'error' : 'warning'}">${ev.level}</span>
+                <span class="context-edit-text">${escapeHTML(ev.text)}</span>
+                <button class="context-delete-btn" data-type="console" data-idx="${i}">${icons.x}</button>
+              </div>`;
+            }).join('')}
+          </div>`;
+        }
+
+        if (editActionEvents.length > 0) {
+          const ACTION_LABELS = { click: 'click', modal_open: 'open', modal_close: 'close', form_submit: 'submit' };
+          html += `<div class="context-edit-section">
+            <h4 class="context-section-title">${icons.activity} Actions (${editActionEvents.length})</h4>
+            ${editActionEvents.map((ev, i) => {
+              const time = formatTimecode(ev.ts);
+              const label = ACTION_LABELS[ev.eventType] || ev.eventType;
+              const displayText = ev.ariaLabel || ev.text || ev.path?.split('>').pop().trim() || ev.tag;
+              return `<div class="context-edit-item" data-type="action" data-idx="${i}">
+                <span class="context-time">${time}</span>
+                <span class="context-badge context-badge-initial">${label}</span>
+                <span class="context-edit-text">${escapeHTML(displayText?.slice(0, 40) || '')}</span>
+                <button class="context-delete-btn" data-type="action" data-idx="${i}">${icons.x}</button>
+              </div>`;
+            }).join('')}
+          </div>`;
+        }
+
+        if (!html) html = '<div class="text-dim">No data to edit</div>';
+        cList.innerHTML = html;
+
+        // Wire delete buttons
+        cList.querySelectorAll('.context-delete-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const type = btn.dataset.type;
+            const idx = parseInt(btn.dataset.idx);
+            if (type === 'url') editUrlEvents.splice(idx, 1);
+            else if (type === 'console') editConsoleEvents.splice(idx, 1);
+            else if (type === 'action') editActionEvents.splice(idx, 1);
+            renderContextEditor();
+          });
+        });
+      }
+
+      btnCancel.addEventListener('click', () => {
+        cEdit.classList.add('hidden');
+        cView.classList.remove('hidden');
+        btnEdit.classList.remove('hidden');
+      });
+
+      btnSave.addEventListener('click', async () => {
+        btnSave.disabled = true;
+        btnSave.textContent = 'Saving...';
+
+        try {
+          await updateContext(recordingId, {
+            url_events: editUrlEvents,
+            console_events: editConsoleEvents,
+            action_events: editActionEvents,
+          });
+          const data = await getRecording(recordingId);
+          currentData = data;
+          render(data);
+        } catch (err) {
+          alert('Error: ' + err.message);
+          btnSave.disabled = false;
+          btnSave.textContent = 'Save';
+        }
+      });
+    }
+
+    // --- YouTrack panel (search + link + create + pre-link) ---
+    function setupYoutrackPanel(recording, card) {
+      const author = recording.author;
+      const cardId = card?.id;
+      const isPreLinkMode = !card; // no card yet = pre-link mode
+
+      // Handle pre-linked review state (State B: pre-linked + card exists)
+      const btnSend = document.getElementById('btnSendPreLinked');
+      const btnClear = document.getElementById('btnClearPreLink');
+
+      if (btnSend && recording.pending_youtrack_issue_id && cardId) {
+        btnSend.addEventListener('click', async () => {
+          btnSend.disabled = true;
+          btnSend.innerHTML = 'Sending...';
+          try {
+            await linkToYoutrack(cardId, recording.pending_youtrack_issue_id);
+            const data = await getRecording(recordingId);
+            currentData = data;
+            render(data);
+          } catch (err) {
+            btnSend.disabled = false;
+            btnSend.innerHTML = `${icons.send} Send`;
+            alert('Error: ' + err.message);
+          }
+        });
+      }
+
+      if (btnClear) {
+        btnClear.addEventListener('click', async () => {
+          try {
+            await clearPreLink(recordingId);
+            const data = await getRecording(recordingId);
+            currentData = data;
+            render(data);
+          } catch (err) {
+            alert('Error: ' + err.message);
+          }
+        });
+      }
+
+      // YouTrack dropdown popover (States C & D)
+      setupYoutrackPopover(author, cardId, isPreLinkMode);
+    }
+
+    function setupYoutrackPopover(author, cardId, isPreLinkMode) {
+      const btn = document.getElementById('btnYouTrack');
+      const popover = document.getElementById('ytPopover');
+      if (!btn || !popover) return;
+
+      const searchInput = document.getElementById('ytSearch');
+      const authorFilter = document.getElementById('ytAuthorFilter');
+      const projectFilter = document.getElementById('ytProjectFilter');
+      const stateFilter = document.getElementById('ytStateFilter');
+      const issueList = document.getElementById('ytIssueList');
+      const createNewBtn = document.getElementById('ytCreateNew');
+      let usersLoaded = false;
+
+      let resolvedReporter = null; // Will be set after loadUsers resolves
+
+      // Populate author dropdown from youtrack_users
+      async function loadUsers() {
+        if (usersLoaded) return;
+        try {
+          const res = await fetch('/api/youtrack-users');
+          const data = await res.json();
+          const users = data.users || [];
+          // Deduplicate by youtrack_login
+          const seen = new Set();
+          const unique = [];
+          for (const u of users) {
+            if (!seen.has(u.youtrack_login)) {
+              seen.add(u.youtrack_login);
+              unique.push(u);
+            }
+          }
+          // Match recording author to youtrack user (by login, author name, or display name)
+          const matchedUser = unique.find(u =>
+            u.youtrack_login === author || u.author === author || u.youtrack_name === author
+          );
+          resolvedReporter = matchedUser || null;
+
+          authorFilter.innerHTML = '<option value="">All users</option>'
+            + unique.map(u => {
+              const isSelected = matchedUser ? u.youtrack_login === matchedUser.youtrack_login : false;
+              return `<option value="${escapeHTML(u.youtrack_login)}" ${isSelected ? 'selected' : ''}>${escapeHTML(u.youtrack_name || u.youtrack_login)}</option>`;
+            }).join('');
+          usersLoaded = true;
+          updateExportMeta();
+        } catch (e) {
+          authorFilter.innerHTML = `<option value="${escapeHTML(author || '')}">${escapeHTML(author || 'All')}</option>`;
+        }
+      }
+
+      // Show export metadata (project + reporter) under "Create new issue"
+      function updateExportMeta() {
+        const metaEl = document.getElementById('ytExportMeta');
+        if (!metaEl) return;
+        const project = projectFilter.value || 'BUG';
+        const reporterName = resolvedReporter ? resolvedReporter.youtrack_name : null;
+        if (reporterName) {
+          metaEl.innerHTML = `<span style="color:var(--text3);font-size:0.75rem;">Project: <strong style="color:var(--text2);">${escapeHTML(project)}</strong> · Reporter: <strong style="color:var(--text2);">${escapeHTML(reporterName)}</strong></span>`;
+        } else {
+          metaEl.innerHTML = `<span style="color:var(--amber);font-size:0.75rem;">Author "${escapeHTML(author)}" not found. Issue will be created by API owner. Project: <strong>${escapeHTML(project)}</strong></span>`;
+        }
+      }
+
+      // Toggle popover
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = popover.classList.contains('hidden');
+        popover.classList.toggle('hidden');
+        if (isHidden) {
+          searchInput.value = '';
+          searchInput.focus();
+          loadUsers().then(loadIssues);
+        }
+      });
+
+      // Close on outside click
+      document.addEventListener('click', (e) => {
+        if (!popover.contains(e.target) && !btn.contains(e.target)) {
+          popover.classList.add('hidden');
+        }
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') popover.classList.add('hidden');
+      });
+
+      // Search debounce
+      let searchTimer;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(loadIssues, 400);
+      });
+
+      // Filter changes
+      stateFilter.addEventListener('change', loadIssues);
+      authorFilter.addEventListener('change', loadIssues);
+      projectFilter.addEventListener('change', () => { loadIssues(); updateExportMeta(); });
+
+      // Load issues from YouTrack
+      async function loadIssues() {
+        issueList.innerHTML = '<div class="yt-popover-loading"><div class="spinner-sm"></div></div>';
+
+        try {
+          const params = {};
+          const stateVal = stateFilter.value;
+          if (stateVal && stateVal !== '*') params.state = stateVal;
+          if (stateVal === '*') params.all = '1';
+          const q = searchInput.value.trim();
+          if (q) params.q = q;
+          const selectedAuthor = authorFilter.value;
+          if (selectedAuthor) params.author = selectedAuthor;
+          const selectedProject = projectFilter.value;
+          if (selectedProject) params.project = selectedProject;
+
+          const data = await searchYoutrackIssues(params);
+          renderIssues(data.issues || []);
+        } catch (err) {
+          issueList.innerHTML = `<div class="yt-popover-empty">Error: ${escapeHTML(err.message)}</div>`;
+        }
+      }
+
+      function renderIssues(issues) {
+        if (!issues.length) {
+          issueList.innerHTML = '<div class="yt-popover-empty">No issues found</div>';
+          return;
+        }
+
+        issueList.innerHTML = issues.map(issue => `
+          <div class="yt-issue-item" data-issue-id="${escapeHTML(issue.id)}">
+            <span class="yt-issue-id">${escapeHTML(issue.id)}</span>
+            <span class="yt-issue-summary" title="${escapeHTML(issue.summary)}">${escapeHTML(issue.summary)}</span>
+            ${issue.state ? `<span class="yt-issue-state">${escapeHTML(issue.state)}</span>` : ''}
+          </div>
+        `).join('');
+
+        issueList.querySelectorAll('.yt-issue-item').forEach(item => {
+          item.addEventListener('click', () => {
+            // Reset any other active confirmations
+            issueList.querySelectorAll('.yt-issue-confirm').forEach(el => {
+              el.classList.remove('yt-issue-confirm');
+              el.querySelector('.yt-confirm-bar')?.remove();
+              el.querySelectorAll('.yt-issue-id, .yt-issue-summary, .yt-issue-state').forEach(c => c.style.display = '');
+            });
+
+            const issueId = item.dataset.issueId;
+            // Show inline confirmation
+            item.classList.add('yt-issue-confirm');
+            item.querySelectorAll('.yt-issue-id, .yt-issue-summary, .yt-issue-state').forEach(c => c.style.display = 'none');
+
+            const bar = document.createElement('div');
+            bar.className = 'yt-confirm-bar';
+            bar.innerHTML = `
+              <span class="yt-confirm-text">Link to <strong>${escapeHTML(issueId)}</strong>?</span>
+              <button class="btn btn-sm btn-primary yt-confirm-yes">Link</button>
+              <button class="btn btn-sm yt-confirm-no">Cancel</button>
+            `;
+            item.appendChild(bar);
+
+            bar.querySelector('.yt-confirm-no').addEventListener('click', (e) => {
+              e.stopPropagation();
+              item.classList.remove('yt-issue-confirm');
+              bar.remove();
+              item.querySelectorAll('.yt-issue-id, .yt-issue-summary, .yt-issue-state').forEach(c => c.style.display = '');
+            });
+
+            bar.querySelector('.yt-confirm-yes').addEventListener('click', async (e) => {
+              e.stopPropagation();
+              bar.querySelector('.yt-confirm-yes').disabled = true;
+              bar.querySelector('.yt-confirm-yes').textContent = 'Linking...';
+              bar.querySelector('.yt-confirm-no').style.display = 'none';
+
+              try {
+                if (isPreLinkMode) {
+                  await preLinkYoutrack(recordingId, issueId);
+                } else {
+                  await linkToYoutrack(cardId, issueId);
+                }
+                popover.classList.add('hidden');
+                const data = await getRecording(recordingId);
+                currentData = data;
+                render(data);
+              } catch (err) {
+                bar.querySelector('.yt-confirm-yes').disabled = false;
+                bar.querySelector('.yt-confirm-yes').textContent = 'Link';
+                bar.querySelector('.yt-confirm-no').style.display = '';
+                bar.querySelector('.yt-confirm-text').innerHTML = `<span style="color:var(--red);">${escapeHTML(err.message)}</span>`;
+              }
+            });
+          });
+        });
+      }
+
+      // Create new ticket — two-click: first shows confirm, second executes
+      if (createNewBtn) {
+        let createConfirmed = false;
+        createNewBtn.addEventListener('click', async () => {
+          if (!createConfirmed) {
+            createConfirmed = true;
+            createNewBtn.innerHTML = `${icons.checkCircle} Confirm creation`;
+            createNewBtn.classList.add('btn-primary');
+            setTimeout(() => {
+              if (createConfirmed) {
+                createConfirmed = false;
+                createNewBtn.innerHTML = `${icons.send} Create new issue`;
+                createNewBtn.classList.remove('btn-primary');
+              }
+            }, 4000);
+            return;
+          }
+
+          createConfirmed = false;
+          createNewBtn.disabled = true;
+          createNewBtn.innerHTML = 'Creating...';
+
+          try {
+            const exportProject = projectFilter.value || undefined;
+            await exportToYoutrack(cardId, { project: exportProject });
+            popover.classList.add('hidden');
+            const data = await getRecording(recordingId);
+            currentData = data;
+            render(data);
+          } catch (err) {
+            createNewBtn.disabled = false;
+            createNewBtn.innerHTML = `${icons.send} Create new issue`;
+            createNewBtn.classList.remove('btn-primary');
+          }
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (recordingId) load();
+    });
+  </script>
+</body>
+</html>

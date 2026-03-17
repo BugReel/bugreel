@@ -1,0 +1,173 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const formattedDate = post.data.date.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: post.data.title,
+  description: post.data.description,
+  datePublished: post.data.date.toISOString(),
+  author: {
+    '@type': 'Organization',
+    name: post.data.author,
+    url: 'https://bugreel.io',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'BugReel',
+    url: 'https://bugreel.io',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://bugreel.io/favicon.svg',
+    },
+  },
+  image: post.data.image ? `https://bugreel.io${post.data.image}` : 'https://bugreel.io/og-image.png',
+  url: `https://bugreel.io/blog/${post.id}`,
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': `https://bugreel.io/blog/${post.id}`,
+  },
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+    { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://bugreel.io/blog' },
+    { '@type': 'ListItem', position: 3, name: post.data.title, item: `https://bugreel.io/blog/${post.id}` },
+  ],
+};
+---
+
+<Base
+  title={`${post.data.title} — BugReel`}
+  description={post.data.description}
+  image={post.data.image}
+  schema={[schema, breadcrumbSchema]}
+  type="article"
+>
+  <article class="section blog-post">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/blog">Blog</a>
+        <span aria-hidden="true">/</span>
+        <span>{post.data.title}</span>
+      </nav>
+
+      <header class="post-header">
+        {post.data.tags && post.data.tags.length > 0 && (
+          <div class="post-tags">
+            {post.data.tags.map((tag) => (
+              <span class="badge">{tag}</span>
+            ))}
+          </div>
+        )}
+        <h1>{post.data.title}</h1>
+        <div class="post-meta">
+          <span class="post-author">{post.data.author}</span>
+          <span class="post-separator" aria-hidden="true">&middot;</span>
+          <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
+        </div>
+      </header>
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      <footer class="post-footer">
+        <a href="/blog" class="btn btn-secondary">&larr; Back to Blog</a>
+      </footer>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 300px;
+  }
+
+  .post-header {
+    max-width: 720px;
+    margin: 0 auto 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .post-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .post-header h1 {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    line-height: 1.15;
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .post-separator {
+    color: var(--color-text-dim);
+  }
+
+  .post-footer {
+    max-width: 720px;
+    margin: 64px auto 0;
+    padding-top: 32px;
+    border-top: 1px solid var(--color-border);
+  }
+</style>

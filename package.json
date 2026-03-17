@@ -1,0 +1,18 @@
+{
+  "name": "bugreel",
+  "version": "1.0.0",
+  "description": "AI-powered bug reporting tool: screen recording → transcription → analysis → bug card",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "better-sqlite3": "^11.0.0",
+    "node-fetch": "^3.3.2",
+    "form-data": "^4.0.0",
+    "dotenv": "^16.4.0"
+  }
+}

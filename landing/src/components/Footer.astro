@@ -1,0 +1,152 @@
+---
+import strings from '../i18n/en.json';
+
+const f = strings.footer;
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="logo" aria-label="BugReel Home">
+          <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="32" height="32" rx="8" fill="#6366f1"/>
+            <circle cx="16" cy="12" r="4" fill="#fff"/>
+            <path d="M8 26c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <circle cx="22" cy="10" r="6" fill="#ef4444"/>
+            <path d="M19.5 10h5M22 7.5v5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>BugReel</span>
+        </a>
+        <p class="footer-tagline">{f.madeWith}</p>
+      </div>
+
+      <div class="footer-column">
+        <h4>{f.product}</h4>
+        <ul>
+          <li><a href="/#features">{f.features}</a></li>
+          <li><a href="/pricing">{f.pricing}</a></li>
+          <li><a href="/#integrations">{f.integrations}</a></li>
+          <li><a href="/#">{f.changelog}</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>{f.resources}</h4>
+        <ul>
+          <li><a href="https://docs.bugreel.io" target="_blank" rel="noopener">{f.docs}</a></li>
+          <li><a href="/blog">{f.blog}</a></li>
+          <li><a href="https://docs.bugreel.io/guides" target="_blank" rel="noopener">{f.guides}</a></li>
+          <li><a href="https://docs.bugreel.io/api" target="_blank" rel="noopener">{f.apiReference}</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>{f.company}</h4>
+        <ul>
+          <li><a href="/#">{f.about}</a></li>
+          <li><a href="https://github.com/nicrmn/bugreel" target="_blank" rel="noopener">{f.github}</a></li>
+          <li><a href="/#">{f.privacy}</a></li>
+          <li><a href="/#">{f.terms}</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; {currentYear} {f.copyright}</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    padding: 64px 0 32px;
+    background: var(--color-bg);
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+
+  .footer-brand .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    margin-bottom: 12px;
+  }
+
+  .footer-brand .logo span {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .footer-tagline {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  .footer-column h4 {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 16px;
+  }
+
+  .footer-column ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .footer-column li {
+    margin-bottom: 10px;
+  }
+
+  .footer-column a {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .footer-column a:hover {
+    color: var(--color-text);
+  }
+
+  .footer-bottom {
+    padding-top: 32px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .footer-bottom p {
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

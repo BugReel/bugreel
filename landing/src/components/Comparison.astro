@@ -1,0 +1,168 @@
+---
+import strings from '../i18n/en.json';
+
+const c = strings.comparison;
+
+interface Row {
+  feature: string;
+  bugreel: string;
+  jam: string;
+  marker: string;
+  bird: string;
+  loom: string;
+}
+
+const rows: Row[] = [
+  {
+    feature: c.rows.aiAnalysis,
+    bugreel: c.values.yes,
+    jam: c.values.partial,
+    marker: c.values.no,
+    bird: c.values.partial,
+    loom: c.values.no,
+  },
+  {
+    feature: c.rows.autoScreenshots,
+    bugreel: c.values.yes,
+    jam: c.values.yes,
+    marker: c.values.yes,
+    bird: c.values.yes,
+    loom: c.values.no,
+  },
+  {
+    feature: c.rows.selfHosted,
+    bugreel: c.values.yes,
+    jam: c.values.no,
+    marker: c.values.no,
+    bird: c.values.no,
+    loom: c.values.no,
+  },
+  {
+    feature: c.rows.openSource,
+    bugreel: c.values.yes,
+    jam: c.values.no,
+    marker: c.values.no,
+    bird: c.values.no,
+    loom: c.values.no,
+  },
+  {
+    feature: c.rows.consoleCapture,
+    bugreel: c.values.yes,
+    jam: c.values.yes,
+    marker: c.values.partial,
+    bird: c.values.yes,
+    loom: c.values.no,
+  },
+  {
+    feature: c.rows.complexityScoring,
+    bugreel: c.values.yes,
+    jam: c.values.no,
+    marker: c.values.no,
+    bird: c.values.no,
+    loom: c.values.no,
+  },
+  {
+    feature: c.rows.price,
+    bugreel: c.values.free,
+    jam: c.values.paid,
+    marker: c.values.paid,
+    bird: c.values.paid,
+    loom: c.values.paid,
+  },
+];
+
+function cellClass(value: string): string {
+  if (value === c.values.yes || value === c.values.free) return 'cell-positive';
+  if (value === c.values.no || value === c.values.paid) return 'cell-negative';
+  return 'cell-neutral';
+}
+---
+
+<section class="section section-sm" id="comparison">
+  <div class="container">
+    <div class="section-header">
+      <h2>{c.title}</h2>
+      <p>{c.subtitle}</p>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>{c.headers.feature}</th>
+            <th class="col-highlight">{c.headers.bugreel}</th>
+            <th>{c.headers.jam}</th>
+            <th>{c.headers.marker}</th>
+            <th>{c.headers.bird}</th>
+            <th>{c.headers.loom}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr>
+              <td class="feature-name">{row.feature}</td>
+              <td class:list={['col-highlight', cellClass(row.bugreel)]}>{row.bugreel}</td>
+              <td class:list={[cellClass(row.jam)]}>{row.jam}</td>
+              <td class:list={[cellClass(row.marker)]}>{row.marker}</td>
+              <td class:list={[cellClass(row.bird)]}>{row.bird}</td>
+              <td class:list={[cellClass(row.loom)]}>{row.loom}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="comparison-footnote">
+      * BugReel Community tier: up to 5 users, Webhook + YouTrack integrations. Jira, Linear, and GitHub Issues require Team plan ($8/user/mo).
+    </p>
+  </div>
+</section>
+
+<style>
+  .comparison-footnote {
+    margin-top: 24px;
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+    text-align: center;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+  .col-highlight {
+    background: rgba(99, 102, 241, 0.05) !important;
+    border-left: 1px solid rgba(99, 102, 241, 0.15);
+    border-right: 1px solid rgba(99, 102, 241, 0.15);
+  }
+
+  thead .col-highlight {
+    color: var(--color-primary) !important;
+    font-weight: 700;
+  }
+
+  .feature-name {
+    font-weight: 500;
+    color: var(--color-text) !important;
+  }
+
+  .cell-positive {
+    color: var(--color-success) !important;
+    font-weight: 500;
+  }
+
+  .cell-negative {
+    color: var(--color-text-dim) !important;
+  }
+
+  .cell-neutral {
+    color: var(--color-warning) !important;
+  }
+
+  @media (max-width: 768px) {
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px 10px;
+      font-size: 0.8125rem;
+    }
+  }
+</style>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recordings - BugReel</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container page">
+    <div class="page-header">
+      <h1>Recordings</h1>
+      <p class="page-desc">Screen recordings from QA team</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="filterStatus">
+          <option value="">All statuses</option>
+          <option value="uploaded">Uploaded</option>
+          <option value="transcribed">Transcribed</option>
+          <option value="analyzed">Analyzed</option>
+          <option value="complete">Complete</option>
+          <option value="error">Error</option>
+          <option value="yt_pending">Not sent to tracker</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Author</label>
+        <input type="text" id="filterAuthor" placeholder="Filter by author...">
+      </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="search" id="filterSearch" placeholder="Search recordings...">
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div id="tableWrapper" class="table-wrapper">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getRecordings } from '/js/api.js';
+    import { renderHeader, formatDate, formatDuration, statusLabel, icons, escapeHTML } from '/js/shared.js';
+
+    const YOUTRACK_URL = window.__BUGREEL_CONFIG__?.youtrackUrl || '';
+
+    // Render header
+    document.getElementById('header').innerHTML = renderHeader('recordings');
+
+    // State
+    let currentOffset = 0;
+    const PAGE_SIZE = 25;
+    let debounceTimer = null;
+
+    // Elements
+    const filterStatus = document.getElementById('filterStatus');
+    const filterAuthor = document.getElementById('filterAuthor');
+    const filterSearch = document.getElementById('filterSearch');
+    const tableWrapper = document.getElementById('tableWrapper');
+
+    // Load and render
+    let firstLoad = true;
+    async function loadRecordings() {
+      if (firstLoad) tableWrapper.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      firstLoad = false;
+
+      try {
+        const params = {
+          status: filterStatus.value === 'yt_pending' ? undefined : (filterStatus.value || undefined),
+          youtrack: filterStatus.value === 'yt_pending' ? 'pending' : undefined,
+          author: filterAuthor.value.trim() || undefined,
+          limit: PAGE_SIZE,
+          offset: currentOffset,
+        };
+
+        const data = await getRecordings(params);
+        renderTable(data.recordings, data.total);
+      } catch (err) {
+        tableWrapper.innerHTML = `
+          <div class="empty-state">
+            ${icons.alertTriangle}
+            <p>Failed to load recordings: ${escapeHTML(err.message)}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderTable(recordings, total) {
+      if (!recordings.length) {
+        tableWrapper.innerHTML = `
+          <div class="empty-state">
+            ${icons.inbox}
+            <p>No recordings found</p>
+          </div>
+        `;
+        return;
+      }
+
+      const searchTerm = filterSearch.value.trim().toLowerCase();
+      let filtered = recordings;
+      if (searchTerm) {
+        filtered = recordings.filter(r =>
+          r.id.toLowerCase().includes(searchTerm) ||
+          (r.author || '').toLowerCase().includes(searchTerm)
+        );
+      }
+
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      const currentPage = Math.floor(currentOffset / PAGE_SIZE) + 1;
+
+      tableWrapper.innerHTML = `
+        <table class="table table-clickable">
+          <thead>
+            <tr>
+              <th style="width:56px;"></th>
+              <th>Recording</th>
+              <th>Author</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>YT</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(r => `
+              <tr data-id="${escapeHTML(r.id)}">
+                <td>
+                  ${r.first_frame
+                    ? `<img class="rec-thumb" src="/api/recordings/${encodeURIComponent(r.id)}/frames/${encodeURIComponent(r.first_frame)}" alt="" loading="lazy">`
+                    : `<div class="rec-thumb-placeholder">${icons.video}</div>`
+                  }
+                </td>
+                <td>
+                  <div class="rec-info">
+                    <a href="/recording/${encodeURIComponent(r.id)}" style="font-weight:600; font-family:'JetBrains Mono','Fira Code',monospace; font-size:0.8rem;">
+                      ${escapeHTML(r.id)}
+                    </a>
+                    ${r.card_title ? `<span class="rec-title">${escapeHTML(r.card_title)}</span>` : ''}
+                  </div>
+                </td>
+                <td>${escapeHTML(r.author || '--')}</td>
+                <td class="text-muted">${formatDate(r.created_at)}</td>
+                <td><span class="badge badge-${r.status}"><span class="dot"></span>${statusLabel(r.status)}</span></td>
+                <td>${(() => {
+                  const ytId = r.card_youtrack_id || r.youtrack_issue_id;
+                  if (ytId) {
+                    const ytUrl = r.youtrack_url || YOUTRACK_URL + '/issue/' + ytId;
+                    return `<a href="${ytUrl}" target="_blank" class="yt-badge" title="${escapeHTML(ytId)}" onclick="event.stopPropagation()">${icons.checkCircle}<span>${escapeHTML(ytId)}</span></a>`;
+                  }
+                  if (r.pending_youtrack_issue_id) {
+                    const ytUrl = YOUTRACK_URL + '/issue/' + r.pending_youtrack_issue_id;
+                    return `<a href="${ytUrl}" target="_blank" class="yt-badge" style="background:var(--amber-dim);color:var(--amber);" title="Pending export" onclick="event.stopPropagation()">${icons.clock}<span>${escapeHTML(r.pending_youtrack_issue_id)}</span></a>`;
+                  }
+                  return '';
+                })()}</td>
+                <td class="text-muted">${formatDuration(r.duration_seconds)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ${total > PAGE_SIZE ? `
+          <div class="pagination">
+            <div class="pagination-info">
+              Showing ${currentOffset + 1}-${Math.min(currentOffset + PAGE_SIZE, total)} of ${total}
+            </div>
+            <div class="pagination-buttons">
+              <button class="btn btn-sm" ${currentPage <= 1 ? 'disabled' : ''} data-page="prev">
+                ${icons.chevronLeft}
+              </button>
+              ${buildPageButtons(currentPage, totalPages)}
+              <button class="btn btn-sm" ${currentPage >= totalPages ? 'disabled' : ''} data-page="next">
+                ${icons.chevronRight}
+              </button>
+            </div>
+          </div>
+        ` : ''}
+      `;
+
+      // Row click handler
+      tableWrapper.querySelectorAll('tbody tr').forEach(tr => {
+        tr.addEventListener('click', (e) => {
+          if (e.target.tagName === 'A') return;
+          const id = tr.dataset.id;
+          window.location.href = `/recording/${encodeURIComponent(id)}`;
+        });
+      });
+
+      // Pagination click
+      tableWrapper.querySelectorAll('.pagination-buttons .btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const page = btn.dataset.page;
+          if (page === 'prev' && currentOffset >= PAGE_SIZE) {
+            currentOffset -= PAGE_SIZE;
+          } else if (page === 'next' && currentOffset + PAGE_SIZE < total) {
+            currentOffset += PAGE_SIZE;
+          } else if (!isNaN(page)) {
+            currentOffset = (parseInt(page) - 1) * PAGE_SIZE;
+          }
+          loadRecordings();
+        });
+      });
+    }
+
+    function buildPageButtons(current, total) {
+      const pages = [];
+      const maxVisible = 5;
+      let start = Math.max(1, current - Math.floor(maxVisible / 2));
+      let end = Math.min(total, start + maxVisible - 1);
+      start = Math.max(1, end - maxVisible + 1);
+
+      for (let i = start; i <= end; i++) {
+        pages.push(`<button class="btn btn-sm ${i === current ? 'active' : ''}" data-page="${i}">${i}</button>`);
+      }
+      return pages.join('');
+    }
+
+    // Event listeners
+    filterStatus.addEventListener('change', () => { currentOffset = 0; loadRecordings(); });
+
+    filterAuthor.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => { currentOffset = 0; loadRecordings(); }, 400);
+    });
+
+    filterSearch.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => { currentOffset = 0; loadRecordings(); }, 300);
+    });
+
+    // Initial load + auto-refresh every 5s (for processing status updates)
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRecordings();
+      setInterval(loadRecordings, 5000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Recording - BugReel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .container { max-width: 700px; width: 100%; padding: 32px; }
+    .header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .header h1 { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header .subtitle { font-size: 12px; color: #64748b; margin-left: auto; }
+
+    .player-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+    video { width: 100%; display: block; max-height: 400px; background: #000; }
+
+    .meta { display: flex; gap: 24px; padding: 12px 16px; border-top: 1px solid #334155; font-size: 13px; color: #94a3b8; }
+    .meta strong { color: #e2e8f0; }
+
+    .actions { display: flex; gap: 12px; margin-bottom: 16px; }
+    .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-upload { background: #3b82f6; color: white; }
+    .btn-upload:hover { background: #2563eb; }
+    .btn-discard { background: #334155; color: #94a3b8; }
+    .btn-discard:hover { background: #475569; color: #e2e8f0; }
+
+    .progress-container { margin-bottom: 16px; display: none; }
+    .progress-track { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 4px; transition: width 0.3s; }
+    .progress-text { font-size: 12px; color: #94a3b8; margin-top: 6px; text-align: center; }
+
+    .status { text-align: center; font-size: 13px; color: #94a3b8; min-height: 20px; }
+    .status a { color: #3b82f6; text-decoration: none; font-weight: 600; }
+    .status a:hover { text-decoration: underline; }
+    .status.error { color: #ef4444; }
+    .status.success { color: #22c55e; }
+
+    .empty { text-align: center; padding: 48px; color: #64748b; }
+    .empty p { font-size: 14px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>BugReel</h1>
+      <span class="subtitle">Review Recording</span>
+    </div>
+
+    <div id="content">
+      <div class="empty"><p>Loading recording...</p></div>
+    </div>
+  </div>
+
+  <script src="idb-helper.js"></script>
+  <script src="review.js"></script>
+</body>
+</html>

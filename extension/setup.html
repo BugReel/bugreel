@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugReel — Setup</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh; background: #0f172a; color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 40px 20px;
+    }
+    .container { max-width: 560px; width: 100%; }
+    .brand { text-align: center; margin-bottom: 32px; }
+    .brand-logo {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 14px; margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+    }
+    .brand-logo svg { width: 28px; height: 28px; color: white; }
+    .brand h1 { font-size: 22px; font-weight: 700; color: #f1f5f9; }
+    .brand .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+    .step {
+      background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+      padding: 24px; margin-bottom: 16px; transition: border-color 0.2s;
+    }
+    .step.active { border-color: #3b82f6; }
+    .step.done { border-color: #22c55e; }
+    .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+      background: #334155; color: #94a3b8;
+    }
+    .step.active .step-num { background: #3b82f6; color: #fff; }
+    .step.done .step-num { background: #22c55e; color: #fff; }
+    .step-title { font-size: 15px; font-weight: 600; }
+    .step-body { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-left: 44px; }
+    .step-body p { margin-bottom: 8px; }
+    .step-body .path {
+      font-family: ui-monospace, monospace; font-size: 12px;
+      background: #0f172a; padding: 6px 10px; border-radius: 6px;
+      color: #e2e8f0; display: inline-block; margin: 4px 0;
+    }
+
+    .btn {
+      padding: 10px 20px; border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-blue { background: #3b82f6; color: #fff; }
+    .btn-green { background: #22c55e; color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+    .btn-outline:hover { border-color: #3b82f6; color: #e2e8f0; }
+
+    .result { margin-top: 8px; font-size: 12px; font-weight: 600; min-height: 18px; }
+    .result.ok { color: #22c55e; }
+    .result.err { color: #ef4444; }
+    .result.info { color: #f59e0b; }
+
+    .mic-live { margin-top: 12px; }
+    .mic-live-row { display: flex; align-items: center; gap: 8px; }
+    .mic-level-track { flex: 1; height: 6px; background: #0f172a; border-radius: 3px; overflow: hidden; }
+    .mic-level-fill { height: 100%; width: 0%; background: #22c55e; border-radius: 3px; transition: width 0.08s linear; }
+    .mic-level-label { font-size: 11px; color: #64748b; min-width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
+    .mic-live-hint { font-size: 11px; color: #475569; margin-top: 4px; }
+
+    .hidden { display: none !important; }
+    .note { font-size: 11px; color: #475569; margin-top: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+      </div>
+      <h1>BugReel</h1>
+      <div class="subtitle" id="subtitle">Extension Setup</div>
+    </div>
+
+    <!-- Step 1: Microphone -->
+    <div class="step active" id="step-1">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">Microphone Access</div>
+      </div>
+      <div class="step-body">
+        <p>Microphone access is needed for voice recording. Click the button and allow access in the browser dialog.</p>
+        <button class="btn btn-blue" id="btn-mic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+          Allow Microphone
+        </button>
+        <div class="result" id="mic-result"></div>
+        <div class="mic-live hidden" id="mic-live">
+          <div class="mic-live-row">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            <div class="mic-level-track"><div class="mic-level-fill" id="mic-level-fill"></div></div>
+            <span class="mic-level-label" id="mic-level-val">0%</span>
+          </div>
+          <p class="mic-live-hint">Say something — the bar should respond to your voice</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Screen Recording (Firefox + macOS only) -->
+    <div class="step" id="step-2">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">Screen Recording</div>
+      </div>
+      <div class="step-body" id="step-2-body">
+        <p>macOS requires screen recording permission for Firefox.</p>
+        <p>Open:</p>
+        <div class="path">System Settings → Privacy & Security → Screen Recording</div>
+        <p>Enable the toggle for <strong>Firefox</strong>.</p>
+        <p style="color:#f59e0b;">After enabling, macOS will ask to restart Firefox — click "Restart".</p>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline" id="btn-open-settings">Open System Settings</button>
+          <button class="btn btn-blue" id="btn-screen">Check Screen Access</button>
+        </div>
+        <div class="result" id="screen-result"></div>
+      </div>
+    </div>
+
+    <!-- Step: Connect Account -->
+    <div class="step" id="step-auth">
+      <div class="step-header">
+        <div class="step-num" id="auth-num">3</div>
+        <div class="step-title">Connect Your Account</div>
+      </div>
+      <div class="step-body">
+        <p>Link your BugReel account so recordings are associated with you.</p>
+        <div class="auth-instructions" style="margin-top:8px;">
+          <div style="margin-bottom:4px;">1. Open your BugReel dashboard and log in</div>
+          <div style="margin-bottom:4px;">2. Go to <strong>Settings</strong> and click <strong>Generate Extension Token</strong></div>
+          <div style="margin-bottom:4px;">3. Copy the token and paste it below</div>
+        </div>
+        <div style="margin-top:12px;">
+          <input type="text" id="input-token" placeholder="Paste extension token here..." style="width:100%;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:ui-monospace,monospace;outline:none;" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+          <button class="btn btn-blue" id="btn-connect-token">Connect</button>
+          <span id="token-result" class="result"></span>
+        </div>
+        <div id="auth-user-info" class="hidden" style="margin-top:10px;padding:10px;background:#0f172a;border:1px solid #22c55e;border-radius:8px;">
+          <span style="color:#22c55e;font-weight:600;">Connected as:</span>
+          <span id="auth-user-name" style="color:#e2e8f0;margin-left:4px;"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step Done -->
+    <div class="step" id="step-done">
+      <div class="step-header">
+        <div class="step-num" id="done-num">2</div>
+        <div class="step-title">Done</div>
+      </div>
+      <div class="step-body">
+        <p id="done-text">All permissions configured. Click the extension icon to start recording!</p>
+        <button class="btn btn-green hidden" id="btn-done" style="margin-top:8px;">Close and Start</button>
+      </div>
+    </div>
+
+    <p class="note">You can skip any step — the extension will request permissions when recording.</p>
+  </div>
+
+  <script src="setup.js"></script>
+</body>
+</html>

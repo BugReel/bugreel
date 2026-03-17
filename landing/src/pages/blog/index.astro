@@ -1,0 +1,128 @@
+---
+import Base from '../../layouts/Base.astro';
+import BlogCard from '../../components/BlogCard.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: 'BugReel Blog',
+  description: 'Insights on bug reporting, developer tools, AI in software development, and building better QA workflows.',
+  url: 'https://bugreel.io/blog',
+  blogPost: posts.map((post) => ({
+    '@type': 'BlogPosting',
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.date.toISOString(),
+    author: {
+      '@type': 'Organization',
+      name: post.data.author,
+    },
+    url: `https://bugreel.io/blog/${post.id}`,
+  })),
+};
+---
+
+<Base
+  title="Blog — BugReel"
+  description="Insights on bug reporting, developer tools, AI in software development, and building better QA workflows."
+  schema={schema}
+>
+  <section class="section">
+    <div class="container">
+      <div class="blog-header">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Home</a>
+          <span aria-hidden="true">/</span>
+          <span>Blog</span>
+        </nav>
+        <h1>Blog</h1>
+        <p>Insights on bug reporting, developer tools, and building better QA workflows.</p>
+      </div>
+
+      {posts.length > 0 ? (
+        <div class="blog-grid">
+          {posts.map((post) => (
+            <BlogCard
+              title={post.data.title}
+              description={post.data.description}
+              date={post.data.date}
+              slug={post.id}
+              image={post.data.image}
+              tags={post.data.tags}
+            />
+          ))}
+        </div>
+      ) : (
+        <div class="blog-empty">
+          <p>No posts yet. Check back soon.</p>
+        </div>
+      )}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .blog-header {
+    margin-bottom: 48px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .blog-header h1 {
+    margin-bottom: 12px;
+  }
+
+  .blog-header p {
+    font-size: 1.125rem;
+    max-width: 480px;
+  }
+
+  .blog-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .blog-empty {
+    text-align: center;
+    padding: 80px 0;
+  }
+
+  .blog-empty p {
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 768px) {
+    .blog-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

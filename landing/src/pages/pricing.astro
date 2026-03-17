@@ -1,0 +1,71 @@
+---
+import Base from '../layouts/Base.astro';
+import PricingSection from '../components/Pricing.astro';
+import FAQ from '../components/FAQ.astro';
+import CTA from '../components/CTA.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'BugReel Pricing',
+  description: 'Simple, transparent pricing for BugReel. Start free with the open-source Community edition. Upgrade for team features and premium integrations.',
+  url: 'https://bugreel.io/pricing',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Pricing', item: 'https://bugreel.io/pricing' },
+    ],
+  },
+};
+---
+
+<Base
+  title="Pricing — BugReel"
+  description="Simple, transparent pricing for BugReel. Start free with the open-source Community edition. Upgrade for team features and premium integrations."
+  schema={schema}
+>
+  <div class="pricing-page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <span>Pricing</span>
+      </nav>
+    </div>
+  </div>
+  <PricingSection />
+  <FAQ />
+  <CTA />
+</Base>
+
+<style>
+  .pricing-page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+</style>

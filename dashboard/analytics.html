@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - BugReel</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container page">
+    <div class="page-header">
+      <h1>Analytics</h1>
+      <p class="page-desc">Overview of recordings and processing</p>
+    </div>
+
+    <div id="analytics">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getRecordings, getCards } from '/js/api.js';
+    import {
+      renderHeader, formatDate, statusLabel,
+      escapeHTML, icons, timeAgo
+    } from '/js/shared.js';
+
+    document.getElementById('header').innerHTML = renderHeader('analytics');
+
+    const container = document.getElementById('analytics');
+
+    async function load() {
+      try {
+        const [recData, cardData] = await Promise.all([
+          getRecordings({ limit: 200, offset: 0 }),
+          getCards({ limit: 200, offset: 0 }),
+        ]);
+
+        render(recData, cardData);
+      } catch (err) {
+        container.innerHTML = `
+          <div class="empty-state">
+            ${icons.alertTriangle}
+            <p>Failed to load analytics: ${escapeHTML(err.message)}</p>
+          </div>
+        `;
+      }
+    }
+
+    function render(recData, cardData) {
+      const recordings = recData.recordings || [];
+      const cards = cardData.cards || [];
+      const totalRec = recData.total || recordings.length;
+
+      // Exported count
+      const exported = cards.filter(c => c.youtrack_issue_id).length;
+      const notExported = cards.filter(c => !c.youtrack_issue_id).length;
+
+      // Recordings by status
+      const recByStatus = {};
+      recordings.forEach(r => {
+        const s = r.status || 'uploaded';
+        recByStatus[s] = (recByStatus[s] || 0) + 1;
+      });
+
+      // Type distribution
+      const typeCount = { bug: 0, feature: 0, enhancement: 0 };
+      cards.forEach(c => {
+        if (typeCount.hasOwnProperty(c.type)) typeCount[c.type]++;
+      });
+      const maxType = Math.max(...Object.values(typeCount), 1);
+
+      // By author
+      const authorCount = {};
+      recordings.forEach(r => {
+        const a = r.author || 'unknown';
+        authorCount[a] = (authorCount[a] || 0) + 1;
+      });
+      const authorsSorted = Object.entries(authorCount).sort((a, b) => b[1] - a[1]);
+      const maxAuthor = Math.max(...Object.values(authorCount), 1);
+
+      // Recent activity
+      const activities = [];
+      recordings.slice(0, 15).forEach(r => {
+        activities.push({
+          text: `<strong>${escapeHTML(r.author || 'Unknown')}</strong> recorded <strong>${escapeHTML(r.card_title || r.id)}</strong>`,
+          date: r.created_at,
+          dotColor: r.status === 'error' ? 'red' : r.status === 'complete' ? 'green' : 'blue',
+          link: `/recording/${encodeURIComponent(r.id)}`,
+        });
+      });
+      activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      container.innerHTML = `
+        <!-- Summary Cards -->
+        <div class="grid-4 mb-24">
+          <div class="card">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="card-title">Recordings</div>
+                <div class="card-value">${totalRec}</div>
+              </div>
+              <div class="stat-icon blue">${icons.video}</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="card-title">Exported to YT</div>
+                <div class="card-value">${exported}</div>
+                <div class="card-subtitle">of ${cards.length} processed</div>
+              </div>
+              <div class="stat-icon green">${icons.checkCircle}</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="card-title">Pending Export</div>
+                <div class="card-value">${notExported}</div>
+              </div>
+              <div class="stat-icon amber">${icons.clock}</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="card-title">Error Rate</div>
+                <div class="card-value">${totalRec > 0 ? (((recByStatus.error || 0) / totalRec) * 100).toFixed(0) : 0}%</div>
+                <div class="card-subtitle">${recByStatus.error || 0} errors</div>
+              </div>
+              <div class="stat-icon red">${icons.alertTriangle}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2 mb-24">
+          <!-- Type Distribution -->
+          <div class="card">
+            <h3 class="mb-16">By Type</h3>
+            <div class="dist-bar-container">
+              ${[['bug', 'Bugs', 'var(--red)'], ['feature', 'Features', 'var(--blue)'], ['enhancement', 'Enhancements', 'var(--violet)']].map(([key, label, color]) => `
+                <div class="dist-bar-row">
+                  <span class="dist-bar-label">${label}</span>
+                  <div class="dist-bar-track">
+                    ${typeCount[key] > 0 ? `
+                      <div class="dist-bar-fill" style="width: ${(typeCount[key] / maxType) * 100}%; background: ${color};">
+                        ${typeCount[key]}
+                      </div>
+                    ` : ''}
+                  </div>
+                  <span class="dist-bar-count">${typeCount[key]}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- By Author -->
+          <div class="card">
+            <h3 class="mb-16">By Author</h3>
+            ${authorsSorted.length > 0 ? `
+              <div class="dist-bar-container">
+                ${authorsSorted.map(([author, count]) => `
+                  <div class="dist-bar-row">
+                    <span class="dist-bar-label">${escapeHTML(author)}</span>
+                    <div class="dist-bar-track">
+                      <div class="dist-bar-fill" style="width: ${(count / maxAuthor) * 100}%; background: var(--blue);">
+                        ${count}
+                      </div>
+                    </div>
+                    <span class="dist-bar-count">${count}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : '<div class="text-dim text-sm">No recordings yet</div>'}
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+          <h3 class="mb-16">Recent Activity</h3>
+          ${activities.length > 0 ? `
+            <div class="activity-list">
+              ${activities.slice(0, 15).map(a => `
+                <a href="${a.link}" class="activity-item" style="text-decoration:none;">
+                  <div class="activity-dot ${a.dotColor}"></div>
+                  <div class="activity-content">
+                    <div class="activity-text">${a.text}</div>
+                    <div class="activity-time">${timeAgo(a.date)}</div>
+                  </div>
+                </a>
+              `).join('')}
+            </div>
+          ` : '<div class="text-dim text-sm">No activity yet</div>'}
+        </div>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', load);
+  </script>
+</body>
+</html>

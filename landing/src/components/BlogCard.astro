@@ -1,0 +1,115 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  date: Date;
+  slug: string;
+  image?: string;
+  tags?: string[];
+}
+
+const { title, description, date, slug, image, tags } = Astro.props;
+
+const formattedDate = date.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<article class="blog-card card">
+  <a href={`/blog/${slug}`} class="blog-card-link">
+    {image && (
+      <div class="blog-card-image">
+        <img src={image} alt={title} loading="lazy" width="600" height="340" />
+      </div>
+    )}
+    <div class="blog-card-body">
+      {tags && tags.length > 0 && (
+        <div class="blog-card-tags">
+          {tags.slice(0, 3).map((tag) => (
+            <span class="badge">{tag}</span>
+          ))}
+        </div>
+      )}
+      <h3 class="blog-card-title">{title}</h3>
+      <p class="blog-card-description">{description}</p>
+      <time class="blog-card-date" datetime={date.toISOString()}>{formattedDate}</time>
+    </div>
+  </a>
+</article>
+
+<style>
+  .blog-card {
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .blog-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .blog-card-image {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .blog-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+  }
+
+  .blog-card:hover .blog-card-image img {
+    transform: scale(1.03);
+  }
+
+  .blog-card-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .blog-card-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .blog-card-tags .badge {
+    font-size: 0.6875rem;
+    padding: 3px 10px;
+  }
+
+  .blog-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.3;
+    transition: color var(--transition-fast);
+  }
+
+  .blog-card:hover .blog-card-title {
+    color: var(--color-primary);
+  }
+
+  .blog-card-description {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .blog-card-date {
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+  }
+</style>
