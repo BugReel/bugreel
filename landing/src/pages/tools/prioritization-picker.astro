@@ -1,0 +1,907 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Prioritization Framework Picker',
+    description: 'Answer 5 questions about your team and workflow. Get a personalized recommendation: RICE, ICE, MoSCoW, WSJF, or Kano.',
+    url: 'https://bugreel.io/tools/prioritization-picker',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Prioritization Framework Picker', item: 'https://bugreel.io/tools/prioritization-picker' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Which Prioritization Framework Should You Use? — RICE, ICE, MoSCoW, WSJF, Kano | BugReel"
+  description="Answer 5 questions about your team and workflow. Get a personalized recommendation: RICE, ICE, MoSCoW, WSJF, or Kano. Free, no signup required."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Prioritization Framework Picker</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-success">Free &middot; No Signup</span>
+        <h1>Which Prioritization Framework Should You Use?</h1>
+        <p class="hero-subtitle">Answer 5 questions about your team and workflow. Get a personalized recommendation: RICE, ICE, MoSCoW, WSJF, or Kano.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quiz -->
+  <section class="tool-section">
+    <div class="container">
+
+      <!-- Progress bar -->
+      <div class="progress-bar" id="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+      <div class="progress-text" id="progress-text">Question 1 of 5</div>
+
+      <!-- Questions container -->
+      <div id="quiz-container">
+
+        <!-- Q1: Team Size -->
+        <div class="question-card card" data-question="0" id="q-0">
+          <div class="question-number">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 2a4 4 0 014 4 4 4 0 01-4 4 4 4 0 01-4-4 4 4 0 014-4zM3 18c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>Question 1 of 5</span>
+          </div>
+          <h2 class="question-title">How big is your product/dev team?</h2>
+          <div class="options">
+            <button class="option-btn" type="button" data-question="0" data-value="small">
+              <span class="option-label">Small (&lt;5)</span>
+              <span class="option-desc">Startup or early-stage team with flat structure</span>
+            </button>
+            <button class="option-btn" type="button" data-question="0" data-value="medium">
+              <span class="option-label">Medium (5-20)</span>
+              <span class="option-desc">Multiple roles, some process, growing backlog</span>
+            </button>
+            <button class="option-btn" type="button" data-question="0" data-value="large">
+              <span class="option-label">Large (20+)</span>
+              <span class="option-desc">Multiple squads, cross-team dependencies</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q2: Data Availability -->
+        <div class="question-card card" data-question="1" id="q-1" hidden>
+          <div class="question-number">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M3 3v14h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 13l3-5 3 3 4-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Question 2 of 5</span>
+          </div>
+          <h2 class="question-title">Do you have usage metrics and analytics?</h2>
+          <div class="options">
+            <button class="option-btn" type="button" data-question="1" data-value="comprehensive">
+              <span class="option-label">Yes, comprehensive</span>
+              <span class="option-desc">Full analytics stack, A/B tests, funnel data</span>
+            </button>
+            <button class="option-btn" type="button" data-question="1" data-value="some">
+              <span class="option-label">Some data</span>
+              <span class="option-desc">Basic analytics, some user feedback, partial coverage</span>
+            </button>
+            <button class="option-btn" type="button" data-question="1" data-value="none">
+              <span class="option-label">No data</span>
+              <span class="option-desc">Gut feeling, anecdotal feedback, no instrumentation</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q3: Stakeholder Involvement -->
+        <div class="question-card card" data-question="2" id="q-2" hidden>
+          <div class="question-number">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="7" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="14" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M1 18c0-2.761 2.686-5 6-5s6 2.239 6 5M10 18c0-2.761 2.686-5 6-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>Question 3 of 5</span>
+          </div>
+          <h2 class="question-title">How involved are stakeholders in prioritization?</h2>
+          <div class="options">
+            <button class="option-btn" type="button" data-question="2" data-value="very">
+              <span class="option-label">Very involved</span>
+              <span class="option-desc">Regular prioritization meetings, competing requests from multiple stakeholders</span>
+            </button>
+            <button class="option-btn" type="button" data-question="2" data-value="moderate">
+              <span class="option-label">Moderate</span>
+              <span class="option-desc">Occasional input, PM/lead makes most calls</span>
+            </button>
+            <button class="option-btn" type="button" data-question="2" data-value="minimal">
+              <span class="option-label">Minimal</span>
+              <span class="option-desc">Engineering-led decisions, stakeholders trust the team</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q4: Cadence -->
+        <div class="question-card card" data-question="3" id="q-3" hidden>
+          <div class="question-number">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 5v5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Question 4 of 5</span>
+          </div>
+          <h2 class="question-title">How often do you prioritize?</h2>
+          <div class="options">
+            <button class="option-btn" type="button" data-question="3" data-value="continuous">
+              <span class="option-label">Continuous</span>
+              <span class="option-desc">Kanban-style, always reprioritizing as work completes</span>
+            </button>
+            <button class="option-btn" type="button" data-question="3" data-value="sprint">
+              <span class="option-label">Per sprint</span>
+              <span class="option-desc">Sprint planning, 1-2 week cycles, fixed commitments</span>
+            </button>
+            <button class="option-btn" type="button" data-question="3" data-value="quarterly">
+              <span class="option-label">Quarterly</span>
+              <span class="option-desc">OKR/roadmap cycles, big-batch planning</span>
+            </button>
+            <button class="option-btn" type="button" data-question="3" data-value="adhoc">
+              <span class="option-label">Ad-hoc</span>
+              <span class="option-desc">No fixed cadence, prioritize when the backlog gets painful</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q5: Primary Challenge -->
+        <div class="question-card card" data-question="4" id="q-4" hidden>
+          <div class="question-number">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 6v4M10 14h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>Question 5 of 5</span>
+          </div>
+          <h2 class="question-title">What's your biggest prioritization problem?</h2>
+          <div class="options">
+            <button class="option-btn" type="button" data-question="4" data-value="scoring">
+              <span class="option-label">Too many features, need objective scoring</span>
+              <span class="option-desc">Backlog is overwhelming, need a formula to rank items</span>
+            </button>
+            <button class="option-btn" type="button" data-question="4" data-value="alignment">
+              <span class="option-label">Need stakeholder alignment</span>
+              <span class="option-desc">People disagree on what's most important, need a shared language</span>
+            </button>
+            <button class="option-btn" type="button" data-question="4" data-value="roi">
+              <span class="option-label">Need to maximize ROI</span>
+              <span class="option-desc">Limited resources, need to pick the highest-value items</span>
+            </button>
+            <button class="option-btn" type="button" data-question="4" data-value="user-needs">
+              <span class="option-label">Need to understand user needs</span>
+              <span class="option-desc">Not sure which features delight users vs. are expected</span>
+            </button>
+            <button class="option-btn" type="button" data-question="4" data-value="effort">
+              <span class="option-label">Estimating effort accurately</span>
+              <span class="option-desc">Keep picking items that take 3x longer than expected</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div id="result-section" hidden>
+        <div class="result-card card">
+          <div class="result-badge-row">
+            <span class="badge badge-success">Your recommendation</span>
+          </div>
+          <h2 class="result-framework" id="result-framework"></h2>
+          <div class="result-confidence">
+            <div class="confidence-bar">
+              <div class="confidence-fill" id="confidence-fill"></div>
+            </div>
+            <span class="confidence-text" id="confidence-text"></span>
+          </div>
+          <p class="result-description" id="result-description"></p>
+          <div class="result-when">
+            <h3>When to use it</h3>
+            <p id="result-when-text"></p>
+          </div>
+        </div>
+
+        <!-- Comparison table -->
+        <div class="comparison-wrapper">
+          <h3 class="comparison-title">All Framework Scores</h3>
+          <div class="table-wrapper">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Framework</th>
+                  <th>Score</th>
+                  <th>Best For</th>
+                </tr>
+              </thead>
+              <tbody id="comparison-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="result-actions">
+          <button class="btn btn-primary" id="retake-btn" type="button">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M2 8a6 6 0 0111.47-2.47M14 8a6 6 0 01-11.47 2.47" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M14 2v4h-4M2 14v-4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Retake Quiz
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Already know your framework? Let AI handle the bugs.</p>
+      <h2>Record your screen. AI files the bug report.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel watches your screen recording and automatically generates structured bug reports with severity, priority, and reproduction steps &mdash; ready for any framework.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 720px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 600px;
+  }
+
+  /* ===== Tool Section ===== */
+  .tool-section {
+    padding-bottom: 64px;
+  }
+
+  /* ===== Progress Bar ===== */
+  .progress-bar {
+    width: 100%;
+    max-width: 600px;
+    height: 4px;
+    background: var(--color-border);
+    border-radius: 2px;
+    margin: 0 auto 8px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-text {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+  }
+
+  /* ===== Question Card ===== */
+  .question-card {
+    max-width: 640px;
+    margin: 0 auto;
+    animation: fadeInUp 0.4s ease forwards;
+  }
+
+  .question-card[hidden] {
+    display: none;
+  }
+
+  .question-number {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+  }
+
+  .question-number svg {
+    color: var(--color-primary);
+  }
+
+  .question-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+
+  /* ===== Option Buttons ===== */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .option-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    padding: 16px 20px;
+    text-align: left;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-sans);
+  }
+
+  .option-btn:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-glow);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .option-btn.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-glow);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+  }
+
+  .option-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .option-desc {
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+    line-height: 1.5;
+  }
+
+  /* ===== Result ===== */
+  #result-section[hidden] {
+    display: none;
+  }
+
+  .result-card {
+    max-width: 640px;
+    margin: 0 auto;
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  .result-badge-row {
+    margin-bottom: 16px;
+  }
+
+  .result-framework {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    font-weight: 800;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .result-confidence {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .confidence-bar {
+    flex: 1;
+    max-width: 200px;
+    height: 8px;
+    background: var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 4px;
+    transition: width 0.8s ease;
+  }
+
+  .confidence-text {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+  }
+
+  .result-description {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  .result-when {
+    padding: 20px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .result-when h3 {
+    font-size: 0.875rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--color-text);
+  }
+
+  .result-when p {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  /* ===== Comparison Table ===== */
+  .comparison-wrapper {
+    max-width: 640px;
+    margin: 32px auto 0;
+    animation: fadeInUp 0.5s ease 0.1s forwards;
+    opacity: 0;
+  }
+
+  .comparison-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.8125rem;
+  }
+
+  .comparison-table th {
+    font-weight: 600;
+    color: var(--color-text);
+    background: var(--color-surface);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.6875rem;
+  }
+
+  .comparison-table td {
+    color: var(--color-text-muted);
+  }
+
+  .comparison-table tr:hover td {
+    background: var(--color-surface-hover);
+  }
+
+  .comparison-table td:first-child {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .comparison-table tr.winner td {
+    color: var(--color-text);
+  }
+
+  .comparison-table tr.winner td:first-child {
+    color: var(--color-primary);
+  }
+
+  .score-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .score-bar-fill {
+    display: inline-block;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-border);
+    min-width: 20px;
+    transition: width 0.6s ease;
+  }
+
+  .score-bar-fill.fill-winner {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  }
+
+  /* ===== Result Actions ===== */
+  .result-actions {
+    max-width: 640px;
+    margin: 24px auto 0;
+    display: flex;
+    gap: 12px;
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Animation ===== */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .result-actions {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<script>
+  // ===== Prioritization Framework Picker — Client-Side Logic =====
+
+  // --- Framework definitions ---
+  interface FrameworkDef {
+    name: string;
+    description: string;
+    whenToUse: string;
+    bestFor: string;
+  }
+
+  const FRAMEWORKS: Record<string, FrameworkDef> = {
+    RICE: {
+      name: 'RICE',
+      description: 'RICE scores items by Reach (how many users), Impact (how much it moves the needle), Confidence (how sure you are), and Effort (how long it takes). It produces a numeric score that makes it easy to rank a large backlog objectively.',
+      whenToUse: 'Use RICE when you have usage data, a large backlog, and need an objective, repeatable formula. It works best for data-driven teams that want to remove bias from prioritization.',
+      bestFor: 'Data-driven teams with large backlogs',
+    },
+    ICE: {
+      name: 'ICE',
+      description: 'ICE scores items on Impact, Confidence, and Ease (inverse of effort). It is a simplified version of RICE — faster to apply, but less rigorous. Each dimension is scored 1-10, multiplied together.',
+      whenToUse: 'Use ICE when you need a quick scoring method for a small team or ad-hoc prioritization. It is lightweight enough to apply in a single meeting without extensive data.',
+      bestFor: 'Small teams needing quick, lightweight scoring',
+    },
+    MoSCoW: {
+      name: 'MoSCoW',
+      description: 'MoSCoW categorizes items into Must Have, Should Have, Could Have, and Won\'t Have. It is a negotiation tool, not a scoring formula — designed to align stakeholders on what is in scope vs. out of scope.',
+      whenToUse: 'Use MoSCoW when stakeholders are heavily involved and you need a shared language for scope negotiation. It works well for sprint or release planning where you need clear boundaries.',
+      bestFor: 'Stakeholder alignment and scope negotiation',
+    },
+    WSJF: {
+      name: 'WSJF',
+      description: 'Weighted Shortest Job First divides the Cost of Delay (business value + time criticality + risk reduction) by Job Size. It comes from SAFe (Scaled Agile Framework) and is designed for maximizing throughput of value.',
+      whenToUse: 'Use WSJF when you have large teams, continuous flow, and need to maximize ROI. It excels when the cost of delay varies significantly between items — some things must ship before a deadline, others can wait.',
+      bestFor: 'Large teams maximizing value throughput',
+    },
+    Kano: {
+      name: 'Kano',
+      description: 'The Kano Model classifies features by user satisfaction: Must-Be (expected), One-Dimensional (more is better), Attractive (delighters), Indifferent, and Reverse. It requires user research — surveys or interviews — to categorize correctly.',
+      whenToUse: 'Use Kano when you need to understand which features delight users vs. are merely expected. It is ideal for product teams focused on user experience, especially when deciding between many feature requests.',
+      bestFor: 'Understanding user satisfaction drivers',
+    },
+  };
+
+  // --- Scoring matrix ---
+  // Each answer adds points to frameworks. Key: "q{N}:{value}", Value: { framework: points }
+  const SCORING: Record<string, Record<string, number>> = {
+    // Q1: Team Size
+    '0:small':   { RICE: 1, ICE: 3, MoSCoW: 2, WSJF: 0, Kano: 1 },
+    '0:medium':  { RICE: 2, ICE: 2, MoSCoW: 2, WSJF: 1, Kano: 2 },
+    '0:large':   { RICE: 3, ICE: 0, MoSCoW: 1, WSJF: 3, Kano: 1 },
+
+    // Q2: Data Availability
+    '1:comprehensive': { RICE: 3, ICE: 1, MoSCoW: 0, WSJF: 2, Kano: 3 },
+    '1:some':          { RICE: 2, ICE: 2, MoSCoW: 1, WSJF: 1, Kano: 2 },
+    '1:none':          { RICE: 0, ICE: 2, MoSCoW: 3, WSJF: 1, Kano: 0 },
+
+    // Q3: Stakeholder Involvement
+    '2:very':     { RICE: 1, ICE: 0, MoSCoW: 3, WSJF: 2, Kano: 1 },
+    '2:moderate': { RICE: 2, ICE: 1, MoSCoW: 2, WSJF: 2, Kano: 2 },
+    '2:minimal':  { RICE: 2, ICE: 3, MoSCoW: 0, WSJF: 1, Kano: 2 },
+
+    // Q4: Cadence
+    '3:continuous': { RICE: 1, ICE: 2, MoSCoW: 0, WSJF: 3, Kano: 1 },
+    '3:sprint':     { RICE: 2, ICE: 2, MoSCoW: 3, WSJF: 1, Kano: 1 },
+    '3:quarterly':  { RICE: 3, ICE: 0, MoSCoW: 1, WSJF: 2, Kano: 2 },
+    '3:adhoc':      { RICE: 0, ICE: 3, MoSCoW: 1, WSJF: 0, Kano: 1 },
+
+    // Q5: Primary Challenge
+    '4:scoring':    { RICE: 3, ICE: 2, MoSCoW: 0, WSJF: 1, Kano: 0 },
+    '4:alignment':  { RICE: 1, ICE: 0, MoSCoW: 3, WSJF: 1, Kano: 1 },
+    '4:roi':        { RICE: 2, ICE: 1, MoSCoW: 0, WSJF: 3, Kano: 0 },
+    '4:user-needs': { RICE: 0, ICE: 0, MoSCoW: 1, WSJF: 0, Kano: 3 },
+    '4:effort':     { RICE: 2, ICE: 2, MoSCoW: 0, WSJF: 2, Kano: 0 },
+  };
+
+  // --- State ---
+  const answers: (string | null)[] = [null, null, null, null, null];
+  let currentQ = 0;
+
+  // --- DOM ---
+  const progressFill = document.getElementById('progress-fill')!;
+  const progressText = document.getElementById('progress-text')!;
+  const quizContainer = document.getElementById('quiz-container')!;
+  const resultSection = document.getElementById('result-section')!;
+  const resultFramework = document.getElementById('result-framework')!;
+  const confidenceFill = document.getElementById('confidence-fill')!;
+  const confidenceText = document.getElementById('confidence-text')!;
+  const resultDescription = document.getElementById('result-description')!;
+  const resultWhenText = document.getElementById('result-when-text')!;
+  const comparisonTbody = document.getElementById('comparison-tbody')!;
+  const retakeBtn = document.getElementById('retake-btn')!;
+  const progressBar = document.getElementById('progress-bar')!;
+
+  // --- Functions ---
+  function updateProgress() {
+    const answered = answers.filter(a => a !== null).length;
+    const pct = (answered / 5) * 100;
+    progressFill.style.width = pct + '%';
+    if (answered < 5) {
+      progressText.textContent = `Question ${currentQ + 1} of 5`;
+    } else {
+      progressText.textContent = 'Complete';
+    }
+  }
+
+  function showQuestion(index: number) {
+    // Hide all questions
+    for (let i = 0; i < 5; i++) {
+      const el = document.getElementById(`q-${i}`);
+      if (el) el.hidden = true;
+    }
+    // Show target
+    const target = document.getElementById(`q-${index}`);
+    if (target) {
+      target.hidden = false;
+      target.style.animation = 'none';
+      target.offsetHeight; // force reflow
+      target.style.animation = 'fadeInUp 0.4s ease forwards';
+    }
+    currentQ = index;
+    updateProgress();
+  }
+
+  function computeScores(): Record<string, number> {
+    const scores: Record<string, number> = { RICE: 0, ICE: 0, MoSCoW: 0, WSJF: 0, Kano: 0 };
+    answers.forEach((val, qi) => {
+      if (val === null) return;
+      const key = `${qi}:${val}`;
+      const pts = SCORING[key];
+      if (pts) {
+        Object.keys(pts).forEach(fw => {
+          scores[fw] += pts[fw];
+        });
+      }
+    });
+    return scores;
+  }
+
+  function showResult() {
+    // Hide quiz
+    quizContainer.hidden = true;
+    progressBar.hidden = true;
+    progressText.hidden = true;
+
+    const scores = computeScores();
+
+    // Find winner
+    let maxScore = 0;
+    let winner = 'RICE';
+    Object.keys(scores).forEach(fw => {
+      if (scores[fw] > maxScore) {
+        maxScore = scores[fw];
+        winner = fw;
+      }
+    });
+
+    // Max possible score = 15 (3 points x 5 questions)
+    const confidence = Math.round((maxScore / 15) * 100);
+
+    const fw = FRAMEWORKS[winner];
+
+    resultFramework.textContent = fw.name;
+    confidenceFill.style.width = confidence + '%';
+    confidenceText.textContent = confidence + '% match';
+    resultDescription.textContent = fw.description;
+    resultWhenText!.textContent = fw.whenToUse;
+
+    // Comparison table
+    comparisonTbody.innerHTML = '';
+    const sorted = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
+    sorted.forEach(fwKey => {
+      const row = document.createElement('tr');
+      if (fwKey === winner) row.className = 'winner';
+      const barWidth = Math.max(20, (scores[fwKey] / 15) * 120);
+      const isWinner = fwKey === winner;
+      row.innerHTML = `
+        <td>${FRAMEWORKS[fwKey].name}${isWinner ? ' (recommended)' : ''}</td>
+        <td>
+          <span class="score-bar">
+            <span class="score-bar-fill ${isWinner ? 'fill-winner' : ''}" style="width: ${barWidth}px"></span>
+            ${scores[fwKey]}
+          </span>
+        </td>
+        <td>${FRAMEWORKS[fwKey].bestFor}</td>
+      `;
+      comparisonTbody.appendChild(row);
+    });
+
+    resultSection.hidden = false;
+    resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function reset() {
+    for (let i = 0; i < 5; i++) answers[i] = null;
+    currentQ = 0;
+
+    // Reset option selections
+    document.querySelectorAll('.option-btn').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+
+    resultSection.hidden = true;
+    quizContainer.hidden = false;
+    progressBar.hidden = false;
+    (progressText as HTMLElement).hidden = false;
+
+    showQuestion(0);
+    document.querySelector('.tool-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // --- Event Wiring ---
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qi = parseInt((btn as HTMLElement).dataset.question || '0', 10);
+      const val = (btn as HTMLElement).dataset.value || '';
+
+      // Mark selected
+      const siblings = btn.parentElement?.querySelectorAll('.option-btn');
+      siblings?.forEach(s => s.classList.remove('selected'));
+      btn.classList.add('selected');
+
+      answers[qi] = val;
+
+      // After short delay, move to next or show result
+      setTimeout(() => {
+        if (qi < 4) {
+          showQuestion(qi + 1);
+        } else {
+          showResult();
+        }
+      }, 300);
+    });
+  });
+
+  retakeBtn.addEventListener('click', reset);
+
+  // Init
+  showQuestion(0);
+</script>

@@ -1,0 +1,1822 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Technical Debt Calculator',
+    description: 'Assess your codebase health in 2 minutes. Get a debt score, estimated cost, and a prioritized action plan.',
+    url: 'https://bugreel.io/tools/technical-debt-calculator',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Technical Debt Calculator', item: 'https://bugreel.io/tools/technical-debt-calculator' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Technical Debt Calculator — Codebase Health Assessment | BugReel"
+  description="Assess your codebase health in 2 minutes. Answer 10 questions, get a debt score, estimated annual cost, and a prioritized action plan. Free, no signup required."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Technical Debt Calculator</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-success">Free &middot; No Signup</span>
+        <h1>Technical Debt Calculator</h1>
+        <p class="hero-subtitle">Assess your codebase health in 2 minutes. Get a debt score, estimated cost, and a prioritized action plan.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calculator -->
+  <section class="tool-section">
+    <div class="container">
+
+      <!-- Progress -->
+      <div class="progress-bar" id="progress-bar">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-label" id="progress-label">Question 0 of 10</span>
+      </div>
+
+      <!-- Questions -->
+      <div class="questions-container" id="questions-container">
+
+        <!-- Q1: Codebase Age -->
+        <div class="question-card card" data-question="0">
+          <div class="question-header">
+            <span class="question-number">1</span>
+            <div>
+              <h3>Codebase Age</h3>
+              <p>How old is the core codebase?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="0" data-value="0" data-label="Less than 1 year" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Less than 1 year</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="0" data-value="1" data-label="1-3 years" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">1&ndash;3 years</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="0" data-value="2" data-label="3-7 years" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">3&ndash;7 years</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="0" data-value="3" data-label="7+ years" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">7+ years</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q2: Test Coverage -->
+        <div class="question-card card" data-question="1">
+          <div class="question-header">
+            <span class="question-number">2</span>
+            <div>
+              <h3>Test Coverage</h3>
+              <p>What's your automated test coverage?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="1" data-value="0" data-label=">80%" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">&gt;80%</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="1" data-value="1" data-label="50-80%" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">50&ndash;80%</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="1" data-value="2" data-label="20-50%" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">20&ndash;50%</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="1" data-value="3" data-label="<20% or unknown" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">&lt;20% or unknown</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q3: Deployment Frequency -->
+        <div class="question-card card" data-question="2">
+          <div class="question-header">
+            <span class="question-number">3</span>
+            <div>
+              <h3>Deployment Frequency</h3>
+              <p>How often do you deploy to production?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="2" data-value="0" data-label="Multiple times/day" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Multiple times per day</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="2" data-value="1" data-label="Weekly" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Weekly</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="2" data-value="2" data-label="Monthly" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Monthly</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="2" data-value="3" data-label="Quarterly or less" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Quarterly or less</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q4: Bug Rate -->
+        <div class="question-card card" data-question="3">
+          <div class="question-header">
+            <span class="question-number">4</span>
+            <div>
+              <h3>Bug Rate</h3>
+              <p>How many production bugs per month?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="3" data-value="0" data-label="<5 bugs/month" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Fewer than 5</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="3" data-value="1" data-label="5-15 bugs/month" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">5&ndash;15</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="3" data-value="2" data-label="15-30 bugs/month" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">15&ndash;30</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="3" data-value="3" data-label="30+ bugs/month" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">30+</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q5: Onboarding Time -->
+        <div class="question-card card" data-question="4">
+          <div class="question-header">
+            <span class="question-number">5</span>
+            <div>
+              <h3>Onboarding Time</h3>
+              <p>How long for a new developer to make their first meaningful commit?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="4" data-value="0" data-label="<1 week" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Less than 1 week</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="4" data-value="1" data-label="1-2 weeks" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">1&ndash;2 weeks</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="4" data-value="2" data-label="2-4 weeks" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">2&ndash;4 weeks</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="4" data-value="3" data-label="1+ month" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">More than 1 month</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q6: Dependency Health -->
+        <div class="question-card card" data-question="5">
+          <div class="question-header">
+            <span class="question-number">6</span>
+            <div>
+              <h3>Dependency Health</h3>
+              <p>How current are your dependencies?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="5" data-value="0" data-label="All up to date" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">All up to date</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="5" data-value="1" data-label="Minor versions behind" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Minor versions behind</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="5" data-value="2" data-label="Major versions behind" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Major versions behind</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="5" data-value="3" data-label="EOL dependencies" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">End-of-life dependencies</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q7: Documentation -->
+        <div class="question-card card" data-question="6">
+          <div class="question-header">
+            <span class="question-number">7</span>
+            <div>
+              <h3>Documentation</h3>
+              <p>How is your technical documentation?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="6" data-value="0" data-label="Comprehensive and current" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Comprehensive and current</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="6" data-value="1" data-label="Exists but outdated" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Exists but outdated</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="6" data-value="2" data-label="Minimal" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Minimal</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="6" data-value="3" data-label="None" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">None</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q8: Code Duplication -->
+        <div class="question-card card" data-question="7">
+          <div class="question-header">
+            <span class="question-number">8</span>
+            <div>
+              <h3>Code Duplication</h3>
+              <p>How much copy-paste code exists?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="7" data-value="0" data-label="Minimal, DRY codebase" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Minimal, DRY codebase</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="7" data-value="1" data-label="Some duplication" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Some duplication</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="7" data-value="2" data-label="Significant duplication" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Significant duplication</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="7" data-value="3" data-label="Rampant, no abstractions" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Rampant, no abstractions</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q9: Build Time -->
+        <div class="question-card card" data-question="8">
+          <div class="question-header">
+            <span class="question-number">9</span>
+            <div>
+              <h3>Build Time</h3>
+              <p>How long does a full build/CI take?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="8" data-value="0" data-label="<5 minutes" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Less than 5 minutes</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="8" data-value="1" data-label="5-15 minutes" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">5&ndash;15 minutes</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="8" data-value="2" data-label="15-30 minutes" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">15&ndash;30 minutes</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="8" data-value="3" data-label="30+ minutes" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">30+ minutes</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Q10: Developer Satisfaction -->
+        <div class="question-card card" data-question="9">
+          <div class="question-header">
+            <span class="question-number">10</span>
+            <div>
+              <h3>Developer Satisfaction</h3>
+              <p>How does the team feel about the codebase?</p>
+            </div>
+          </div>
+          <div class="options-list">
+            <button class="option-row" data-question="9" data-value="0" data-label="Love working in it" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Love working in it</span>
+              <span class="option-pts">0 pts</span>
+            </button>
+            <button class="option-row" data-question="9" data-value="1" data-label="It's fine" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">It's fine</span>
+              <span class="option-pts">1 pt</span>
+            </button>
+            <button class="option-row" data-question="9" data-value="2" data-label="Frustrating" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Frustrating</span>
+              <span class="option-pts">2 pts</span>
+            </button>
+            <button class="option-row" data-question="9" data-value="3" data-label="Actively looking for new jobs" type="button">
+              <span class="option-indicator"></span>
+              <span class="option-text">Actively looking for new jobs</span>
+              <span class="option-pts">3 pts</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Result Panel -->
+      <div class="result-panel" id="result-panel" hidden>
+        <div class="result-card" id="result-card">
+
+          <!-- Score Header -->
+          <div class="result-header">
+            <div class="result-severity">
+              <span class="severity-dot-lg" id="result-dot"></span>
+              <div>
+                <span class="result-level" id="result-category-text">Healthy</span>
+                <span class="result-priority" id="result-summary-text">Your codebase is in good shape</span>
+              </div>
+            </div>
+            <div class="result-score">
+              <span class="result-score-number" id="result-score-number">0</span>
+              <span class="result-score-total">/30</span>
+            </div>
+          </div>
+
+          <!-- Debt Gauge -->
+          <div class="gauge-section" id="gauge-section">
+            <div class="gauge-container">
+              <svg class="gauge-svg" viewBox="0 0 280 160" aria-hidden="true">
+                <path d="M 30 140 A 110 110 0 0 1 250 140" fill="none" stroke="var(--color-border)" stroke-width="18" stroke-linecap="round"/>
+                <path id="gauge-arc" d="M 30 140 A 110 110 0 0 1 250 140" fill="none" stroke="url(#gauge-gradient)" stroke-width="18" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58"/>
+                <defs>
+                  <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#22c55e"/>
+                    <stop offset="33%" stop-color="#f59e0b"/>
+                    <stop offset="66%" stop-color="#f97316"/>
+                    <stop offset="100%" stop-color="#ef4444"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="gauge-labels">
+                <span class="gauge-label-start">0</span>
+                <span class="gauge-label-end">30</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Score Breakdown -->
+          <div class="result-breakdown" id="result-breakdown">
+            <!-- Filled by JS -->
+          </div>
+
+          <!-- Cost Estimation -->
+          <div class="cost-section" id="cost-section">
+            <h3 class="cost-title">Estimated Annual Cost of Debt</h3>
+            <p class="cost-subtitle">Technical debt slows your team down. Estimate the productivity loss.</p>
+
+            <div class="cost-sliders">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <label for="team-size-slider">Team size</label>
+                  <span class="slider-value" id="team-size-value">8</span>
+                </div>
+                <input type="range" id="team-size-slider" min="1" max="50" value="8" class="range-slider">
+                <div class="slider-range">
+                  <span>1</span>
+                  <span>50</span>
+                </div>
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <label for="salary-slider">Average salary</label>
+                  <span class="slider-value" id="salary-value">$100,000</span>
+                </div>
+                <input type="range" id="salary-slider" min="50000" max="200000" step="5000" value="100000" class="range-slider">
+                <div class="slider-range">
+                  <span>$50K</span>
+                  <span>$200K</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="cost-result">
+              <p class="cost-label">Your technical debt costs approximately</p>
+              <p class="cost-amount" id="cost-amount">$0</p>
+              <p class="cost-period">per year in lost productivity</p>
+            </div>
+          </div>
+
+          <!-- Action Plan -->
+          <div class="action-plan" id="action-plan">
+            <h3 class="action-plan-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Prioritized Action Plan
+            </h3>
+            <div id="action-items">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="result-actions">
+            <button class="btn btn-primary" id="copy-assessment-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3 11V3.5A.5.5 0 013.5 3H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span id="copy-assessment-text">Copy Assessment</span>
+            </button>
+            <button class="btn btn-secondary" id="reset-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2.5 8a5.5 5.5 0 019.3-3.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M13.5 8a5.5 5.5 0 01-9.3 3.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 2v2.5h-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 13.5V11h2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- What is Technical Debt -->
+  <section class="section-sm explanation-section">
+    <div class="container">
+      <h2 class="explanation-title">What is Technical Debt?</h2>
+      <p class="explanation-subtitle">The hidden tax on every feature you ship.</p>
+      <div class="explanation-content">
+        <div class="explanation-card card">
+          <div class="explanation-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p>Technical debt is the implied cost of future rework caused by choosing a quick solution now instead of a better approach that would take longer. Like financial debt, it accumulates interest: the longer you leave it, the more expensive it becomes to fix.</p>
+          <p style="margin-top: 16px;">It shows up as slow builds, brittle tests, spaghetti code, outdated dependencies, and developers who dread touching certain parts of the system. Left unchecked, it slows feature delivery, increases bug rates, and drives away your best engineers.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tips -->
+  <section class="section-sm tips-section">
+    <div class="container">
+      <h2 class="tips-title">3 Strategies to Reduce Technical Debt</h2>
+      <div class="tips-grid">
+        <div class="tip-card card">
+          <div class="tip-number">1</div>
+          <h3>Dedicate 20% of each sprint</h3>
+          <p>Reserve one day per week or 20% of sprint capacity for debt reduction. This prevents debt from compounding while keeping feature delivery on track. Treat it as non-negotiable, not a stretch goal. Teams that do this consistently ship faster within 2&ndash;3 quarters.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">2</div>
+          <h3>Strangle the monolith</h3>
+          <p>Don't rewrite from scratch. Use the strangler fig pattern: wrap legacy code with clean interfaces, then replace modules one at a time. Each replacement is a small, low-risk deployment. Over months, the old code shrinks until it disappears entirely.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">3</div>
+          <h3>Automate the safety net</h3>
+          <p>Invest in CI/CD, automated testing, and linting before tackling debt. Without a safety net, refactoring is gambling. With 80%+ test coverage and a 5-minute build pipeline, you can refactor confidently, catch regressions immediately, and ship changes the same day.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Want to catch bugs before they become debt?</p>
+      <h2>Record your screen. AI files the bug.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel turns screen recordings into complete bug reports with severity, steps to reproduce, and environment details &mdash; automatically.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 700px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 600px;
+  }
+
+  /* ===== Progress Bar ===== */
+  .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+
+  /* ===== Questions ===== */
+  .questions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .question-card {
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  }
+
+  .question-card.answered {
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+
+  .question-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .question-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all var(--transition-base);
+  }
+
+  .question-card.answered .question-number {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-color: transparent;
+    color: #fff;
+  }
+
+  .question-header h3 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .question-header p {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+
+  /* ===== Option Rows ===== */
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .option-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+  }
+
+  .option-row:hover {
+    border-color: var(--color-border-hover);
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+
+  .option-row.selected {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--color-text);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+
+  .option-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--color-border);
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+  }
+
+  .option-row.selected .option-indicator {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    box-shadow: inset 0 0 0 3px rgba(99, 102, 241, 0.08);
+  }
+
+  .option-row.selected .option-indicator::after {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  .option-text {
+    flex: 1;
+  }
+
+  .option-pts {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+
+  .option-row.selected .option-pts {
+    color: var(--color-primary);
+  }
+
+  /* ===== Result Panel ===== */
+  .result-panel {
+    max-width: 800px;
+    margin: 40px auto 0;
+  }
+
+  .result-panel[hidden] {
+    display: none;
+  }
+
+  .result-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--color-text-dim);
+    overflow: hidden;
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  .result-card.debt-healthy {
+    border-left-color: #22c55e;
+  }
+
+  .result-card.debt-moderate {
+    border-left-color: #f59e0b;
+  }
+
+  .result-card.debt-high {
+    border-left-color: #f97316;
+  }
+
+  .result-card.debt-critical {
+    border-left-color: #ef4444;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 32px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .result-severity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .severity-dot-lg {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .severity-dot-lg.dot-healthy {
+    background: #22c55e;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+  }
+
+  .severity-dot-lg.dot-moderate {
+    background: #f59e0b;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+  }
+
+  .severity-dot-lg.dot-high {
+    background: #f97316;
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.5);
+  }
+
+  .severity-dot-lg.dot-critical {
+    background: #ef4444;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+  }
+
+  .result-level {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .result-priority {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  .result-score {
+    text-align: right;
+  }
+
+  .result-score-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .result-score-total {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+  }
+
+  /* ===== Gauge ===== */
+  .gauge-section {
+    padding: 32px 32px 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .gauge-container {
+    position: relative;
+    width: 280px;
+  }
+
+  .gauge-svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .gauge-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    margin-top: -8px;
+  }
+
+  .gauge-labels span {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--color-text-dim);
+    font-weight: 500;
+  }
+
+  /* ===== Score Breakdown ===== */
+  .result-breakdown {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.875rem;
+  }
+
+  .breakdown-row + .breakdown-row {
+    border-top: 1px solid rgba(30, 30, 46, 0.5);
+  }
+
+  .breakdown-label {
+    color: var(--color-text-muted);
+  }
+
+  .breakdown-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .breakdown-answer {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .breakdown-pts {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    background: var(--color-primary-glow);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+  }
+
+  /* ===== Cost Estimation ===== */
+  .cost-section {
+    padding: 32px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cost-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .cost-subtitle {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 28px;
+  }
+
+  .cost-sliders {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-bottom: 28px;
+  }
+
+  .slider-group label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+
+  .slider-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .slider-value {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .range-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 2px solid var(--color-surface);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .range-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.6);
+  }
+
+  .range-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 2px solid var(--color-surface);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+    cursor: pointer;
+  }
+
+  .slider-range {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 0.6875rem;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+  }
+
+  .cost-result {
+    text-align: center;
+    padding: 28px 24px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .cost-label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+  }
+
+  .cost-amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+
+  .cost-period {
+    font-size: 0.875rem;
+    color: var(--color-text-dim);
+    margin-top: 4px;
+  }
+
+  /* ===== Action Plan ===== */
+  .action-plan {
+    padding: 28px 32px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .action-plan-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 20px;
+  }
+
+  .action-plan-title svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .action-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .action-item + .action-item {
+    margin-top: 12px;
+  }
+
+  .action-rank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .action-rank.rank-1 {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .action-rank.rank-2 {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+  }
+
+  .action-rank.rank-3 {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .action-body h4 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 4px;
+  }
+
+  .action-body p {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  /* Result Actions */
+  .result-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 32px;
+    background: var(--color-bg);
+  }
+
+  #copy-assessment-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+
+  /* ===== Explanation Section ===== */
+  .explanation-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .explanation-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .explanation-subtitle {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin-bottom: 48px;
+  }
+
+  .explanation-content {
+    max-width: 740px;
+    margin: 0 auto;
+  }
+
+  .explanation-card {
+    padding: 32px;
+  }
+
+  .explanation-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-glow);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: var(--color-primary);
+    margin-bottom: 20px;
+  }
+
+  .explanation-card p {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  /* ===== Pro Tips ===== */
+  .tips-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tips-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .tip-card {
+    position: relative;
+    padding-top: 48px;
+  }
+
+  .tip-number {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-lg) 0 var(--radius-md) 0;
+  }
+
+  .tip-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .tip-card p {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Animation ===== */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .question-card {
+      padding: 24px;
+    }
+
+    .option-row {
+      padding: 10px 14px;
+      font-size: 0.875rem;
+    }
+
+    .result-header {
+      padding: 20px 24px;
+    }
+
+    .result-breakdown,
+    .action-plan {
+      padding: 20px 24px;
+    }
+
+    .cost-section {
+      padding: 24px;
+    }
+
+    .cost-sliders {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .cost-amount {
+      font-size: 1.75rem;
+    }
+
+    .gauge-section {
+      padding: 24px 24px 8px;
+    }
+
+    .result-actions {
+      padding: 16px 24px;
+      flex-wrap: wrap;
+    }
+
+    .result-score-number {
+      font-size: 2rem;
+    }
+
+    .tips-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .progress-bar {
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .progress-label {
+      text-align: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .question-header {
+      gap: 12px;
+    }
+
+    .option-pts {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // ===== Technical Debt Calculator — Client-Side Logic =====
+
+  const TOTAL_QUESTIONS = 10;
+  const answers: (number | null)[] = new Array(TOTAL_QUESTIONS).fill(null);
+  const answerLabels: (string | null)[] = new Array(TOTAL_QUESTIONS).fill(null);
+
+  const questionNames = [
+    'Codebase Age',
+    'Test Coverage',
+    'Deployment Frequency',
+    'Bug Rate',
+    'Onboarding Time',
+    'Dependency Health',
+    'Documentation',
+    'Code Duplication',
+    'Build Time',
+    'Developer Satisfaction',
+  ];
+
+  // Recommendations keyed by question index
+  const questionRecommendations: Record<number, { title: string; text: string }> = {
+    0: {
+      title: 'Plan incremental modernization',
+      text: 'Older codebases accumulate legacy patterns. Identify the most-touched modules and modernize them first. Use the strangler fig pattern to replace legacy code without a risky rewrite.',
+    },
+    1: {
+      title: 'Invest in test coverage',
+      text: 'Start with integration tests for critical paths, then expand to unit tests for business logic. Aim for 80%+ coverage on new code immediately, and backfill tests when touching existing code.',
+    },
+    2: {
+      title: 'Increase deployment frequency',
+      text: 'Smaller, more frequent deployments reduce risk and speed up feedback. Invest in CI/CD automation, feature flags, and trunk-based development to deploy weekly, then daily.',
+    },
+    3: {
+      title: 'Reduce your bug rate',
+      text: 'High bug rates signal architectural issues, not just carelessness. Add linting, pre-commit hooks, and mandatory code review. Track where bugs originate to find and fix the root causes.',
+    },
+    4: {
+      title: 'Streamline developer onboarding',
+      text: 'Long onboarding means poor documentation, tangled architecture, or a broken local dev setup. Create a one-command setup script, maintain a getting-started guide, and assign onboarding buddies.',
+    },
+    5: {
+      title: 'Update your dependencies',
+      text: 'Stale dependencies accumulate security vulnerabilities and compatibility issues. Set up Dependabot or Renovate, schedule monthly dependency updates, and prioritize anything end-of-life.',
+    },
+    6: {
+      title: 'Rebuild your documentation',
+      text: 'Focus on architecture decision records (ADRs) and API docs first. Keep docs next to code (README in each module). Use diagrams for system architecture. Outdated docs are worse than none.',
+    },
+    7: {
+      title: 'Eliminate code duplication',
+      text: 'Extract shared logic into well-tested utility functions or services. Use static analysis tools (like SonarQube or jscpd) to find duplicates. Refactor the top 3 most-duplicated patterns first.',
+    },
+    8: {
+      title: 'Speed up your build pipeline',
+      text: 'Slow builds kill developer flow and delay feedback. Parallelize test suites, cache dependencies, use incremental builds, and consider splitting your monolith into smaller build targets.',
+    },
+    9: {
+      title: 'Improve developer experience',
+      text: 'Developer frustration leads to turnover, which is the most expensive form of tech debt. Run an anonymous survey, fix the top 3 pain points, and allocate dedicated time for DX improvements.',
+    },
+  };
+
+  // --- DOM ---
+  const progressFill = document.getElementById('progress-fill') as HTMLDivElement;
+  const progressLabel = document.getElementById('progress-label') as HTMLSpanElement;
+  const questionsContainer = document.getElementById('questions-container')!;
+  const resultPanel = document.getElementById('result-panel') as HTMLDivElement;
+  const resultCard = document.getElementById('result-card') as HTMLDivElement;
+  const resultDot = document.getElementById('result-dot') as HTMLSpanElement;
+  const resultCategoryText = document.getElementById('result-category-text')!;
+  const resultSummaryText = document.getElementById('result-summary-text')!;
+  const resultScoreNumber = document.getElementById('result-score-number')!;
+  const resultBreakdown = document.getElementById('result-breakdown')!;
+  const gaugeArc = document.getElementById('gauge-arc') as SVGPathElement;
+  const costSection = document.getElementById('cost-section')!;
+  const costAmount = document.getElementById('cost-amount')!;
+  const teamSizeSlider = document.getElementById('team-size-slider') as HTMLInputElement;
+  const teamSizeValue = document.getElementById('team-size-value')!;
+  const salarySlider = document.getElementById('salary-slider') as HTMLInputElement;
+  const salaryValue = document.getElementById('salary-value')!;
+  const actionItems = document.getElementById('action-items')!;
+  const copyAssessmentBtn = document.getElementById('copy-assessment-btn')!;
+  const copyAssessmentText = document.getElementById('copy-assessment-text')!;
+  const resetBtn = document.getElementById('reset-btn')!;
+
+  const allOptionButtons = questionsContainer.querySelectorAll('.option-row') as NodeListOf<HTMLButtonElement>;
+  const allQuestionCards = questionsContainer.querySelectorAll('.question-card') as NodeListOf<HTMLDivElement>;
+
+  // --- Scoring ---
+  interface DebtResult {
+    category: string;
+    categoryLabel: string;
+    summary: string;
+    colorClass: string;
+    dotClass: string;
+  }
+
+  function calcResult(total: number): DebtResult {
+    if (total <= 7) {
+      return {
+        category: 'healthy',
+        categoryLabel: 'Healthy',
+        summary: 'Your codebase is in good shape',
+        colorClass: 'debt-healthy',
+        dotClass: 'dot-healthy',
+      };
+    } else if (total <= 14) {
+      return {
+        category: 'moderate',
+        categoryLabel: 'Moderate',
+        summary: 'Some debt accumulating, address proactively',
+        colorClass: 'debt-moderate',
+        dotClass: 'dot-moderate',
+      };
+    } else if (total <= 21) {
+      return {
+        category: 'high',
+        categoryLabel: 'High',
+        summary: 'Significant debt, plan remediation sprints',
+        colorClass: 'debt-high',
+        dotClass: 'dot-high',
+      };
+    } else {
+      return {
+        category: 'critical',
+        categoryLabel: 'Critical',
+        summary: 'Codebase is a liability, urgent action needed',
+        colorClass: 'debt-critical',
+        dotClass: 'dot-critical',
+      };
+    }
+  }
+
+  // --- Cost calculation ---
+  // The overhead factor scales with debt: higher debt = higher % of time wasted
+  function calcAnnualCost(total: number, teamSize: number, avgSalary: number): number {
+    // Debt percentage: score / 30 mapped to a realistic overhead range
+    // 0 debt = 5% overhead (baseline), 30 debt = 65% overhead
+    const minOverhead = 0.05;
+    const maxOverhead = 0.65;
+    const debtPct = total / 30;
+    const overhead = minOverhead + (maxOverhead - minOverhead) * debtPct;
+    return Math.round(teamSize * avgSalary * overhead);
+  }
+
+  function formatCurrency(amount: number): string {
+    if (amount >= 1000000) {
+      return '$' + (amount / 1000000).toFixed(1) + 'M';
+    } else if (amount >= 1000) {
+      return '$' + Math.round(amount / 1000).toLocaleString() + 'K';
+    }
+    return '$' + amount.toLocaleString();
+  }
+
+  function updateCost() {
+    const total = answers.reduce((sum, a) => sum! + (a ?? 0), 0) as number;
+    const teamSize = parseInt(teamSizeSlider.value);
+    const salary = parseInt(salarySlider.value);
+    const cost = calcAnnualCost(total, teamSize, salary);
+    costAmount.textContent = formatCurrency(cost);
+    teamSizeValue.textContent = String(teamSize);
+    salaryValue.textContent = '$' + (salary / 1000).toFixed(0) + ',000';
+  }
+
+  // --- Gauge ---
+  // Total arc length for the semicircle path
+  const GAUGE_ARC_LENGTH = 345.58;
+
+  function updateGauge(total: number) {
+    const pct = total / 30;
+    const offset = GAUGE_ARC_LENGTH * (1 - pct);
+    gaugeArc.style.transition = 'stroke-dashoffset 1s ease';
+    gaugeArc.style.strokeDashoffset = String(offset);
+  }
+
+  // --- Action plan ---
+  function buildActionPlan(): void {
+    // Find the 3 worst-scoring questions (highest score first)
+    const indexed = answers.map((val, idx) => ({ idx, val: val ?? 0 }));
+    indexed.sort((a, b) => b.val - a.val);
+
+    // Take top 3 (skip any with 0 score)
+    const worst = indexed.filter(item => item.val > 0).slice(0, 3);
+
+    if (worst.length === 0) {
+      actionItems.innerHTML = '<p style="font-size: 0.9375rem; color: var(--color-text-muted);">No action items needed. Your codebase scored perfectly across all dimensions.</p>';
+      return;
+    }
+
+    let html = '';
+    worst.forEach((item, rank) => {
+      const rec = questionRecommendations[item.idx];
+      html += `
+        <div class="action-item">
+          <span class="action-rank rank-${rank + 1}">${rank + 1}</span>
+          <div class="action-body">
+            <h4>${rec.title}</h4>
+            <p>${rec.text}</p>
+          </div>
+        </div>
+      `;
+    });
+    actionItems.innerHTML = html;
+  }
+
+  // --- Progress ---
+  function updateProgress() {
+    const answered = answers.filter(a => a !== null).length;
+    const pct = (answered / TOTAL_QUESTIONS) * 100;
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = `Question ${answered} of ${TOTAL_QUESTIONS}`;
+  }
+
+  // --- Option Click ---
+  function handleOptionClick(btn: HTMLButtonElement) {
+    const qIdx = parseInt(btn.getAttribute('data-question')!);
+    const value = parseInt(btn.getAttribute('data-value')!);
+    const label = btn.getAttribute('data-label')!;
+
+    // Deselect siblings
+    const siblings = questionsContainer.querySelectorAll(`.option-row[data-question="${qIdx}"]`);
+    siblings.forEach(s => s.classList.remove('selected'));
+
+    // Select this
+    btn.classList.add('selected');
+
+    // Store answer
+    answers[qIdx] = value;
+    answerLabels[qIdx] = label;
+
+    // Mark card as answered
+    allQuestionCards[qIdx].classList.add('answered');
+
+    updateProgress();
+
+    // Check if all answered
+    const allAnswered = answers.every(a => a !== null);
+    if (allAnswered) {
+      showResult();
+    }
+  }
+
+  allOptionButtons.forEach(btn => {
+    btn.addEventListener('click', () => handleOptionClick(btn));
+  });
+
+  // --- Show Result ---
+  function showResult() {
+    const total = answers.reduce((sum, a) => sum! + (a ?? 0), 0) as number;
+    const result = calcResult(total);
+
+    // Update result card
+    resultCard.className = 'result-card ' + result.colorClass;
+    resultDot.className = 'severity-dot-lg ' + result.dotClass;
+    resultCategoryText.textContent = result.categoryLabel;
+    resultSummaryText.textContent = result.summary;
+    resultScoreNumber.textContent = String(total);
+
+    // Gauge
+    updateGauge(total);
+
+    // Breakdown
+    let breakdownHtml = '';
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      breakdownHtml += `
+        <div class="breakdown-row">
+          <span class="breakdown-label">${questionNames[i]}</span>
+          <div class="breakdown-value">
+            <span class="breakdown-answer">${answerLabels[i] || '\u2014'}</span>
+            <span class="breakdown-pts">${answers[i] ?? 0}/3</span>
+          </div>
+        </div>
+      `;
+    }
+    resultBreakdown.innerHTML = breakdownHtml;
+
+    // Cost
+    updateCost();
+
+    // Action plan
+    buildActionPlan();
+
+    // Show
+    resultPanel.hidden = false;
+
+    // Smooth scroll to result
+    setTimeout(() => {
+      resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  // --- Slider events ---
+  teamSizeSlider.addEventListener('input', updateCost);
+  salarySlider.addEventListener('input', updateCost);
+
+  // --- Copy Assessment ---
+  function buildAssessmentText(): string {
+    const total = answers.reduce((sum, a) => sum! + (a ?? 0), 0) as number;
+    const result = calcResult(total);
+    const teamSize = parseInt(teamSizeSlider.value);
+    const salary = parseInt(salarySlider.value);
+    const cost = calcAnnualCost(total, teamSize, salary);
+
+    let text = `Technical Debt Assessment\n`;
+    text += `========================\n\n`;
+    text += `Debt Score: ${total}/30 (${result.categoryLabel})\n`;
+    text += `${result.summary}\n\n`;
+    text += `Breakdown:\n`;
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      text += `  ${questionNames[i]}: ${answerLabels[i] || '\u2014'} (${answers[i] ?? 0}/3)\n`;
+    }
+    text += `\nEstimated Annual Cost: ${formatCurrency(cost)}\n`;
+    text += `  Team size: ${teamSize} | Avg salary: $${(salary / 1000).toFixed(0)}K\n\n`;
+
+    // Top priorities
+    const indexed = answers.map((val, idx) => ({ idx, val: val ?? 0 }));
+    indexed.sort((a, b) => b.val - a.val);
+    const worst = indexed.filter(item => item.val > 0).slice(0, 3);
+    if (worst.length > 0) {
+      text += `Top Priorities:\n`;
+      worst.forEach((item, rank) => {
+        const rec = questionRecommendations[item.idx];
+        text += `  ${rank + 1}. ${rec.title}\n`;
+      });
+    }
+
+    text += `\nGenerated by BugReel Technical Debt Calculator\nhttps://bugreel.io/tools/technical-debt-calculator`;
+    return text;
+  }
+
+  copyAssessmentBtn.addEventListener('click', async () => {
+    const text = buildAssessmentText();
+    try {
+      await navigator.clipboard.writeText(text);
+      copyAssessmentBtn.classList.add('copied');
+      copyAssessmentText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyAssessmentBtn.classList.remove('copied');
+        copyAssessmentText.textContent = 'Copy Assessment';
+      }, 2000);
+    } catch {
+      // Fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      copyAssessmentBtn.classList.add('copied');
+      copyAssessmentText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyAssessmentBtn.classList.remove('copied');
+        copyAssessmentText.textContent = 'Copy Assessment';
+      }, 2000);
+    }
+  });
+
+  // --- Reset ---
+  resetBtn.addEventListener('click', () => {
+    // Clear answers
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      answers[i] = null;
+      answerLabels[i] = null;
+    }
+
+    // Deselect all options
+    allOptionButtons.forEach(btn => btn.classList.remove('selected'));
+
+    // Remove answered state from cards
+    allQuestionCards.forEach(card => card.classList.remove('answered'));
+
+    // Hide result
+    resultPanel.hidden = true;
+
+    // Reset gauge
+    gaugeArc.style.transition = 'none';
+    gaugeArc.style.strokeDashoffset = String(GAUGE_ARC_LENGTH);
+
+    // Reset sliders
+    teamSizeSlider.value = '8';
+    salarySlider.value = '100000';
+
+    // Reset progress
+    updateProgress();
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // --- Initial state ---
+  updateProgress();
+</script>

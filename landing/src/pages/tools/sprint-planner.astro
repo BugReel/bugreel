@@ -1,0 +1,1802 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Sprint Planning Calculator',
+    description: 'Calculate your team\'s sprint capacity, apply risk buffers, and get a recommended story point commitment with confidence levels. Free sprint planning tool for agile teams.',
+    url: 'https://bugreel.io/tools/sprint-planner',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Sprint Planning Calculator', item: 'https://bugreel.io/tools/sprint-planner' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Sprint Planning Calculator — Capacity, Velocity & Risk Buffer | BugReel"
+  description="Calculate your team's sprint capacity, apply risk buffers, and get a recommended story point commitment with confidence levels. Free sprint planning tool for agile teams."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Sprint Planning Calculator</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-accent">Free &middot; No Signup</span>
+        <h1>Sprint Planning Calculator</h1>
+        <p class="hero-subtitle">Calculate your team's sprint capacity, apply risk buffers, and get a recommended story point commitment with confidence levels.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calculator -->
+  <section class="tool-section">
+    <div class="container">
+      <div class="calc-layout">
+
+        <!-- LEFT: Inputs -->
+        <div class="input-panel">
+
+          <!-- Team Capacity -->
+          <div class="panel-card">
+            <h2 class="panel-title">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="13" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M1 17c0-3 2.5-5 6-5s6 2 6 5M9 17c0-3 2.5-5 6-5s4 2 4 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Team Capacity
+            </h2>
+
+            <!-- Team Members -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="team-members" class="slider-label">Team Members</label>
+                <span class="slider-value" id="team-members-value">5</span>
+              </div>
+              <p class="slider-hint">Developers and QA contributing to the sprint</p>
+              <input
+                type="range"
+                id="team-members"
+                min="1"
+                max="20"
+                value="5"
+                class="calc-slider"
+              />
+              <div class="slider-range">
+                <span>1</span>
+                <span>20</span>
+              </div>
+            </div>
+
+            <!-- Sprint Length -->
+            <div class="field-group">
+              <label for="sprint-length" class="field-label">Sprint Length</label>
+              <div class="select-wrapper">
+                <select id="sprint-length" class="calc-select">
+                  <option value="5">1 week (5 days)</option>
+                  <option value="10" selected>2 weeks (10 days)</option>
+                  <option value="15">3 weeks (15 days)</option>
+                </select>
+                <svg class="select-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Working Hours Per Day -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="hours-per-day" class="slider-label">Working Hours Per Day</label>
+                <span class="slider-value" id="hours-per-day-value">6<small>hrs</small></span>
+              </div>
+              <p class="slider-hint">Productive coding time (excludes meetings, admin)</p>
+              <input
+                type="range"
+                id="hours-per-day"
+                min="4"
+                max="8"
+                value="6"
+                class="calc-slider"
+              />
+              <div class="slider-range">
+                <span>4 hrs</span>
+                <span>8 hrs</span>
+              </div>
+            </div>
+
+            <!-- Days Off -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="days-off" class="slider-label">Days Off This Sprint</label>
+                <span class="slider-value" id="days-off-value">0</span>
+              </div>
+              <p class="slider-hint">Total team days off (holidays, PTO, sick leave)</p>
+              <input
+                type="range"
+                id="days-off"
+                min="0"
+                max="20"
+                value="0"
+                class="calc-slider"
+              />
+              <div class="slider-range">
+                <span>0</span>
+                <span>20</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Velocity History -->
+          <div class="panel-card">
+            <h2 class="panel-title">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M3 17l4-6 4 3 6-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Velocity History
+            </h2>
+
+            <div class="toggle-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="no-history" class="toggle-input" />
+                <span class="toggle-switch"></span>
+                <span class="toggle-text">No historical data (use estimate)</span>
+              </label>
+            </div>
+
+            <div id="velocity-inputs">
+              <p class="slider-hint" style="margin-bottom: 16px;">Story points completed in the last 3 sprints</p>
+              <div class="velocity-grid">
+                <div class="velocity-field">
+                  <label for="sprint-1" class="velocity-label">Sprint -1</label>
+                  <input type="number" id="sprint-1" min="0" max="200" value="34" class="calc-input" />
+                </div>
+                <div class="velocity-field">
+                  <label for="sprint-2" class="velocity-label">Sprint -2</label>
+                  <input type="number" id="sprint-2" min="0" max="200" value="28" class="calc-input" />
+                </div>
+                <div class="velocity-field">
+                  <label for="sprint-3" class="velocity-label">Sprint -3</label>
+                  <input type="number" id="sprint-3" min="0" max="200" value="31" class="calc-input" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carry-Over & Risk -->
+          <div class="panel-card">
+            <h2 class="panel-title">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 2l2.09 6.26H18l-4.79 3.48L15.12 18 10 14.27 4.88 18l1.91-6.26L2 8.26h5.91z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Adjustments
+            </h2>
+
+            <!-- Carry-Over -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="carry-over" class="slider-label">Carry-Over from Last Sprint</label>
+                <span class="slider-value" id="carry-over-value">0<small>pts</small></span>
+              </div>
+              <p class="slider-hint">Unfinished story points rolling into this sprint</p>
+              <input
+                type="range"
+                id="carry-over"
+                min="0"
+                max="50"
+                value="0"
+                class="calc-slider"
+              />
+              <div class="slider-range">
+                <span>0</span>
+                <span>50</span>
+              </div>
+            </div>
+
+            <!-- Risk Buffer -->
+            <div class="field-group">
+              <label for="risk-buffer" class="field-label">Risk Buffer</label>
+              <div class="select-wrapper">
+                <select id="risk-buffer" class="calc-select">
+                  <option value="0.30">Conservative (30% buffer)</option>
+                  <option value="0.20" selected>Moderate (20% buffer)</option>
+                  <option value="0.10">Aggressive (10% buffer)</option>
+                  <option value="0">None (0% buffer)</option>
+                </select>
+                <svg class="select-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Results -->
+        <div class="results-panel">
+          <div class="results-sticky">
+
+            <!-- Recommended Commitment -->
+            <div class="panel-card commitment-card">
+              <h2 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M10 1l2.39 4.84L18 6.74l-4 3.9.94 5.5L10 13.57l-4.94 2.57.94-5.5-4-3.9 5.61-.9z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Recommended Commitment
+              </h2>
+              <div class="commitment-hero">
+                <span class="commitment-number" id="commitment-number">25</span>
+                <span class="commitment-unit">story points</span>
+              </div>
+              <div class="commitment-breakdown">
+                <div class="breakdown-item">
+                  <span class="breakdown-label">Capacity</span>
+                  <span class="breakdown-value" id="breakdown-capacity">31</span>
+                </div>
+                <span class="breakdown-op">&minus;</span>
+                <div class="breakdown-item">
+                  <span class="breakdown-label">Carry-over</span>
+                  <span class="breakdown-value breakdown-value--orange" id="breakdown-carryover">0</span>
+                </div>
+                <span class="breakdown-op">&minus;</span>
+                <div class="breakdown-item">
+                  <span class="breakdown-label">Buffer</span>
+                  <span class="breakdown-value breakdown-value--yellow" id="breakdown-buffer">6</span>
+                </div>
+                <span class="breakdown-op">=</span>
+                <div class="breakdown-item">
+                  <span class="breakdown-label">Commit</span>
+                  <span class="breakdown-value breakdown-value--green" id="breakdown-commit">25</span>
+                </div>
+              </div>
+              <div class="confidence-row">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M8 5v3.5l2.5 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span id="confidence-text">75% confidence based on velocity variance</span>
+              </div>
+            </div>
+
+            <!-- Stacked Bar -->
+            <div class="panel-card">
+              <h2 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <rect x="2" y="14" width="16" height="3" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="2" y="9" width="12" height="3" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="2" y="4" width="8" height="3" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                Sprint Allocation
+              </h2>
+              <div class="stacked-bar-container">
+                <div class="stacked-bar">
+                  <div class="stacked-segment stacked-segment--committed" id="bar-committed" style="width: 80%">
+                    <span class="stacked-label" id="bar-committed-label">25 pts</span>
+                  </div>
+                  <div class="stacked-segment stacked-segment--buffer" id="bar-buffer" style="width: 13%">
+                    <span class="stacked-label" id="bar-buffer-label">6</span>
+                  </div>
+                  <div class="stacked-segment stacked-segment--carryover" id="bar-carryover" style="width: 7%">
+                    <span class="stacked-label" id="bar-carryover-label">0</span>
+                  </div>
+                </div>
+                <div class="stacked-legend">
+                  <div class="legend-item">
+                    <span class="legend-dot legend-dot--committed"></span>
+                    <span>Committed</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-dot legend-dot--buffer"></span>
+                    <span>Risk Buffer</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-dot legend-dot--carryover"></span>
+                    <span>Carry-over</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Capacity Metrics -->
+            <div class="panel-card">
+              <h2 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M10 6v4.5l3 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Capacity Metrics
+              </h2>
+              <div class="metrics-grid">
+                <div class="metric-item">
+                  <span class="metric-label">Total Available Hours</span>
+                  <span class="metric-value" id="metric-total-hours">300</span>
+                  <span class="metric-unit">hrs</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">Effective Hours</span>
+                  <span class="metric-value" id="metric-effective-hours">300</span>
+                  <span class="metric-unit">hrs</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">SP Capacity Estimate</span>
+                  <span class="metric-value metric-value--accent" id="metric-sp-capacity">31</span>
+                  <span class="metric-unit">pts</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Velocity Analysis -->
+            <div class="panel-card">
+              <h2 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M3 17l4-6 4 3 6-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Velocity Analysis
+              </h2>
+              <div class="velocity-stats">
+                <div class="velocity-stat">
+                  <span class="velocity-stat-label">Average Velocity</span>
+                  <span class="velocity-stat-value" id="vel-average">31</span>
+                  <span class="velocity-stat-unit">pts/sprint</span>
+                </div>
+                <div class="velocity-stat">
+                  <span class="velocity-stat-label">Velocity Trend</span>
+                  <span class="velocity-stat-value velocity-trend" id="vel-trend">
+                    <svg class="trend-arrow" id="trend-arrow" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                      <path d="M9 14V4M9 4l4 4M9 4L5 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span id="trend-text">Improving</span>
+                  </span>
+                </div>
+                <div class="velocity-stat">
+                  <span class="velocity-stat-label">Velocity Range</span>
+                  <span class="velocity-stat-value" id="vel-range">28 &ndash; 34</span>
+                  <span class="velocity-stat-unit">pts/sprint</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="results-actions">
+              <button class="btn btn-secondary btn-sm" id="copy-btn" type="button">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span id="copy-text">Copy Sprint Plan</span>
+              </button>
+              <button class="btn btn-secondary btn-sm" id="reset-btn" type="button">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M2 8a6 6 0 1111.47-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M10 2.5h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Reset
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Best Practices -->
+  <section class="section-sm practices-section">
+    <div class="container" style="max-width: 900px;">
+      <h2 class="practices-heading">Sprint Planning Best Practices</h2>
+      <div class="practices-grid">
+        <div class="practice-card">
+          <div class="practice-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 3v18h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M7 16l4-8 4 4 4-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3>Use Yesterday's Weather</h3>
+          <p>Your best predictor of next sprint's velocity is the average of the last 3 sprints. Resist the temptation to plan for your "best case" -- plan for your average.</p>
+        </div>
+        <div class="practice-card">
+          <div class="practice-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 2a10 10 0 100 20 10 10 0 000-20z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M12 8v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3>Always Include a Buffer</h3>
+          <p>Unplanned work, production incidents, and scope creep happen every sprint. A 20% risk buffer is not slack -- it is realistic planning that builds trust with stakeholders.</p>
+        </div>
+        <div class="practice-card">
+          <div class="practice-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>Account for Real Capacity</h3>
+          <p>No one codes 8 hours a day. Between standups, reviews, Slack, and context-switching, 5-6 productive hours is realistic. Plan for capacity, not calendar time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Velocity vs Capacity -->
+  <section class="section-sm explainer-section">
+    <div class="container" style="max-width: 800px;">
+      <button class="collapse-toggle" id="toggle-explainer" aria-expanded="false" type="button">
+        <svg class="collapse-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Velocity vs Capacity: What's the Difference?
+      </button>
+      <div class="collapse-content" id="explainer-content" hidden>
+        <div class="explainer-body">
+          <div class="explainer-col">
+            <h3>Velocity</h3>
+            <p><strong>What your team actually delivered</strong> in past sprints, measured in story points. It is a backward-looking, empirical metric. Velocity naturally accounts for meetings, interruptions, and other overhead because it reflects real output.</p>
+          </div>
+          <div class="explainer-col">
+            <h3>Capacity</h3>
+            <p><strong>How much time your team has available</strong> in the upcoming sprint, measured in hours. It is forward-looking and based on team size, working days, and PTO. Capacity tells you the theoretical maximum -- velocity tells you what is realistic.</p>
+          </div>
+          <div class="explainer-takeaway">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 1a5 5 0 00-1.8 9.66V12a1 1 0 001 1h1.6a1 1 0 001-1v-1.34A5 5 0 008 1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6.5 14.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <p><strong>Best approach:</strong> Use velocity as your primary planning input, and capacity as a sanity check. If capacity drops significantly (PTO, holidays), scale velocity proportionally.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Deliver sprints on time, every time</p>
+      <h2>Catch bugs faster with AI-powered reports</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel turns screen recordings into complete bug reports with steps, screenshots, and severity -- automatically. Fewer bug-related delays, more story points delivered.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 720px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 600px;
+  }
+
+  /* ===== Calculator Layout ===== */
+  .tool-section {
+    padding-bottom: 64px;
+  }
+
+  .calc-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ===== Panel Card ===== */
+  .panel-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--color-text);
+  }
+
+  .panel-title svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  /* ===== Slider Groups ===== */
+  .slider-group {
+    margin-bottom: 28px;
+  }
+
+  .slider-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .slider-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .slider-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .slider-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+    letter-spacing: -0.02em;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  .slider-value small {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    margin-left: 2px;
+  }
+
+  .slider-hint {
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+
+  .slider-range {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    margin-top: 6px;
+    font-family: var(--font-mono);
+  }
+
+  /* ===== Custom Slider ===== */
+  .calc-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-border);
+    outline: none;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .calc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 3px solid var(--color-bg);
+    box-shadow: 0 0 0 2px var(--color-primary), 0 2px 8px rgba(99, 102, 241, 0.3);
+    cursor: pointer;
+    transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .calc-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px var(--color-primary-hover), 0 2px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .calc-slider::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+  }
+
+  .calc-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 3px solid var(--color-bg);
+    box-shadow: 0 0 0 2px var(--color-primary), 0 2px 8px rgba(99, 102, 241, 0.3);
+    cursor: pointer;
+    transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .calc-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px var(--color-primary-hover), 0 2px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .calc-slider::-moz-range-track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-border);
+  }
+
+  /* ===== Select / Field ===== */
+  .field-group {
+    margin-bottom: 28px;
+  }
+
+  .field-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+  }
+
+  .select-wrapper {
+    position: relative;
+  }
+
+  .calc-select {
+    width: 100%;
+    padding: 10px 40px 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    outline: none;
+    transition: border-color var(--transition-fast);
+  }
+
+  .calc-select:focus {
+    border-color: var(--color-primary);
+  }
+
+  .calc-select:hover {
+    border-color: var(--color-border-hover);
+  }
+
+  .select-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-dim);
+    pointer-events: none;
+  }
+
+  /* ===== Number Input ===== */
+  .calc-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: border-color var(--transition-fast);
+    text-align: center;
+  }
+
+  .calc-input:focus {
+    border-color: var(--color-primary);
+  }
+
+  .calc-input:hover {
+    border-color: var(--color-border-hover);
+  }
+
+  .calc-input::-webkit-inner-spin-button,
+  .calc-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .calc-input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  /* ===== Velocity Grid ===== */
+  .velocity-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .velocity-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .velocity-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    text-align: center;
+  }
+
+  /* ===== Toggle ===== */
+  .toggle-group {
+    margin-bottom: 20px;
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .toggle-input {
+    display: none;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: var(--color-border);
+    border-radius: 11px;
+    flex-shrink: 0;
+    transition: background var(--transition-fast);
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: var(--color-text-dim);
+    border-radius: 50%;
+    transition: transform var(--transition-fast), background var(--transition-fast);
+  }
+
+  .toggle-input:checked + .toggle-switch {
+    background: var(--color-primary);
+  }
+
+  .toggle-input:checked + .toggle-switch::after {
+    transform: translateX(18px);
+    background: #fff;
+  }
+
+  .toggle-text {
+    user-select: none;
+  }
+
+  /* ===== Results Sticky ===== */
+  .results-panel {
+    position: relative;
+  }
+
+  .results-sticky {
+    position: sticky;
+    top: 24px;
+  }
+
+  /* ===== Commitment Card ===== */
+  .commitment-card {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), rgba(99, 102, 241, 0.05));
+    border-color: rgba(34, 197, 94, 0.2);
+  }
+
+  .commitment-card .panel-title svg {
+    color: var(--color-success);
+  }
+
+  .commitment-hero {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .commitment-number {
+    font-size: 4rem;
+    font-weight: 800;
+    color: var(--color-success);
+    font-family: var(--font-mono);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .commitment-unit {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .commitment-breakdown {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+  }
+
+  .breakdown-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .breakdown-label {
+    font-size: 0.6875rem;
+    color: var(--color-text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .breakdown-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .breakdown-value--green {
+    color: var(--color-success);
+  }
+
+  .breakdown-value--yellow {
+    color: var(--color-warning);
+  }
+
+  .breakdown-value--orange {
+    color: #f97316;
+  }
+
+  .breakdown-op {
+    font-size: 1.25rem;
+    color: var(--color-text-dim);
+    font-weight: 300;
+    flex-shrink: 0;
+  }
+
+  .confidence-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .confidence-row svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  /* ===== Stacked Bar ===== */
+  .stacked-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .stacked-bar {
+    display: flex;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--color-bg);
+  }
+
+  .stacked-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow: hidden;
+  }
+
+  .stacked-segment--committed {
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.4));
+    border-right: 1px solid rgba(34, 197, 94, 0.2);
+  }
+
+  .stacked-segment--buffer {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.25), rgba(245, 158, 11, 0.4));
+    border-right: 1px solid rgba(245, 158, 11, 0.2);
+  }
+
+  .stacked-segment--carryover {
+    background: linear-gradient(90deg, rgba(249, 115, 22, 0.25), rgba(249, 115, 22, 0.4));
+  }
+
+  .stacked-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--color-text);
+    white-space: nowrap;
+    padding: 0 8px;
+  }
+
+  .stacked-legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .legend-dot--committed {
+    background: rgba(34, 197, 94, 0.5);
+    border: 1px solid rgba(34, 197, 94, 0.6);
+  }
+
+  .legend-dot--buffer {
+    background: rgba(245, 158, 11, 0.5);
+    border: 1px solid rgba(245, 158, 11, 0.6);
+  }
+
+  .legend-dot--carryover {
+    background: rgba(249, 115, 22, 0.5);
+    border: 1px solid rgba(249, 115, 22, 0.6);
+  }
+
+  /* ===== Capacity Metrics ===== */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 12px 8px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .metric-label {
+    font-size: 0.6875rem;
+    color: var(--color-text-dim);
+    font-weight: 500;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .metric-value--accent {
+    color: var(--color-accent);
+  }
+
+  .metric-unit {
+    font-size: 0.6875rem;
+    color: var(--color-text-dim);
+    font-weight: 500;
+  }
+
+  /* ===== Velocity Analysis ===== */
+  .velocity-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .velocity-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .velocity-stat-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .velocity-stat-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .velocity-stat-unit {
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    font-weight: 500;
+    margin-left: 4px;
+  }
+
+  .velocity-trend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .trend-arrow {
+    flex-shrink: 0;
+  }
+
+  .trend-arrow.trend-up {
+    color: var(--color-success);
+  }
+
+  .trend-arrow.trend-down {
+    color: var(--color-error);
+    transform: rotate(180deg);
+  }
+
+  .trend-arrow.trend-stable {
+    color: var(--color-warning);
+  }
+
+  #trend-text {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  #trend-text.trend-up {
+    color: var(--color-success);
+  }
+
+  #trend-text.trend-down {
+    color: var(--color-error);
+  }
+
+  #trend-text.trend-stable {
+    color: var(--color-warning);
+  }
+
+  /* ===== Results Actions ===== */
+  .results-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
+  #copy-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+  }
+
+  #copy-btn.copied:hover {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+  }
+
+  /* ===== Practices ===== */
+  .practices-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .practices-heading {
+    text-align: center;
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+    margin-bottom: 40px;
+  }
+
+  .practices-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .practice-card {
+    padding: 24px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    transition: border-color var(--transition-base);
+  }
+
+  .practice-card:hover {
+    border-color: var(--color-border-hover);
+  }
+
+  .practice-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary-glow);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-md);
+    color: var(--color-primary);
+    margin-bottom: 16px;
+  }
+
+  .practice-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--color-text);
+  }
+
+  .practice-card p {
+    font-size: 0.8125rem;
+    color: var(--color-text-dim);
+    line-height: 1.6;
+  }
+
+  /* ===== Explainer ===== */
+  .explainer-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .collapse-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    text-align: left;
+  }
+
+  .collapse-toggle:hover {
+    color: var(--color-text);
+  }
+
+  .collapse-icon {
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+  }
+
+  .collapse-toggle[aria-expanded="true"] .collapse-icon {
+    transform: rotate(180deg);
+  }
+
+  .collapse-content {
+    margin-top: 24px;
+  }
+
+  .collapse-content[hidden] {
+    display: none;
+  }
+
+  .explainer-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .explainer-col h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: var(--color-accent);
+  }
+
+  .explainer-col p {
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: var(--color-text-dim);
+  }
+
+  .explainer-col p strong {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .explainer-takeaway {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px;
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: var(--radius-md);
+    margin-top: 4px;
+  }
+
+  .explainer-takeaway svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .explainer-takeaway p {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--color-text-muted);
+  }
+
+  .explainer-takeaway p strong {
+    color: var(--color-text);
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1024px) {
+    .calc-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .results-sticky {
+      position: static;
+    }
+
+    .practices-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .panel-card {
+      padding: 20px;
+    }
+
+    .slider-value {
+      font-size: 1.25rem;
+    }
+
+    .commitment-number {
+      font-size: 3rem;
+    }
+
+    .commitment-breakdown {
+      gap: 6px;
+      padding: 12px;
+    }
+
+    .breakdown-value {
+      font-size: 1rem;
+    }
+
+    .breakdown-op {
+      font-size: 1rem;
+    }
+
+    .metrics-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .metric-item {
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 10px 14px;
+    }
+
+    .velocity-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .stacked-bar {
+      height: 36px;
+    }
+
+    .stacked-label {
+      font-size: 0.6875rem;
+      padding: 0 4px;
+    }
+
+    .results-actions {
+      flex-direction: column;
+    }
+
+    .results-actions .btn {
+      width: 100%;
+    }
+
+    .explainer-body {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  // ===== Sprint Planning Calculator — Client-Side Logic =====
+
+  // --- Default constants ---
+  const DEFAULT_SP_PER_PERSON_PER_DAY = 1.2; // estimate when no history
+
+  // --- DOM: Inputs ---
+  const teamMembersSlider = document.getElementById('team-members') as HTMLInputElement;
+  const sprintLengthSelect = document.getElementById('sprint-length') as HTMLSelectElement;
+  const hoursPerDaySlider = document.getElementById('hours-per-day') as HTMLInputElement;
+  const daysOffSlider = document.getElementById('days-off') as HTMLInputElement;
+
+  const noHistoryToggle = document.getElementById('no-history') as HTMLInputElement;
+  const velocityInputsDiv = document.getElementById('velocity-inputs') as HTMLElement;
+  const sprint1Input = document.getElementById('sprint-1') as HTMLInputElement;
+  const sprint2Input = document.getElementById('sprint-2') as HTMLInputElement;
+  const sprint3Input = document.getElementById('sprint-3') as HTMLInputElement;
+
+  const carryOverSlider = document.getElementById('carry-over') as HTMLInputElement;
+  const riskBufferSelect = document.getElementById('risk-buffer') as HTMLSelectElement;
+
+  // --- DOM: Value displays ---
+  const teamMembersValueEl = document.getElementById('team-members-value') as HTMLElement;
+  const hoursPerDayValueEl = document.getElementById('hours-per-day-value') as HTMLElement;
+  const daysOffValueEl = document.getElementById('days-off-value') as HTMLElement;
+  const carryOverValueEl = document.getElementById('carry-over-value') as HTMLElement;
+
+  // --- DOM: Results ---
+  const commitmentNumberEl = document.getElementById('commitment-number') as HTMLElement;
+  const breakdownCapacityEl = document.getElementById('breakdown-capacity') as HTMLElement;
+  const breakdownCarryoverEl = document.getElementById('breakdown-carryover') as HTMLElement;
+  const breakdownBufferEl = document.getElementById('breakdown-buffer') as HTMLElement;
+  const breakdownCommitEl = document.getElementById('breakdown-commit') as HTMLElement;
+  const confidenceTextEl = document.getElementById('confidence-text') as HTMLElement;
+
+  const barCommittedEl = document.getElementById('bar-committed') as HTMLElement;
+  const barBufferEl = document.getElementById('bar-buffer') as HTMLElement;
+  const barCarryoverEl = document.getElementById('bar-carryover') as HTMLElement;
+  const barCommittedLabelEl = document.getElementById('bar-committed-label') as HTMLElement;
+  const barBufferLabelEl = document.getElementById('bar-buffer-label') as HTMLElement;
+  const barCarryoverLabelEl = document.getElementById('bar-carryover-label') as HTMLElement;
+
+  const metricTotalHoursEl = document.getElementById('metric-total-hours') as HTMLElement;
+  const metricEffectiveHoursEl = document.getElementById('metric-effective-hours') as HTMLElement;
+  const metricSpCapacityEl = document.getElementById('metric-sp-capacity') as HTMLElement;
+
+  const velAverageEl = document.getElementById('vel-average') as HTMLElement;
+  const trendArrowEl = document.getElementById('trend-arrow') as HTMLElement;
+  const trendTextEl = document.getElementById('trend-text') as HTMLElement;
+  const velRangeEl = document.getElementById('vel-range') as HTMLElement;
+
+  const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement;
+  const copyTextEl = document.getElementById('copy-text') as HTMLElement;
+  const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
+
+  const toggleExplainer = document.getElementById('toggle-explainer') as HTMLButtonElement;
+  const explainerContent = document.getElementById('explainer-content') as HTMLElement;
+
+  // --- Slider track fill ---
+  function updateSliderFill(slider: HTMLInputElement): void {
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+    const val = parseFloat(slider.value);
+    const pct = ((val - min) / (max - min)) * 100;
+    const color = 'rgba(99, 102, 241, 0.5)';
+    slider.style.background = `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, var(--color-border) ${pct}%, var(--color-border) 100%)`;
+  }
+
+  // --- Core Calculation ---
+  function calculate(): void {
+    const teamMembers = parseInt(teamMembersSlider.value);
+    const sprintDays = parseInt(sprintLengthSelect.value);
+    const hoursPerDay = parseInt(hoursPerDaySlider.value);
+    const daysOff = parseInt(daysOffSlider.value);
+    const carryOver = parseInt(carryOverSlider.value);
+    const riskBufferPct = parseFloat(riskBufferSelect.value);
+    const useEstimate = noHistoryToggle.checked;
+
+    // Update value displays
+    teamMembersValueEl.textContent = String(teamMembers);
+    hoursPerDayValueEl.innerHTML = hoursPerDay + '<small>hrs</small>';
+    daysOffValueEl.textContent = String(daysOff);
+    carryOverValueEl.innerHTML = carryOver + '<small>pts</small>';
+
+    // Update slider fills
+    updateSliderFill(teamMembersSlider);
+    updateSliderFill(hoursPerDaySlider);
+    updateSliderFill(daysOffSlider);
+    updateSliderFill(carryOverSlider);
+
+    // --- Capacity ---
+    const totalPersonDays = (teamMembers * sprintDays) - daysOff;
+    const effectivePersonDays = Math.max(totalPersonDays, 0);
+    const totalAvailableHours = effectivePersonDays * hoursPerDay;
+    // Effective hours account for overhead (standup, retro, planning ~15% of working hours)
+    const overheadFactor = 0.85;
+    const effectiveHours = Math.round(totalAvailableHours * overheadFactor);
+
+    // --- Velocity ---
+    let avgVelocity: number;
+    let minVel: number;
+    let maxVel: number;
+    let velocityVariance: number;
+    let trend: 'up' | 'down' | 'stable';
+
+    if (useEstimate) {
+      // Estimate based on team size and sprint length
+      avgVelocity = Math.round(teamMembers * sprintDays * DEFAULT_SP_PER_PERSON_PER_DAY);
+      minVel = avgVelocity;
+      maxVel = avgVelocity;
+      velocityVariance = 0.3; // high uncertainty
+      trend = 'stable';
+    } else {
+      const s1 = parseInt(sprint1Input.value) || 0;
+      const s2 = parseInt(sprint2Input.value) || 0;
+      const s3 = parseInt(sprint3Input.value) || 0;
+
+      avgVelocity = Math.round((s1 + s2 + s3) / 3);
+      minVel = Math.min(s1, s2, s3);
+      maxVel = Math.max(s1, s2, s3);
+
+      // Variance as coefficient of variation
+      const mean = (s1 + s2 + s3) / 3;
+      if (mean > 0) {
+        const stdDev = Math.sqrt(((s1 - mean) ** 2 + (s2 - mean) ** 2 + (s3 - mean) ** 2) / 3);
+        velocityVariance = stdDev / mean;
+      } else {
+        velocityVariance = 0;
+      }
+
+      // Trend: compare most recent (s1) to oldest (s3)
+      if (s1 > s3 * 1.05) {
+        trend = 'up';
+      } else if (s1 < s3 * 0.95) {
+        trend = 'down';
+      } else {
+        trend = 'stable';
+      }
+    }
+
+    // --- Scale velocity by capacity ratio ---
+    // If team has less capacity this sprint (PTO etc), scale velocity
+    const normalCapacityDays = teamMembers * sprintDays;
+    const capacityRatio = normalCapacityDays > 0 ? effectivePersonDays / normalCapacityDays : 1;
+    const scaledVelocity = Math.round(avgVelocity * capacityRatio);
+
+    // SP capacity estimate
+    const spCapacity = scaledVelocity;
+
+    // --- Commitment ---
+    const bufferPoints = Math.round(spCapacity * riskBufferPct);
+    const rawCommitment = spCapacity - carryOver - bufferPoints;
+    const commitment = Math.max(rawCommitment, 0);
+
+    // --- Confidence ---
+    // Low variance + buffer = high confidence
+    let confidence: number;
+    if (useEstimate) {
+      confidence = 50; // no data = low confidence
+    } else {
+      // Base confidence from variance (low variance = high confidence)
+      const varianceScore = Math.max(0, 1 - velocityVariance * 3); // 0 to 1
+      // Buffer bonus
+      const bufferBonus = riskBufferPct * 0.5; // 0 to 0.15
+      confidence = Math.min(95, Math.round((varianceScore * 0.7 + bufferBonus + 0.15) * 100));
+      confidence = Math.max(40, confidence);
+    }
+
+    // --- Update DOM ---
+
+    // Commitment
+    commitmentNumberEl.textContent = String(commitment);
+    breakdownCapacityEl.textContent = String(spCapacity);
+    breakdownCarryoverEl.textContent = String(carryOver);
+    breakdownBufferEl.textContent = String(bufferPoints);
+    breakdownCommitEl.textContent = String(commitment);
+
+    // Confidence
+    let confidenceLabel: string;
+    if (confidence >= 80) {
+      confidenceLabel = 'High confidence';
+    } else if (confidence >= 60) {
+      confidenceLabel = 'Moderate confidence';
+    } else {
+      confidenceLabel = 'Low confidence';
+    }
+    if (useEstimate) {
+      confidenceTextEl.textContent = confidence + '% confidence -- no historical data, using estimate';
+    } else {
+      confidenceTextEl.textContent = confidence + '% confidence based on velocity variance';
+    }
+
+    // Stacked bar
+    const totalBar = spCapacity > 0 ? spCapacity : 1;
+    const committedPct = Math.max((commitment / totalBar) * 100, 0);
+    const bufferPct = Math.max((bufferPoints / totalBar) * 100, 0);
+    const carryoverPct = Math.max((carryOver / totalBar) * 100, 0);
+
+    // Normalize to 100%
+    const sumPct = committedPct + bufferPct + carryoverPct;
+    const norm = sumPct > 0 ? 100 / sumPct : 0;
+
+    barCommittedEl.style.width = Math.max(committedPct * norm, commitment > 0 ? 5 : 0) + '%';
+    barBufferEl.style.width = Math.max(bufferPct * norm, bufferPoints > 0 ? 3 : 0) + '%';
+    barCarryoverEl.style.width = Math.max(carryoverPct * norm, carryOver > 0 ? 3 : 0) + '%';
+
+    barCommittedLabelEl.textContent = commitment + ' pts';
+    barBufferLabelEl.textContent = bufferPoints > 0 ? String(bufferPoints) : '';
+    barCarryoverLabelEl.textContent = carryOver > 0 ? String(carryOver) : '';
+
+    // Capacity metrics
+    metricTotalHoursEl.textContent = String(totalAvailableHours);
+    metricEffectiveHoursEl.textContent = String(effectiveHours);
+    metricSpCapacityEl.textContent = String(spCapacity);
+
+    // Velocity analysis
+    velAverageEl.textContent = String(avgVelocity);
+
+    // Trend
+    trendArrowEl.classList.remove('trend-up', 'trend-down', 'trend-stable');
+    trendTextEl.classList.remove('trend-up', 'trend-down', 'trend-stable');
+
+    if (useEstimate) {
+      trendArrowEl.classList.add('trend-stable');
+      trendArrowEl.innerHTML = '<line x1="3" y1="9" x2="15" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
+      trendTextEl.textContent = 'N/A';
+      trendTextEl.classList.add('trend-stable');
+    } else if (trend === 'up') {
+      trendArrowEl.classList.add('trend-up');
+      trendArrowEl.innerHTML = '<path d="M9 14V4M9 4l4 4M9 4L5 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+      trendTextEl.textContent = 'Improving';
+      trendTextEl.classList.add('trend-up');
+    } else if (trend === 'down') {
+      trendArrowEl.classList.add('trend-down');
+      trendArrowEl.innerHTML = '<path d="M9 4V14M9 14l4-4M9 14L5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+      trendTextEl.textContent = 'Declining';
+      trendTextEl.classList.add('trend-down');
+    } else {
+      trendArrowEl.classList.add('trend-stable');
+      trendArrowEl.innerHTML = '<path d="M3 9h12M12 6l3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+      trendTextEl.textContent = 'Stable';
+      trendTextEl.classList.add('trend-stable');
+    }
+
+    // Velocity range
+    if (useEstimate) {
+      velRangeEl.innerHTML = 'Estimated';
+    } else {
+      velRangeEl.innerHTML = minVel + ' &ndash; ' + maxVel;
+    }
+  }
+
+  // --- Toggle velocity history ---
+  noHistoryToggle.addEventListener('change', function () {
+    if (noHistoryToggle.checked) {
+      velocityInputsDiv.style.opacity = '0.3';
+      velocityInputsDiv.style.pointerEvents = 'none';
+    } else {
+      velocityInputsDiv.style.opacity = '1';
+      velocityInputsDiv.style.pointerEvents = 'auto';
+    }
+    calculate();
+  });
+
+  // --- Event listeners ---
+  const allSliders = [teamMembersSlider, hoursPerDaySlider, daysOffSlider, carryOverSlider];
+  allSliders.forEach(function (s) { s.addEventListener('input', calculate); });
+
+  const allSelects = [sprintLengthSelect, riskBufferSelect];
+  allSelects.forEach(function (s) { s.addEventListener('change', calculate); });
+
+  const allInputs = [sprint1Input, sprint2Input, sprint3Input];
+  allInputs.forEach(function (inp) { inp.addEventListener('input', calculate); });
+
+  // --- Copy Sprint Plan ---
+  copyBtn.addEventListener('click', function () {
+    const teamMembers = teamMembersSlider.value;
+    const sprintDays = sprintLengthSelect.value;
+    const sprintWeeks = parseInt(sprintDays) / 5;
+    const hoursPerDay = hoursPerDaySlider.value;
+    const daysOff = daysOffSlider.value;
+    const carryOver = carryOverSlider.value;
+    const riskLabel = riskBufferSelect.options[riskBufferSelect.selectedIndex].text;
+
+    const text = [
+      '## Sprint Plan',
+      '',
+      '**Team:** ' + teamMembers + ' members',
+      '**Sprint:** ' + sprintWeeks + ' week' + (sprintWeeks > 1 ? 's' : '') + ' (' + sprintDays + ' days)',
+      '**Productive hours/day:** ' + hoursPerDay,
+      '**Days off:** ' + daysOff,
+      '',
+      '**Velocity (avg):** ' + velAverageEl.textContent + ' pts/sprint',
+      '**Risk buffer:** ' + riskLabel,
+      '**Carry-over:** ' + carryOver + ' pts',
+      '',
+      '### Recommended Commitment: ' + commitmentNumberEl.textContent + ' story points',
+      '',
+      'Capacity (' + breakdownCapacityEl.textContent + ') - Carry-over (' + breakdownCarryoverEl.textContent + ') - Buffer (' + breakdownBufferEl.textContent + ') = **' + breakdownCommitEl.textContent + ' pts**',
+      '',
+      confidenceTextEl.textContent,
+      '',
+      '---',
+      '_Generated with [BugReel Sprint Planner](https://bugreel.io/tools/sprint-planner)_',
+    ].join('\n');
+
+    navigator.clipboard.writeText(text).then(function () {
+      copyBtn.classList.add('copied');
+      copyTextEl.textContent = 'Copied!';
+      setTimeout(function () {
+        copyBtn.classList.remove('copied');
+        copyTextEl.textContent = 'Copy Sprint Plan';
+      }, 2000);
+    });
+  });
+
+  // --- Reset ---
+  resetBtn.addEventListener('click', function () {
+    teamMembersSlider.value = '5';
+    sprintLengthSelect.value = '10';
+    hoursPerDaySlider.value = '6';
+    daysOffSlider.value = '0';
+    noHistoryToggle.checked = false;
+    velocityInputsDiv.style.opacity = '1';
+    velocityInputsDiv.style.pointerEvents = 'auto';
+    sprint1Input.value = '34';
+    sprint2Input.value = '28';
+    sprint3Input.value = '31';
+    carryOverSlider.value = '0';
+    riskBufferSelect.value = '0.20';
+    calculate();
+  });
+
+  // --- Explainer Toggle ---
+  toggleExplainer.addEventListener('click', function () {
+    const expanded = toggleExplainer.getAttribute('aria-expanded') === 'true';
+    toggleExplainer.setAttribute('aria-expanded', String(!expanded));
+    explainerContent.hidden = expanded;
+  });
+
+  // --- Initial ---
+  calculate();
+</script>

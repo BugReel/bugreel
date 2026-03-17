@@ -1,0 +1,1173 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Eisenhower Matrix for Bugs',
+    description: 'Classify bugs by urgency and importance. Drag items between quadrants to prioritize your backlog.',
+    url: 'https://bugreel.io/tools/eisenhower-bugs',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'BugReel',
+      url: 'https://bugreel.io',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://bugreel.io/tools' },
+      { '@type': 'ListItem', position: 3, name: 'Eisenhower Matrix for Bugs', item: 'https://bugreel.io/tools/eisenhower-bugs' },
+    ],
+  },
+];
+---
+
+<Base
+  title="Eisenhower Matrix for Bugs — Prioritize by Urgency & Importance | BugReel"
+  description="Classify bugs by urgency and importance. Drag items between quadrants to prioritize your backlog. Free, no signup required."
+  schema={schema}
+>
+  <!-- Breadcrumb -->
+  <div class="page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/tools">Tools</a>
+        <span aria-hidden="true">/</span>
+        <span>Eisenhower Matrix for Bugs</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-success">Free &middot; No Signup</span>
+        <h1>Eisenhower Matrix for Bugs</h1>
+        <p class="hero-subtitle">Classify bugs by urgency and importance. Drag items between quadrants to prioritize your backlog.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tool -->
+  <section class="tool-section">
+    <div class="container">
+
+      <!-- Input row -->
+      <div class="input-row">
+        <div class="input-row-inner card">
+          <div class="input-group">
+            <input
+              type="text"
+              id="bug-input"
+              class="form-input"
+              placeholder="Describe a bug, e.g. Login fails on Safari mobile"
+              maxlength="120"
+              autocomplete="off"
+            />
+            <button class="btn btn-primary add-btn" id="add-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Add Bug
+            </button>
+          </div>
+          <div class="form-error" id="form-error" hidden></div>
+
+          <!-- Preset examples -->
+          <div class="presets">
+            <span class="presets-label">Quick add:</span>
+            <button class="preset-btn" type="button" data-text="Checkout crashes when applying promo code">Checkout crash</button>
+            <button class="preset-btn" type="button" data-text="Password reset email takes 30+ minutes">Slow password reset</button>
+            <button class="preset-btn" type="button" data-text="Dashboard chart labels overlap on Firefox">Chart labels overlap</button>
+            <button class="preset-btn" type="button" data-text="Favicon missing on staging environment">Missing favicon</button>
+            <button class="preset-btn" type="button" data-text="API rate limit error not shown to user">Rate limit silent fail</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Axis labels + Matrix -->
+      <div class="matrix-area">
+        <!-- Y-axis -->
+        <div class="y-axis" aria-hidden="true">
+          <span>Important</span>
+          <svg class="axis-arrow" width="12" height="60" viewBox="0 0 12 60" fill="none" aria-hidden="true">
+            <path d="M6 58V2M6 2L2 8M6 2l4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Not Important</span>
+        </div>
+
+        <div class="matrix-col">
+          <!-- X-axis -->
+          <div class="x-axis" aria-hidden="true">
+            <span>Urgent</span>
+            <svg class="axis-arrow-h" width="60" height="12" viewBox="0 0 60 12" fill="none" aria-hidden="true">
+              <path d="M58 6H2M2 6l6-4M2 6l6 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Not Urgent</span>
+          </div>
+
+          <!-- 2x2 Grid -->
+          <div class="em-grid" id="em-grid">
+            <!-- Q1: Urgent + Important -->
+            <div class="em-cell cell-q1" data-quadrant="q1">
+              <div class="cell-header">
+                <svg class="cell-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <path d="M9 1.5L1.5 16.5h15L9 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M9 6.75v3M9 12.75h.008" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span class="cell-title">Fix Immediately</span>
+              </div>
+              <span class="cell-desc">Urgent + Important</span>
+              <span class="cell-count" data-count="q1">0 bugs</span>
+              <div class="cell-items" id="cell-q1"></div>
+            </div>
+
+            <!-- Q2: Not Urgent + Important -->
+            <div class="em-cell cell-q2" data-quadrant="q2">
+              <div class="cell-header">
+                <svg class="cell-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <rect x="2.25" y="3" width="13.5" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M2.25 7.5h13.5M6 3v4.5M12 3v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span class="cell-title">Schedule Fix</span>
+              </div>
+              <span class="cell-desc">Not Urgent + Important</span>
+              <span class="cell-count" data-count="q2">0 bugs</span>
+              <div class="cell-items" id="cell-q2"></div>
+            </div>
+
+            <!-- Q3: Urgent + Not Important -->
+            <div class="em-cell cell-q3" data-quadrant="q3">
+              <div class="cell-header">
+                <svg class="cell-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <path d="M15 9.75l-3.75 3.75L9 11.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M3 4.5h7.5M3 9h4.5M3 13.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span class="cell-title">Delegate / Quick Fix</span>
+              </div>
+              <span class="cell-desc">Urgent + Not Important</span>
+              <span class="cell-count" data-count="q3">0 bugs</span>
+              <div class="cell-items" id="cell-q3"></div>
+            </div>
+
+            <!-- Q4: Not Urgent + Not Important -->
+            <div class="em-cell cell-q4" data-quadrant="q4">
+              <div class="cell-header">
+                <svg class="cell-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <path d="M3.75 3.75h10.5v10.5H3.75z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M6.75 7.5h4.5M6.75 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span class="cell-title">Backlog / Won't Fix</span>
+              </div>
+              <span class="cell-desc">Not Urgent + Not Important</span>
+              <span class="cell-count" data-count="q4">0 bugs</span>
+              <div class="cell-items" id="cell-q4"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state overlay -->
+      <div class="matrix-empty" id="matrix-empty">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <rect x="4" y="4" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <rect x="22" y="4" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <rect x="4" y="22" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <rect x="22" y="22" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+        </svg>
+        <p>Add bugs to classify them in the Eisenhower Matrix.</p>
+        <p class="matrix-empty-hint">New items land in Q1 by default. Drag to reclassify.</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-bar" id="actions-bar" hidden>
+        <button class="btn btn-primary btn-sm" id="copy-btn" type="button">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M3 11V3.5A.5.5 0 013.5 3H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span id="copy-text">Copy Prioritized List</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" id="clear-btn" type="button">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M2 4h12M5.333 4V2.667a.667.667 0 01.667-.667h4a.667.667 0 01.667.667V4M12.667 4v9.333a.667.667 0 01-.667.667H4a.667.667 0 01-.667-.667V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Clear All
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Explanation -->
+  <section class="section-sm explanation-section">
+    <div class="container">
+      <h2 class="explanation-title">How the Eisenhower Matrix Works for Bug Management</h2>
+      <div class="explanation-prose">
+        <p>The Eisenhower Matrix &mdash; named after President Dwight D. Eisenhower &mdash; is a decision framework that separates tasks into four quadrants based on two axes: <strong>urgency</strong> (how soon it needs attention) and <strong>importance</strong> (how much it affects business goals). Applied to bug management, it forces teams to stop treating every bug as equally critical.</p>
+        <p><strong>Urgent + Important (Q1)</strong> bugs are production-down, data-loss, or security issues. They get fixed immediately. <strong>Not Urgent + Important (Q2)</strong> bugs degrade core workflows but have workarounds &mdash; schedule them into the next sprint. <strong>Urgent + Not Important (Q3)</strong> bugs are noisy but low-impact: delegate to junior devs or batch them into a quick-fix session. <strong>Not Urgent + Not Important (Q4)</strong> bugs are cosmetic or edge-case issues that may never justify the fix cost &mdash; park them in the backlog or close as won't-fix.</p>
+        <p>The key insight is that most teams spend too much time in Q1 and Q3 (reacting) and too little in Q2 (preventing). By making classification explicit, the Eisenhower Matrix helps shift engineering effort toward the bugs that actually matter for the product.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tips -->
+  <section class="section-sm tips-section">
+    <div class="container">
+      <h2 class="tips-title">3 Tips for Eisenhower Bug Prioritization</h2>
+      <div class="tips-grid">
+        <div class="tip-card card">
+          <div class="tip-number">1</div>
+          <h3>Define "urgent" with a timer, not feelings</h3>
+          <p>A bug is urgent if it will cause measurable damage within 24 hours. Everything else is not urgent. This single rule eliminates 80% of prioritization arguments &mdash; most "urgent" bugs are actually important but can wait a sprint.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">2</div>
+          <h3>Review Q4 monthly and close aggressively</h3>
+          <p>Backlog bugs that sit untouched for 3+ months are organizational debt. If nobody has asked about them, close them. You can always reopen if the bug resurfaces. A smaller list is a faster list.</p>
+        </div>
+        <div class="tip-card card">
+          <div class="tip-number">3</div>
+          <h3>Invest in Q2 to shrink Q1</h3>
+          <p>Every bug you schedule and fix properly in Q2 is one fewer emergency in Q1. Teams that allocate 30% of sprint capacity to Q2 bugs report 40% fewer production incidents over 6 months.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section-sm cta-bottom">
+    <div class="container" style="text-align: center; max-width: 640px;">
+      <p class="cta-lead">Want to auto-classify bugs from screen recordings?</p>
+      <h2>Record your screen. AI prioritizes the bug.</h2>
+      <p style="margin: 16px 0 32px; font-size: 1rem;">BugReel watches your screen recording and automatically classifies urgency, importance, and suggests the right quadrant &mdash; before you even file the ticket.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/BugReel/bugreel" class="btn btn-primary">Try BugReel Free</a>
+        <a href="/" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ===== Page Header ===== */
+  .page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  /* ===== Hero ===== */
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  .hero-content {
+    max-width: 700px;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 580px;
+  }
+
+  /* ===== Tool Section ===== */
+  .tool-section {
+    padding-bottom: 64px;
+    position: relative;
+  }
+
+  /* ===== Input Row ===== */
+  .input-row {
+    margin-bottom: 32px;
+  }
+
+  .input-row-inner {
+    max-width: 800px;
+  }
+
+  .input-group {
+    display: flex;
+    gap: 12px;
+  }
+
+  .input-group .form-input {
+    flex: 1;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .form-input::placeholder {
+    color: var(--color-text-dim);
+  }
+
+  .form-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+  }
+
+  .add-btn {
+    flex-shrink: 0;
+  }
+
+  .form-error {
+    font-size: 0.8125rem;
+    color: var(--color-error);
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-sm);
+  }
+
+  .form-error[hidden] {
+    display: none;
+  }
+
+  /* Presets */
+  .presets {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .presets-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+
+  .preset-btn {
+    display: inline-block;
+    padding: 5px 12px;
+    margin: 0 6px 6px 0;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .preset-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-glow);
+  }
+
+  .preset-btn.used {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* ===== Matrix Area ===== */
+  .matrix-area {
+    display: flex;
+    gap: 0;
+  }
+
+  /* Y-axis */
+  .y-axis {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 28px;
+    padding: 32px 0 8px;
+    flex-shrink: 0;
+  }
+
+  .y-axis span {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .axis-arrow {
+    color: var(--color-text-dim);
+    flex-shrink: 0;
+  }
+
+  .matrix-col {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* X-axis */
+  .x-axis {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px 10px;
+  }
+
+  .x-axis span {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .axis-arrow-h {
+    color: var(--color-text-dim);
+    flex-shrink: 0;
+  }
+
+  /* ===== The 2x2 Grid ===== */
+  .em-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 3px;
+    background: var(--color-border);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    min-height: 420px;
+  }
+
+  .em-cell {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+    transition: background-color var(--transition-fast);
+    position: relative;
+  }
+
+  .em-cell.drag-over {
+    outline: 2px dashed var(--color-primary);
+    outline-offset: -2px;
+  }
+
+  /* Q1: Urgent + Important = red */
+  .cell-q1 {
+    background: rgba(239, 68, 68, 0.07);
+  }
+  .cell-q1 .cell-header { color: #ef4444; }
+
+  /* Q2: Not Urgent + Important = blue */
+  .cell-q2 {
+    background: rgba(99, 102, 241, 0.07);
+  }
+  .cell-q2 .cell-header { color: #818cf8; }
+
+  /* Q3: Urgent + Not Important = orange */
+  .cell-q3 {
+    background: rgba(249, 115, 22, 0.07);
+  }
+  .cell-q3 .cell-header { color: #f97316; }
+
+  /* Q4: Not Urgent + Not Important = gray */
+  .cell-q4 {
+    background: rgba(113, 113, 122, 0.07);
+  }
+  .cell-q4 .cell-header { color: #71717a; }
+
+  .cell-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+
+  .cell-icon {
+    flex-shrink: 0;
+  }
+
+  .cell-title {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .cell-desc {
+    font-size: 0.6875rem;
+    color: var(--color-text-dim);
+    margin-bottom: 8px;
+  }
+
+  .cell-count {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 8px;
+  }
+
+  .cell-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 20px;
+  }
+
+  /* ===== Bug Items ===== */
+  .bug-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: grab;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast);
+    user-select: none;
+  }
+
+  .bug-item:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .bug-item:active {
+    cursor: grabbing;
+  }
+
+  .bug-item.dragging {
+    opacity: 0.4;
+  }
+
+  .bug-item-text {
+    flex: 1;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .bug-item-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: none;
+    color: var(--color-text-dim);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    padding: 0;
+    transition: all var(--transition-fast);
+  }
+
+  .bug-item-remove:hover {
+    color: var(--color-error);
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  /* ===== Empty State ===== */
+  .matrix-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--color-text-dim);
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .matrix-empty[hidden] {
+    display: none;
+  }
+
+  .matrix-empty p {
+    font-size: 0.875rem;
+    color: var(--color-text-dim);
+  }
+
+  .matrix-empty-hint {
+    font-size: 0.75rem !important;
+    opacity: 0.6;
+  }
+
+  /* ===== Actions Bar ===== */
+  .actions-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .actions-bar[hidden] {
+    display: none;
+  }
+
+  #copy-btn.copied {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+
+  /* ===== Explanation Section ===== */
+  .explanation-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .explanation-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .explanation-prose {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .explanation-prose p {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .explanation-prose p:last-child {
+    margin-bottom: 0;
+  }
+
+  .explanation-prose strong {
+    color: var(--color-text);
+  }
+
+  /* ===== Tips ===== */
+  .tips-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tips-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .tip-card {
+    position: relative;
+    padding-top: 48px;
+  }
+
+  .tip-number {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-lg) 0 var(--radius-md) 0;
+  }
+
+  .tip-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .tip-card p {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  /* ===== Bottom CTA ===== */
+  .cta-bottom {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cta-lead {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .cta-bottom h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Animation ===== */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 24px 0 32px;
+    }
+
+    .input-group {
+      flex-direction: column;
+    }
+
+    .tips-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .matrix-area {
+      flex-direction: column;
+    }
+
+    .y-axis {
+      display: none;
+    }
+
+    .x-axis {
+      display: none;
+    }
+
+    .em-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+      min-height: 0;
+    }
+
+    .em-cell {
+      min-height: 80px;
+    }
+
+    .em-cell::before {
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.6;
+      margin-bottom: 4px;
+    }
+
+    .cell-q1::before { content: "Urgent + Important"; }
+    .cell-q2::before { content: "Not Urgent + Important"; }
+    .cell-q3::before { content: "Urgent + Not Important"; }
+    .cell-q4::before { content: "Not Urgent + Not Important"; }
+  }
+</style>
+
+<script>
+  // ===== Eisenhower Matrix for Bugs — Client-Side Logic =====
+
+  interface BugItem {
+    id: string;
+    text: string;
+    quadrant: string;
+  }
+
+  const QUADRANT_META: Record<string, { label: string; action: string }> = {
+    q1: { label: 'Urgent + Important', action: 'Fix immediately' },
+    q2: { label: 'Not Urgent + Important', action: 'Schedule fix' },
+    q3: { label: 'Urgent + Not Important', action: 'Delegate / quick fix' },
+    q4: { label: 'Not Urgent + Not Important', action: 'Backlog / won\'t fix' },
+  };
+
+  let items: BugItem[] = [];
+  let draggedId: string | null = null;
+
+  // DOM refs
+  const bugInput = document.getElementById('bug-input') as HTMLInputElement;
+  const addBtn = document.getElementById('add-btn')!;
+  const formError = document.getElementById('form-error')!;
+  const matrixEmpty = document.getElementById('matrix-empty')!;
+  const actionsBar = document.getElementById('actions-bar')!;
+  const copyBtn = document.getElementById('copy-btn')!;
+  const copyText = document.getElementById('copy-text')!;
+  const clearBtn = document.getElementById('clear-btn')!;
+
+  const cellEls: Record<string, HTMLElement> = {
+    q1: document.getElementById('cell-q1')!,
+    q2: document.getElementById('cell-q2')!,
+    q3: document.getElementById('cell-q3')!,
+    q4: document.getElementById('cell-q4')!,
+  };
+
+  const quadrantCells = document.querySelectorAll('.em-cell') as NodeListOf<HTMLElement>;
+  const presetBtns = document.querySelectorAll('.preset-btn') as NodeListOf<HTMLButtonElement>;
+
+  // Helpers
+  function genId(): string {
+    return 'ei-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function showError(msg: string) {
+    formError.textContent = msg;
+    formError.hidden = false;
+    setTimeout(() => { formError.hidden = true; }, 3000);
+  }
+
+  // CRUD
+  function addItem(text: string, quadrant: string = 'q1') {
+    items.push({ id: genId(), text, quadrant });
+    render();
+  }
+
+  function removeItem(id: string) {
+    items = items.filter(i => i.id !== id);
+    render();
+  }
+
+  function moveItem(id: string, newQuadrant: string) {
+    const item = items.find(i => i.id === id);
+    if (item) {
+      item.quadrant = newQuadrant;
+      render();
+    }
+  }
+
+  // Render
+  function render() {
+    // Clear cells
+    Object.values(cellEls).forEach(el => { el.innerHTML = ''; });
+
+    // Count per quadrant
+    const counts: Record<string, number> = { q1: 0, q2: 0, q3: 0, q4: 0 };
+    items.forEach(i => { counts[i.quadrant] = (counts[i.quadrant] || 0) + 1; });
+
+    Object.keys(counts).forEach(q => {
+      const countEl = document.querySelector(`[data-count="${q}"]`);
+      if (countEl) {
+        const n = counts[q];
+        countEl.textContent = n === 1 ? '1 bug' : `${n} bugs`;
+      }
+    });
+
+    // Render items
+    items.forEach(item => {
+      const container = cellEls[item.quadrant];
+      if (!container) return;
+
+      const el = document.createElement('div');
+      el.className = 'bug-item';
+      el.draggable = true;
+      el.dataset.itemId = item.id;
+
+      el.innerHTML = `
+        <span class="bug-item-text" title="${item.text}">${item.text}</span>
+        <button class="bug-item-remove" type="button" aria-label="Remove bug" data-remove-id="${item.id}">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      `;
+
+      container.appendChild(el);
+    });
+
+    // Wire drag events on items
+    document.querySelectorAll('.bug-item').forEach(el => {
+      el.addEventListener('dragstart', handleDragStart as EventListener);
+      el.addEventListener('dragend', handleDragEnd as EventListener);
+    });
+
+    // Wire remove buttons
+    document.querySelectorAll('.bug-item-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (btn as HTMLElement).dataset.removeId;
+        if (id) removeItem(id);
+      });
+    });
+
+    // Empty state
+    matrixEmpty.hidden = items.length > 0;
+
+    // Actions bar
+    actionsBar.hidden = items.length === 0;
+  }
+
+  // Drag & Drop
+  function handleDragStart(e: DragEvent) {
+    const el = (e.target as HTMLElement).closest('.bug-item') as HTMLElement;
+    if (!el) return;
+    draggedId = el.dataset.itemId || null;
+    el.classList.add('dragging');
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedId || '');
+    }
+  }
+
+  function handleDragEnd(e: DragEvent) {
+    const el = (e.target as HTMLElement).closest('.bug-item') as HTMLElement;
+    if (el) el.classList.remove('dragging');
+    draggedId = null;
+    quadrantCells.forEach(c => c.classList.remove('drag-over'));
+  }
+
+  quadrantCells.forEach(cell => {
+    cell.addEventListener('dragover', (e: Event) => {
+      const de = e as DragEvent;
+      de.preventDefault();
+      if (de.dataTransfer) de.dataTransfer.dropEffect = 'move';
+      cell.classList.add('drag-over');
+    });
+
+    cell.addEventListener('dragleave', () => {
+      cell.classList.remove('drag-over');
+    });
+
+    cell.addEventListener('drop', (e: Event) => {
+      const de = e as DragEvent;
+      de.preventDefault();
+      cell.classList.remove('drag-over');
+      const itemId = de.dataTransfer?.getData('text/plain') || draggedId;
+      const targetQ = cell.dataset.quadrant;
+      if (itemId && targetQ) {
+        moveItem(itemId, targetQ);
+      }
+    });
+  });
+
+  // Touch drag support for mobile
+  let touchDragId: string | null = null;
+  let touchClone: HTMLElement | null = null;
+
+  document.addEventListener('touchstart', (e) => {
+    const item = (e.target as HTMLElement).closest('.bug-item') as HTMLElement;
+    if (!item) return;
+    // Only hijack long-press style — let short taps pass to remove button
+    touchDragId = item.dataset.itemId || null;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!touchDragId) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+
+    if (!touchClone) {
+      const item = document.querySelector(`[data-item-id="${touchDragId}"]`) as HTMLElement;
+      if (!item) return;
+      touchClone = item.cloneNode(true) as HTMLElement;
+      touchClone.style.position = 'fixed';
+      touchClone.style.zIndex = '9999';
+      touchClone.style.pointerEvents = 'none';
+      touchClone.style.opacity = '0.85';
+      touchClone.style.width = item.offsetWidth + 'px';
+      touchClone.style.transform = 'scale(1.05)';
+      document.body.appendChild(touchClone);
+      item.classList.add('dragging');
+    }
+
+    touchClone.style.left = (touch.clientX - 40) + 'px';
+    touchClone.style.top = (touch.clientY - 16) + 'px';
+
+    // Highlight cell under finger
+    quadrantCells.forEach(c => c.classList.remove('drag-over'));
+    const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cellUnder = elUnder?.closest('.em-cell') as HTMLElement | null;
+    if (cellUnder) cellUnder.classList.add('drag-over');
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if (!touchDragId) return;
+
+    if (touchClone) {
+      const touch = e.changedTouches[0];
+      const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+      const cellUnder = elUnder?.closest('.em-cell') as HTMLElement | null;
+      if (cellUnder) {
+        const targetQ = cellUnder.dataset.quadrant;
+        if (targetQ) moveItem(touchDragId, targetQ);
+      }
+      touchClone.remove();
+      touchClone = null;
+    }
+
+    const item = document.querySelector(`[data-item-id="${touchDragId}"]`) as HTMLElement;
+    if (item) item.classList.remove('dragging');
+
+    quadrantCells.forEach(c => c.classList.remove('drag-over'));
+    touchDragId = null;
+  }, { passive: true });
+
+  // Add button
+  addBtn.addEventListener('click', () => {
+    const text = bugInput.value.trim();
+    if (!text) { showError('Enter a bug description.'); bugInput.focus(); return; }
+    addItem(text);
+    bugInput.value = '';
+    formError.hidden = true;
+    bugInput.focus();
+  });
+
+  // Enter key
+  bugInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addBtn.click();
+    }
+  });
+
+  // Preset buttons
+  presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const text = btn.dataset.text || '';
+      if (text) {
+        addItem(text);
+        btn.classList.add('used');
+      }
+    });
+  });
+
+  // Copy
+  function buildMarkdown(): string {
+    let md = '# Eisenhower Bug Prioritization\n\n';
+
+    const order: string[] = ['q1', 'q2', 'q3', 'q4'];
+    order.forEach(q => {
+      const meta = QUADRANT_META[q];
+      const qItems = items.filter(i => i.quadrant === q);
+      if (qItems.length === 0) return;
+
+      md += `## ${meta.label} -- ${meta.action}\n`;
+      qItems.forEach(i => {
+        md += `- ${i.text}\n`;
+      });
+      md += '\n';
+    });
+
+    md += '---\nGenerated with BugReel Eisenhower Matrix (https://bugreel.io/tools/eisenhower-bugs)';
+    return md;
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    if (items.length === 0) return;
+    const text = buildMarkdown();
+    try {
+      await navigator.clipboard.writeText(text);
+      copyBtn.classList.add('copied');
+      copyText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyText.textContent = 'Copy Prioritized List';
+      }, 2000);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      copyBtn.classList.add('copied');
+      copyText.textContent = 'Copied!';
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyText.textContent = 'Copy Prioritized List';
+      }, 2000);
+    }
+  });
+
+  // Clear
+  clearBtn.addEventListener('click', () => {
+    items = [];
+    render();
+    presetBtns.forEach(btn => btn.classList.remove('used'));
+    document.querySelector('.tool-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // Init
+  render();
+</script>
