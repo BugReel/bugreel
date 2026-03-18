@@ -1,0 +1,483 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const title = 'BugReel vs Jam.dev: Detailed Comparison (2026)';
+const description = 'Compare BugReel and Jam.dev side by side. Features, pricing, AI capabilities, self-hosting, and which tool is right for your team.';
+const slug = 'bugreel-vs-jam-dev';
+const competitor = 'Jam.dev';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: title,
+  description,
+  url: `https://bugreel.io/compare/${slug}`,
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Compare', item: 'https://bugreel.io/compare' },
+      { '@type': 'ListItem', position: 3, name: title, item: `https://bugreel.io/compare/${slug}` },
+    ],
+  },
+};
+
+const rows = [
+  { feature: 'Screen recording', bugreel: 'Yes', competitor: 'Yes (instant replay)', winner: 'draw' },
+  { feature: 'AI transcription', bugreel: 'Yes (Whisper)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'AI analysis (full card generation)', bugreel: 'Yes — steps, severity, environment', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Auto screenshot extraction', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Console error capture', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'User action tracking', bugreel: 'Yes (click, scroll, navigation)', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Complexity scoring', bugreel: 'Yes', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Tracker integrations', bugreel: 'Jira, Linear, GitHub, YouTrack, Webhooks', competitor: 'Jira, Linear, GitHub, Slack', winner: 'bugreel' },
+  { feature: 'Self-hosted option', bugreel: 'Yes (Docker)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Open source', bugreel: 'Yes (MIT)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Chrome extension', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Firefox support', bugreel: 'Yes', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Public shareable reports', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Pricing', bugreel: 'Free (Community) / $8/user/mo', competitor: '$12.50/user/mo', winner: 'bugreel' },
+];
+---
+
+<Base title={title} description={description} schema={schema}>
+  <div class="compare-page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/compare">Compare</a>
+        <span aria-hidden="true">/</span>
+        <span>BugReel vs {competitor}</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="section-sm compare-hero">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge">Comparison</span>
+        <h1>BugReel vs <span class="gradient-text">{competitor}</span></h1>
+        <p class="hero-subtitle">
+          Two Chrome-extension-based bug capture tools, with very different approaches to what happens after you hit "stop."
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Verdict -->
+  <section class="section-sm">
+    <div class="container">
+      <div class="verdict-box card">
+        <h2>Quick Verdict</h2>
+        <p>
+          <strong>Jam.dev</strong> is a polished tool for quickly capturing and sharing browser bugs with instant replay. It's great for teams who want a fast, frictionless workflow within Chrome.
+          <strong>BugReel</strong> goes further by using AI to generate complete bug report cards — with structured steps to reproduce, severity scoring, and environment details — while offering self-hosting and open-source flexibility.
+          Choose Jam.dev for speed and simplicity; choose BugReel for depth, privacy, and AI-powered analysis.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="section-sm">
+    <div class="container">
+      <h2 class="table-title">Feature-by-Feature Comparison</h2>
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="col-highlight">BugReel</th>
+              <th>{competitor}</th>
+              <th class="winner-col">Winner</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr>
+                <td class="feature-name">{row.feature}</td>
+                <td class:list={['col-highlight', row.winner === 'bugreel' ? 'cell-positive' : row.winner === 'competitor' ? 'cell-negative' : '']}>
+                  {row.bugreel}
+                </td>
+                <td class:list={[row.winner === 'competitor' ? 'cell-positive' : row.winner === 'bugreel' ? 'cell-negative' : '']}>
+                  {row.competitor}
+                </td>
+                <td class="winner-cell">
+                  {row.winner === 'bugreel' && <span class="winner-badge winner-bugreel">BugReel</span>}
+                  {row.winner === 'competitor' && <span class="winner-badge winner-competitor">{competitor}</span>}
+                  {row.winner === 'draw' && <span class="winner-badge winner-draw">Draw</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detailed Sections -->
+  <section class="section-sm">
+    <div class="container prose">
+      <h2>Recording & Capture</h2>
+      <p>
+        Both tools record browser sessions and capture console errors alongside the video. Jam.dev's standout feature is its "instant replay" — it continuously records in the background, so you can retroactively capture a bug without needing to start a recording first. BugReel uses a more traditional start/stop recording approach but enriches the capture with automatic screenshot extraction at key moments and a user action timeline (clicks, scrolls, navigation events).
+      </p>
+      <p>
+        Jam.dev is Chrome-only. BugReel works in both Chrome and Firefox, making it a better fit for teams that need cross-browser coverage.
+      </p>
+
+      <h2>AI & Analysis</h2>
+      <p>
+        This is where the two tools diverge significantly. Jam.dev captures excellent raw data — console logs, network requests, DOM snapshots — but leaves the reporting to you. BugReel uses Whisper for audio transcription and an LLM pipeline to generate a structured bug report card: title, steps to reproduce, expected vs. actual behavior, severity, environment, and a complexity score. The result is a tracker-ready card, not just a recording link.
+      </p>
+
+      <h2>Integrations</h2>
+      <p>
+        Jam.dev integrates with Jira, Linear, GitHub Issues, and Slack. BugReel supports Jira, Linear, GitHub Issues, YouTrack, and a generic Webhook integration that lets you push to any system. Both cover the major project management tools, though BugReel's webhook option gives it an edge for custom workflows.
+      </p>
+
+      <h2>Pricing & Plans</h2>
+      <p>
+        Jam.dev is priced at $12.50 per user per month (billed annually). BugReel offers a free, open-source Community tier for up to 5 users with Webhook and YouTrack integrations. The Team plan at $8 per user per month unlocks Jira, Linear, and GitHub Issues integrations along with higher storage limits. For small teams and individual developers, BugReel's free tier is hard to beat.
+      </p>
+
+      <h2>Privacy & Self-Hosting</h2>
+      <p>
+        Jam.dev is a cloud-only SaaS product. BugReel can be self-hosted via Docker, keeping all recordings, reports, and data on your own infrastructure. For teams in regulated industries or those with strict data policies, self-hosting is a decisive advantage. BugReel's open-source core also means you can audit the code and contribute improvements.
+      </p>
+
+      <h2>Best For</h2>
+      <p>
+        <strong>Jam.dev</strong> is best for teams who value speed above all else. The instant replay feature means you never have to think about starting a recording. If your workflow is Chrome-centric and you prefer sending quick recording links over structured reports, Jam.dev is an excellent choice.
+      </p>
+      <p>
+        <strong>BugReel</strong> is best for teams that want AI to do the heavy lifting. If you're tired of writing steps to reproduce, want consistent bug report quality across your team, or need self-hosting and open-source transparency, BugReel is the stronger option.
+      </p>
+    </div>
+  </section>
+
+  <!-- Decision Matrix -->
+  <section class="section-sm">
+    <div class="container">
+      <h2 class="table-title">Which Should You Choose?</h2>
+      <div class="decision-grid">
+        <div class="decision-card card">
+          <h3 class="decision-heading decision-bugreel">Choose BugReel if...</h3>
+          <ul>
+            <li>You want AI to generate full bug report cards automatically</li>
+            <li>You need self-hosting or open-source for compliance or privacy</li>
+            <li>Your team uses Firefox alongside Chrome</li>
+            <li>You want a free tier that actually works for small teams</li>
+          </ul>
+        </div>
+        <div class="decision-card card">
+          <h3 class="decision-heading decision-competitor">Choose {competitor} if...</h3>
+          <ul>
+            <li>Instant replay (retroactive capture) is essential to your workflow</li>
+            <li>You work exclusively in Chrome and want the fastest possible capture</li>
+            <li>You prefer a polished, established SaaS with no self-hosting overhead</li>
+            <li>Slack integration is a key part of your bug triage process</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section-sm">
+    <div class="container prose">
+      <h2>Frequently Asked Questions</h2>
+
+      <h3>Can I migrate from Jam.dev to BugReel?</h3>
+      <p>
+        BugReel does not offer a direct import from Jam.dev. However, since BugReel generates standalone report cards with all the data included, you can start using BugReel alongside Jam.dev and transition at your own pace. Existing Jam.dev recording links will continue to work.
+      </p>
+
+      <h3>Does BugReel have instant replay like Jam.dev?</h3>
+      <p>
+        Not currently. BugReel uses a start/stop recording model. However, the AI analysis that runs after recording often compensates by extracting more structured detail from shorter, targeted recordings.
+      </p>
+
+      <h3>Which tool is better for large teams?</h3>
+      <p>
+        For large teams, BugReel's consistency advantage matters more — AI-generated reports follow the same format regardless of who filed the bug. Jam.dev scales well too, but report quality depends on each person's effort. Pricing also favors BugReel at scale: $8/user vs. $12.50/user per month.
+      </p>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-inner">
+        <div class="cta-glow" aria-hidden="true"></div>
+        <h2>Try BugReel Free</h2>
+        <p>Open source, self-hostable, and AI-powered. See the difference for yourself.</p>
+        <div class="cta-actions">
+          <a href="https://github.com/BugReel/bugreel" class="btn btn-primary btn-lg">Get Started on GitHub</a>
+          <a href="https://docs.bugreel.io" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">Read the Docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .compare-page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .compare-hero {
+    padding-top: 16px;
+  }
+
+  .hero-content {
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+  }
+
+  /* Verdict */
+  .verdict-box {
+    max-width: 800px;
+    margin: 0 auto;
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .verdict-box h2 {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
+  }
+
+  .verdict-box p {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  /* Table */
+  .table-title {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .col-highlight {
+    background: rgba(99, 102, 241, 0.05) !important;
+    border-left: 1px solid rgba(99, 102, 241, 0.15);
+    border-right: 1px solid rgba(99, 102, 241, 0.15);
+  }
+
+  thead .col-highlight {
+    color: var(--color-primary) !important;
+    font-weight: 700;
+  }
+
+  .feature-name {
+    font-weight: 500;
+    color: var(--color-text) !important;
+  }
+
+  .cell-positive {
+    color: var(--color-success) !important;
+    font-weight: 500;
+  }
+
+  .cell-negative {
+    color: var(--color-text-dim) !important;
+  }
+
+  .winner-col {
+    width: 100px;
+  }
+
+  .winner-cell {
+    text-align: center;
+  }
+
+  .winner-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+  }
+
+  .winner-bugreel {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary);
+  }
+
+  .winner-competitor {
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+  }
+
+  .winner-draw {
+    background: rgba(113, 113, 122, 0.15);
+    color: var(--color-text-muted);
+  }
+
+  /* Decision */
+  .decision-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    max-width: 900px;
+    margin: 32px auto 0;
+  }
+
+  .decision-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .decision-card li {
+    padding: 10px 0;
+    padding-left: 28px;
+    position: relative;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+    line-height: 1.5;
+  }
+
+  .decision-card li:last-child {
+    border-bottom: none;
+  }
+
+  .decision-card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .decision-bugreel + ul li::before {
+    background: var(--color-primary);
+  }
+
+  .decision-competitor + ul li::before {
+    background: var(--color-accent);
+  }
+
+  .decision-heading {
+    font-size: 1.125rem;
+    margin-bottom: 8px;
+  }
+
+  /* CTA */
+  .cta-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 80px 40px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .cta-inner h2 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-inner p {
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+    max-width: 480px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px 10px;
+      font-size: 0.8125rem;
+    }
+
+    .decision-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cta-inner {
+      padding: 48px 24px;
+    }
+
+    .cta-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .cta-actions .btn {
+      width: 100%;
+    }
+  }
+</style>

@@ -1,0 +1,483 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const title = 'BugReel vs Bird Eats Bug: Feature-by-Feature Comparison';
+const description = 'Compare BugReel and Bird Eats Bug for screen recording bug reports. AI features, console capture, integrations, and pricing.';
+const slug = 'bugreel-vs-bird-eats-bug';
+const competitor = 'Bird Eats Bug';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: title,
+  description,
+  url: `https://bugreel.io/compare/${slug}`,
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Compare', item: 'https://bugreel.io/compare' },
+      { '@type': 'ListItem', position: 3, name: title, item: `https://bugreel.io/compare/${slug}` },
+    ],
+  },
+};
+
+const rows = [
+  { feature: 'Screen recording', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'AI transcription', bugreel: 'Yes (Whisper)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'AI analysis (full card generation)', bugreel: 'Yes — steps, severity, environment', competitor: 'Basic AI summaries', winner: 'bugreel' },
+  { feature: 'Auto screenshot extraction', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Console error capture', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Network request capture', bugreel: 'Planned', competitor: 'Yes', winner: 'competitor' },
+  { feature: 'User action tracking', bugreel: 'Yes (click, scroll, navigation)', competitor: 'Partial', winner: 'bugreel' },
+  { feature: 'Complexity scoring', bugreel: 'Yes', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Tracker integrations', bugreel: 'Jira, Linear, GitHub, YouTrack, Webhooks', competitor: 'Jira, Linear, GitHub, Slack', winner: 'bugreel' },
+  { feature: 'Self-hosted option', bugreel: 'Yes (Docker)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Open source', bugreel: 'Yes (MIT)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Chrome extension', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Firefox support', bugreel: 'Yes', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Public shareable reports', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Pricing', bugreel: 'Free (Community) / $8/user/mo', competitor: 'From $25/mo', winner: 'bugreel' },
+];
+---
+
+<Base title={title} description={description} schema={schema}>
+  <div class="compare-page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/compare">Compare</a>
+        <span aria-hidden="true">/</span>
+        <span>BugReel vs {competitor}</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="section-sm compare-hero">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge">Comparison</span>
+        <h1>BugReel vs <span class="gradient-text">{competitor}</span></h1>
+        <p class="hero-subtitle">
+          Both tools record browser sessions and capture technical context. The difference is what AI does with that data — and who owns it.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Verdict -->
+  <section class="section-sm">
+    <div class="container">
+      <div class="verdict-box card">
+        <h2>Quick Verdict</h2>
+        <p>
+          <strong>Bird Eats Bug</strong> is a solid screen recording tool for bug reports with strong console and network capture. It includes basic AI summaries to help describe what happened.
+          <strong>BugReel</strong> takes the AI further — generating complete, structured bug report cards with steps to reproduce, severity, environment, and complexity scoring. BugReel also offers self-hosting and an open-source core, which Bird Eats Bug does not.
+          If network request capture is critical today, Bird Eats Bug has an edge. For everything else, BugReel offers more depth at a lower price.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="section-sm">
+    <div class="container">
+      <h2 class="table-title">Feature-by-Feature Comparison</h2>
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="col-highlight">BugReel</th>
+              <th>{competitor}</th>
+              <th class="winner-col">Winner</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr>
+                <td class="feature-name">{row.feature}</td>
+                <td class:list={['col-highlight', row.winner === 'bugreel' ? 'cell-positive' : row.winner === 'competitor' ? 'cell-negative' : '']}>
+                  {row.bugreel}
+                </td>
+                <td class:list={[row.winner === 'competitor' ? 'cell-positive' : row.winner === 'bugreel' ? 'cell-negative' : '']}>
+                  {row.competitor}
+                </td>
+                <td class="winner-cell">
+                  {row.winner === 'bugreel' && <span class="winner-badge winner-bugreel">BugReel</span>}
+                  {row.winner === 'competitor' && <span class="winner-badge winner-competitor">{competitor}</span>}
+                  {row.winner === 'draw' && <span class="winner-badge winner-draw">Draw</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detailed Sections -->
+  <section class="section-sm">
+    <div class="container prose">
+      <h2>Recording & Capture</h2>
+      <p>
+        Both BugReel and Bird Eats Bug use Chrome extensions to record browser sessions. Both capture console errors and attach them to the recording. Where Bird Eats Bug currently leads is network request capture — it logs XHR/Fetch calls, headers, and response codes alongside the video. BugReel has this on its roadmap but does not include it yet.
+      </p>
+      <p>
+        BugReel's advantage in capture is its user action tracking — a detailed timeline of clicks, scrolls, and navigation events. This makes it easier to understand what the user was doing at each point in the recording. BugReel also supports Firefox, while Bird Eats Bug is Chrome-only.
+      </p>
+
+      <h2>AI & Analysis</h2>
+      <p>
+        Bird Eats Bug offers basic AI summaries — short descriptions of what happened in the recording. These are helpful but limited: you still need to write the actual bug report.
+      </p>
+      <p>
+        BugReel's AI pipeline is significantly more comprehensive. It uses Whisper for audio transcription, then an LLM generates a full bug report card: title, structured steps to reproduce, expected vs. actual behavior, severity level, environment details, and a complexity score. The output is ready to push directly to your issue tracker.
+      </p>
+
+      <h2>Integrations</h2>
+      <p>
+        Both tools integrate with Jira, Linear, and GitHub Issues. Bird Eats Bug also supports Slack. BugReel adds YouTrack support and a generic Webhook integration that works with any system that accepts HTTP callbacks. For most teams, the integration coverage is comparable.
+      </p>
+
+      <h2>Pricing & Plans</h2>
+      <p>
+        Bird Eats Bug starts at $25 per month. BugReel offers a free, open-source Community tier for up to 5 users. The Team plan at $8 per user per month includes all integrations and higher limits. For a team of 5, that is $40/month for BugReel Team versus $25+/month for Bird Eats Bug — but BugReel's Community tier covers that same team for free if Webhook and YouTrack integrations are sufficient.
+      </p>
+
+      <h2>Privacy & Self-Hosting</h2>
+      <p>
+        Bird Eats Bug is a cloud-only product. All recordings and data are stored on their servers. BugReel can be self-hosted via Docker, keeping everything on your own infrastructure. The entire codebase is open source under the MIT license, which means you can audit it, fork it, and modify it to fit your needs.
+      </p>
+
+      <h2>Best For</h2>
+      <p>
+        <strong>Bird Eats Bug</strong> is best for teams that prioritize network request capture alongside screen recording. If you debug a lot of API-related issues and need to see request/response data in context with the video, Bird Eats Bug has a mature implementation of this.
+      </p>
+      <p>
+        <strong>BugReel</strong> is best for teams who want AI to do more than summarize — they want complete, structured bug reports generated automatically. If open source, self-hosting, or Firefox support matters, BugReel is the clear winner.
+      </p>
+    </div>
+  </section>
+
+  <!-- Decision Matrix -->
+  <section class="section-sm">
+    <div class="container">
+      <h2 class="table-title">Which Should You Choose?</h2>
+      <div class="decision-grid">
+        <div class="decision-card card">
+          <h3 class="decision-heading decision-bugreel">Choose BugReel if...</h3>
+          <ul>
+            <li>You want AI to generate full, structured bug report cards</li>
+            <li>Self-hosting and open-source are requirements for your team</li>
+            <li>You need Firefox support alongside Chrome</li>
+            <li>A free tier for small teams is important to you</li>
+          </ul>
+        </div>
+        <div class="decision-card card">
+          <h3 class="decision-heading decision-competitor">Choose {competitor} if...</h3>
+          <ul>
+            <li>Network request capture (XHR/Fetch logging) is essential right now</li>
+            <li>Basic AI summaries are enough for your bug reporting workflow</li>
+            <li>You prefer a managed cloud service with no self-hosting overhead</li>
+            <li>Your team already uses Bird Eats Bug and is satisfied with its features</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section-sm">
+    <div class="container prose">
+      <h2>Frequently Asked Questions</h2>
+
+      <h3>Will BugReel add network request capture?</h3>
+      <p>
+        Yes, network request capture is on BugReel's roadmap. Once available, it will further close the gap between the two tools. Check the GitHub repository for the latest status on this feature.
+      </p>
+
+      <h3>Are the AI features comparable?</h3>
+      <p>
+        Not directly. Bird Eats Bug provides brief AI-generated summaries of recordings. BugReel generates complete bug report cards with structured fields: title, steps to reproduce, expected vs. actual behavior, severity, environment, and complexity score. BugReel's AI output is significantly more detailed and tracker-ready.
+      </p>
+
+      <h3>Which tool is easier to set up?</h3>
+      <p>
+        Both are straightforward — install the Chrome extension and start recording. Bird Eats Bug is purely cloud-based, so there is nothing else to configure. BugReel's cloud version is equally simple. Self-hosted BugReel requires a Docker setup, which takes a few minutes but gives you full data control.
+      </p>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-inner">
+        <div class="cta-glow" aria-hidden="true"></div>
+        <h2>Try BugReel Free</h2>
+        <p>Open source, self-hostable, and AI-powered. See the difference for yourself.</p>
+        <div class="cta-actions">
+          <a href="https://github.com/BugReel/bugreel" class="btn btn-primary btn-lg">Get Started on GitHub</a>
+          <a href="https://docs.bugreel.io" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">Read the Docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .compare-page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .compare-hero {
+    padding-top: 16px;
+  }
+
+  .hero-content {
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+  }
+
+  .verdict-box {
+    max-width: 800px;
+    margin: 0 auto;
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .verdict-box h2 {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
+  }
+
+  .verdict-box p {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .table-title {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .col-highlight {
+    background: rgba(99, 102, 241, 0.05) !important;
+    border-left: 1px solid rgba(99, 102, 241, 0.15);
+    border-right: 1px solid rgba(99, 102, 241, 0.15);
+  }
+
+  thead .col-highlight {
+    color: var(--color-primary) !important;
+    font-weight: 700;
+  }
+
+  .feature-name {
+    font-weight: 500;
+    color: var(--color-text) !important;
+  }
+
+  .cell-positive {
+    color: var(--color-success) !important;
+    font-weight: 500;
+  }
+
+  .cell-negative {
+    color: var(--color-text-dim) !important;
+  }
+
+  .winner-col {
+    width: 100px;
+  }
+
+  .winner-cell {
+    text-align: center;
+  }
+
+  .winner-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+  }
+
+  .winner-bugreel {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary);
+  }
+
+  .winner-competitor {
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+  }
+
+  .winner-draw {
+    background: rgba(113, 113, 122, 0.15);
+    color: var(--color-text-muted);
+  }
+
+  .decision-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    max-width: 900px;
+    margin: 32px auto 0;
+  }
+
+  .decision-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .decision-card li {
+    padding: 10px 0;
+    padding-left: 28px;
+    position: relative;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+    line-height: 1.5;
+  }
+
+  .decision-card li:last-child {
+    border-bottom: none;
+  }
+
+  .decision-card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .decision-bugreel + ul li::before {
+    background: var(--color-primary);
+  }
+
+  .decision-competitor + ul li::before {
+    background: var(--color-accent);
+  }
+
+  .decision-heading {
+    font-size: 1.125rem;
+    margin-bottom: 8px;
+  }
+
+  .cta-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 80px 40px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .cta-inner h2 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-inner p {
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+    max-width: 480px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px 10px;
+      font-size: 0.8125rem;
+    }
+
+    .decision-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cta-inner {
+      padding: 48px 24px;
+    }
+
+    .cta-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .cta-actions .btn {
+      width: 100%;
+    }
+  }
+</style>

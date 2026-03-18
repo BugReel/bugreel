@@ -1,0 +1,281 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'BugReel Comparisons — How BugReel Stacks Up',
+  description: 'See how BugReel compares to Jam.dev, Marker.io, Bird Eats Bug, Loom, and other bug reporting tools. Feature-by-feature breakdowns.',
+  url: 'https://bugreel.io/compare',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Compare', item: 'https://bugreel.io/compare' },
+    ],
+  },
+};
+
+const comparisons = [
+  {
+    slug: 'bugreel-vs-jam-dev',
+    title: 'BugReel vs Jam.dev',
+    description: 'Both offer Chrome extensions for bug capture — but BugReel adds AI analysis, complexity scoring, and self-hosting.',
+    competitor: 'Jam.dev',
+    tagline: 'AI analysis vs instant replay',
+  },
+  {
+    slug: 'bugreel-vs-marker-io',
+    title: 'BugReel vs Marker.io',
+    description: 'Marker.io excels at website annotations for agencies. BugReel goes deeper with AI-powered screen recording and full report generation.',
+    competitor: 'Marker.io',
+    tagline: 'Screen recording vs website widget',
+  },
+  {
+    slug: 'bugreel-vs-bird-eats-bug',
+    title: 'BugReel vs Bird Eats Bug',
+    description: 'Both capture console errors alongside recordings. BugReel adds full AI card generation, complexity scoring, and an open-source core.',
+    competitor: 'Bird Eats Bug',
+    tagline: 'Full AI cards vs basic summaries',
+  },
+  {
+    slug: 'bugreel-vs-loom',
+    title: 'BugReel vs Loom',
+    description: 'Loom is built for async communication. BugReel is built for bug reports — with steps to reproduce, severity, and tracker export.',
+    competitor: 'Loom',
+    tagline: 'Bug reporting vs video messaging',
+  },
+];
+---
+
+<Base
+  title="Compare BugReel — How It Stacks Up Against Alternatives"
+  description="See how BugReel compares to Jam.dev, Marker.io, Bird Eats Bug, Loom, and other bug reporting tools. Feature-by-feature breakdowns."
+  schema={schema}
+>
+  <div class="compare-page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <span>Compare</span>
+      </nav>
+
+      <div class="hero-content">
+        <span class="badge">Comparisons</span>
+        <h1>How BugReel <span class="gradient-text">Stacks Up</span></h1>
+        <p class="hero-subtitle">
+          Honest, side-by-side comparisons of BugReel and other popular bug reporting tools.
+          We highlight where each tool shines so you can make the right choice for your team.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <section class="section-sm">
+    <div class="container">
+      <div class="compare-grid">
+        {comparisons.map((comp) => (
+          <a href={`/compare/${comp.slug}`} class="compare-card card">
+            <div class="compare-card-header">
+              <span class="compare-vs-badge">{comp.tagline}</span>
+              <h2>{comp.title}</h2>
+            </div>
+            <p>{comp.description}</p>
+            <span class="compare-link">
+              Read full comparison
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="cta-inner">
+        <div class="cta-glow" aria-hidden="true"></div>
+        <h2>Ready to Try BugReel?</h2>
+        <p>Open source, free to start, and built for developers who want better bug reports.</p>
+        <div class="cta-actions">
+          <a href="https://github.com/BugReel/bugreel" class="btn btn-primary btn-lg">Get Started Free</a>
+          <a href="https://docs.bugreel.io" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">Read the Docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .compare-page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 48px;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .hero-content {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .compare-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-decoration: none;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+  }
+
+  .compare-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-glow-primary);
+    transform: translateY(-2px);
+  }
+
+  .compare-card:hover .compare-link {
+    color: var(--color-primary);
+  }
+
+  .compare-card-header h2 {
+    font-size: 1.375rem;
+    margin-top: 8px;
+  }
+
+  .compare-vs-badge {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .compare-card p {
+    flex: 1;
+  }
+
+  .compare-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast);
+  }
+
+  /* CTA (inline, same as component) */
+  .cta-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 80px 40px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .cta-inner h2 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-inner p {
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+    max-width: 480px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .compare-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cta-inner {
+      padding: 48px 24px;
+    }
+
+    .cta-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .cta-actions .btn {
+      width: 100%;
+    }
+  }
+</style>

@@ -1,0 +1,482 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const title = 'BugReel vs Marker.io: Which Bug Reporting Tool Is Better?';
+const description = 'Detailed comparison of BugReel and Marker.io. Screen recording, AI analysis, integrations, pricing, and self-hosting options.';
+const slug = 'bugreel-vs-marker-io';
+const competitor = 'Marker.io';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: title,
+  description,
+  url: `https://bugreel.io/compare/${slug}`,
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Compare', item: 'https://bugreel.io/compare' },
+      { '@type': 'ListItem', position: 3, name: title, item: `https://bugreel.io/compare/${slug}` },
+    ],
+  },
+};
+
+const rows = [
+  { feature: 'Screen recording', bugreel: 'Yes (full video)', competitor: 'Limited (session replay widget)', winner: 'bugreel' },
+  { feature: 'AI transcription', bugreel: 'Yes (Whisper)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'AI analysis (full card generation)', bugreel: 'Yes — steps, severity, environment', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Auto screenshot extraction', bugreel: 'Yes', competitor: 'Yes (annotations)', winner: 'draw' },
+  { feature: 'Console error capture', bugreel: 'Yes', competitor: 'Partial (via widget)', winner: 'bugreel' },
+  { feature: 'User action tracking', bugreel: 'Yes (click, scroll, navigation)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Complexity scoring', bugreel: 'Yes', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Tracker integrations', bugreel: 'Jira, Linear, GitHub, YouTrack, Webhooks', competitor: 'Jira, Trello, Asana, GitHub, GitLab, Slack', winner: 'draw' },
+  { feature: 'Self-hosted option', bugreel: 'Yes (Docker)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Open source', bugreel: 'Yes (MIT)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Chrome extension', bugreel: 'Yes', competitor: 'Yes (website widget)', winner: 'draw' },
+  { feature: 'Firefox support', bugreel: 'Yes', competitor: 'Widget works in all browsers', winner: 'draw' },
+  { feature: 'Public shareable reports', bugreel: 'Yes', competitor: 'No (internal only)', winner: 'bugreel' },
+  { feature: 'Pricing', bugreel: 'Free (Community) / $8/user/mo', competitor: 'From $39/mo (3 seats)', winner: 'bugreel' },
+];
+---
+
+<Base title={title} description={description} schema={schema}>
+  <div class="compare-page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/compare">Compare</a>
+        <span aria-hidden="true">/</span>
+        <span>BugReel vs {competitor}</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="section-sm compare-hero">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge">Comparison</span>
+        <h1>BugReel vs <span class="gradient-text">{competitor}</span></h1>
+        <p class="hero-subtitle">
+          Two different philosophies for capturing bugs: AI-powered screen recording versus an in-page annotation widget.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Verdict -->
+  <section class="section-sm">
+    <div class="container">
+      <div class="verdict-box card">
+        <h2>Quick Verdict</h2>
+        <p>
+          <strong>Marker.io</strong> is an excellent choice for agencies and QA teams who need a lightweight website widget for annotating screenshots and sending feedback directly to project management tools. It requires no browser extension — just embed a script.
+          <strong>BugReel</strong> is a better fit for development teams who want full screen recordings with AI-generated bug report cards, console error capture, and the option to self-host.
+          Choose Marker.io for client feedback workflows; choose BugReel for developer-centric bug reporting.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="section-sm">
+    <div class="container">
+      <h2 class="table-title">Feature-by-Feature Comparison</h2>
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="col-highlight">BugReel</th>
+              <th>{competitor}</th>
+              <th class="winner-col">Winner</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr>
+                <td class="feature-name">{row.feature}</td>
+                <td class:list={['col-highlight', row.winner === 'bugreel' ? 'cell-positive' : row.winner === 'competitor' ? 'cell-negative' : '']}>
+                  {row.bugreel}
+                </td>
+                <td class:list={[row.winner === 'competitor' ? 'cell-positive' : row.winner === 'bugreel' ? 'cell-negative' : '']}>
+                  {row.competitor}
+                </td>
+                <td class="winner-cell">
+                  {row.winner === 'bugreel' && <span class="winner-badge winner-bugreel">BugReel</span>}
+                  {row.winner === 'competitor' && <span class="winner-badge winner-competitor">{competitor}</span>}
+                  {row.winner === 'draw' && <span class="winner-badge winner-draw">Draw</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detailed Sections -->
+  <section class="section-sm">
+    <div class="container prose">
+      <h2>Recording & Capture</h2>
+      <p>
+        BugReel and Marker.io approach capture from opposite directions. BugReel records your screen as a video, capturing everything that happens — scrolling, clicking, typing, animations, transitions. Marker.io embeds a widget on your website that lets users take annotated screenshots and, optionally, capture a session replay.
+      </p>
+      <p>
+        Marker.io's widget approach is ideal for gathering visual feedback from non-technical stakeholders — clients can point at something on the page and draw an arrow without installing anything. BugReel's extension-based recording captures richer data: full video, console errors, network activity, and a timeline of user actions.
+      </p>
+
+      <h2>AI & Analysis</h2>
+      <p>
+        Marker.io does not include AI features. The tool focuses on collecting and routing feedback, not analyzing it. Reports include the annotated screenshot, browser/OS metadata, and any notes the reporter typed.
+      </p>
+      <p>
+        BugReel uses AI at every step: Whisper transcribes voice narration, an LLM pipeline generates structured steps to reproduce, severity levels, and environment details. A complexity score helps teams prioritize. The output is a complete bug report card ready to push to your tracker.
+      </p>
+
+      <h2>Integrations</h2>
+      <p>
+        Marker.io has strong project management integrations: Jira, Trello, Asana, GitHub, GitLab, Slack, ClickUp, and more. It's built for teams that need bugs to land in their existing workflow with minimal friction. BugReel integrates with Jira, Linear, GitHub Issues, YouTrack, and offers a generic Webhook. The integration sets overlap, but Marker.io covers more PM tools out of the box, especially Trello and Asana.
+      </p>
+
+      <h2>Pricing & Plans</h2>
+      <p>
+        Marker.io starts at $39 per month for 3 seats, with higher tiers for larger teams and additional features. BugReel offers a free, open-source Community tier for up to 5 users. The Team plan is $8 per user per month. For a 3-person team, that is $24/month versus $39/month — and BugReel includes AI features that Marker.io does not offer at any price.
+      </p>
+
+      <h2>Privacy & Self-Hosting</h2>
+      <p>
+        Marker.io is cloud-only. All screenshots and feedback are stored on Marker.io's servers. BugReel can be fully self-hosted via Docker, giving you complete control over where recordings and reports are stored. This matters for teams handling sensitive data, working under NDA, or operating in regulated industries.
+      </p>
+
+      <h2>Best For</h2>
+      <p>
+        <strong>Marker.io</strong> is best for agencies and product teams that need to collect visual feedback from clients or stakeholders who will never install a browser extension. The widget-based approach removes all friction from the reporter's side.
+      </p>
+      <p>
+        <strong>BugReel</strong> is best for engineering teams who want detailed, AI-analyzed bug reports with video evidence, console data, and tracker-ready output. If your bugs are reported by developers and QA, not external clients, BugReel provides deeper data.
+      </p>
+    </div>
+  </section>
+
+  <!-- Decision Matrix -->
+  <section class="section-sm">
+    <div class="container">
+      <h2 class="table-title">Which Should You Choose?</h2>
+      <div class="decision-grid">
+        <div class="decision-card card">
+          <h3 class="decision-heading decision-bugreel">Choose BugReel if...</h3>
+          <ul>
+            <li>Your team files bugs internally and wants AI-generated report cards</li>
+            <li>You need full screen recordings, not just annotated screenshots</li>
+            <li>Self-hosting and open-source licensing matter to you</li>
+            <li>You want a lower-cost solution with a free tier</li>
+          </ul>
+        </div>
+        <div class="decision-card card">
+          <h3 class="decision-heading decision-competitor">Choose {competitor} if...</h3>
+          <ul>
+            <li>You collect feedback from external clients who will not install extensions</li>
+            <li>Annotated screenshots are more useful than video for your workflow</li>
+            <li>You need deep integrations with Trello, Asana, or ClickUp</li>
+            <li>You run an agency managing multiple client websites</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section-sm">
+    <div class="container prose">
+      <h2>Frequently Asked Questions</h2>
+
+      <h3>Can I use Marker.io and BugReel together?</h3>
+      <p>
+        Yes. Some teams use Marker.io for client-facing feedback collection and BugReel for internal QA and developer-to-developer bug reporting. Since both push to common trackers like Jira and GitHub, the bugs end up in the same backlog.
+      </p>
+
+      <h3>Does BugReel have an embeddable website widget like Marker.io?</h3>
+      <p>
+        Not currently. BugReel works via a browser extension. If you need a widget that non-technical users can access without installing anything, Marker.io is the better choice for that specific use case.
+      </p>
+
+      <h3>Which tool captures more technical detail?</h3>
+      <p>
+        BugReel. It captures full video, console errors, user actions, and generates structured reports with AI. Marker.io focuses on visual feedback — screenshots with annotations and basic metadata (browser, OS, viewport size). For debugging complex frontend issues, BugReel provides significantly more context.
+      </p>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-inner">
+        <div class="cta-glow" aria-hidden="true"></div>
+        <h2>Try BugReel Free</h2>
+        <p>Open source, self-hostable, and AI-powered. See the difference for yourself.</p>
+        <div class="cta-actions">
+          <a href="https://github.com/BugReel/bugreel" class="btn btn-primary btn-lg">Get Started on GitHub</a>
+          <a href="https://docs.bugreel.io" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">Read the Docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .compare-page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .compare-hero {
+    padding-top: 16px;
+  }
+
+  .hero-content {
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+  }
+
+  .verdict-box {
+    max-width: 800px;
+    margin: 0 auto;
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .verdict-box h2 {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
+  }
+
+  .verdict-box p {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .table-title {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .col-highlight {
+    background: rgba(99, 102, 241, 0.05) !important;
+    border-left: 1px solid rgba(99, 102, 241, 0.15);
+    border-right: 1px solid rgba(99, 102, 241, 0.15);
+  }
+
+  thead .col-highlight {
+    color: var(--color-primary) !important;
+    font-weight: 700;
+  }
+
+  .feature-name {
+    font-weight: 500;
+    color: var(--color-text) !important;
+  }
+
+  .cell-positive {
+    color: var(--color-success) !important;
+    font-weight: 500;
+  }
+
+  .cell-negative {
+    color: var(--color-text-dim) !important;
+  }
+
+  .winner-col {
+    width: 100px;
+  }
+
+  .winner-cell {
+    text-align: center;
+  }
+
+  .winner-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+  }
+
+  .winner-bugreel {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary);
+  }
+
+  .winner-competitor {
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+  }
+
+  .winner-draw {
+    background: rgba(113, 113, 122, 0.15);
+    color: var(--color-text-muted);
+  }
+
+  .decision-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    max-width: 900px;
+    margin: 32px auto 0;
+  }
+
+  .decision-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .decision-card li {
+    padding: 10px 0;
+    padding-left: 28px;
+    position: relative;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+    line-height: 1.5;
+  }
+
+  .decision-card li:last-child {
+    border-bottom: none;
+  }
+
+  .decision-card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .decision-bugreel + ul li::before {
+    background: var(--color-primary);
+  }
+
+  .decision-competitor + ul li::before {
+    background: var(--color-accent);
+  }
+
+  .decision-heading {
+    font-size: 1.125rem;
+    margin-bottom: 8px;
+  }
+
+  .cta-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 80px 40px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .cta-inner h2 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-inner p {
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+    max-width: 480px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px 10px;
+      font-size: 0.8125rem;
+    }
+
+    .decision-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cta-inner {
+      padding: 48px 24px;
+    }
+
+    .cta-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .cta-actions .btn {
+      width: 100%;
+    }
+  }
+</style>

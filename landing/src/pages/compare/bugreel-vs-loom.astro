@@ -1,0 +1,484 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const title = 'BugReel vs Loom for Bug Reporting: Which Should You Use?';
+const description = "Loom is great for communication, but is it the right tool for bug reports? Compare with BugReel's AI-powered bug reporting.";
+const slug = 'bugreel-vs-loom';
+const competitor = 'Loom';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: title,
+  description,
+  url: `https://bugreel.io/compare/${slug}`,
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Compare', item: 'https://bugreel.io/compare' },
+      { '@type': 'ListItem', position: 3, name: title, item: `https://bugreel.io/compare/${slug}` },
+    ],
+  },
+};
+
+const rows = [
+  { feature: 'Screen recording', bugreel: 'Yes (browser-focused)', competitor: 'Yes (screen + camera)', winner: 'draw' },
+  { feature: 'AI transcription', bugreel: 'Yes (Whisper)', competitor: 'Yes', winner: 'draw' },
+  { feature: 'AI analysis (full card generation)', bugreel: 'Yes — steps, severity, environment', competitor: 'No (summaries, not bug-specific)', winner: 'bugreel' },
+  { feature: 'Auto screenshot extraction', bugreel: 'Yes', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Console error capture', bugreel: 'Yes', competitor: 'No', winner: 'bugreel' },
+  { feature: 'User action tracking', bugreel: 'Yes (click, scroll, navigation)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Complexity scoring', bugreel: 'Yes', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Tracker integrations', bugreel: 'Jira, Linear, GitHub, YouTrack, Webhooks', competitor: 'No native tracker export', winner: 'bugreel' },
+  { feature: 'Self-hosted option', bugreel: 'Yes (Docker)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Open source', bugreel: 'Yes (MIT)', competitor: 'No', winner: 'bugreel' },
+  { feature: 'Chrome extension', bugreel: 'Yes', competitor: 'Yes', winner: 'draw' },
+  { feature: 'Firefox support', bugreel: 'Yes', competitor: 'Yes (desktop app)', winner: 'draw' },
+  { feature: 'Public shareable reports', bugreel: 'Yes', competitor: 'Yes (video links)', winner: 'draw' },
+  { feature: 'Pricing', bugreel: 'Free (Community) / $8/user/mo', competitor: 'Free (limited) / $12.50/user/mo', winner: 'bugreel' },
+];
+---
+
+<Base title={title} description={description} schema={schema}>
+  <div class="compare-page-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/compare">Compare</a>
+        <span aria-hidden="true">/</span>
+        <span>BugReel vs {competitor}</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="section-sm compare-hero">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge">Comparison</span>
+        <h1>BugReel vs <span class="gradient-text">{competitor}</span></h1>
+        <p class="hero-subtitle">
+          Loom is the king of async video communication. But is a general-purpose screen recorder the right tool for filing bug reports?
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Verdict -->
+  <section class="section-sm">
+    <div class="container">
+      <div class="verdict-box card">
+        <h2>Quick Verdict</h2>
+        <p>
+          <strong>Loom</strong> is a fantastic tool for async communication — product walkthroughs, team updates, feedback reviews. Many teams use it to "record a quick video" of a bug, but Loom was not designed for bug reporting. It does not capture console errors, generate steps to reproduce, or export to issue trackers.
+          <strong>BugReel</strong> is purpose-built for bug reports. It captures technical context alongside the recording and uses AI to generate a complete, structured bug report card. Use Loom for communication; use BugReel for bug reporting.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="section-sm">
+    <div class="container">
+      <h2 class="table-title">Feature-by-Feature Comparison</h2>
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="col-highlight">BugReel</th>
+              <th>{competitor}</th>
+              <th class="winner-col">Winner</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr>
+                <td class="feature-name">{row.feature}</td>
+                <td class:list={['col-highlight', row.winner === 'bugreel' ? 'cell-positive' : row.winner === 'competitor' ? 'cell-negative' : '']}>
+                  {row.bugreel}
+                </td>
+                <td class:list={[row.winner === 'competitor' ? 'cell-positive' : row.winner === 'bugreel' ? 'cell-negative' : '']}>
+                  {row.competitor}
+                </td>
+                <td class="winner-cell">
+                  {row.winner === 'bugreel' && <span class="winner-badge winner-bugreel">BugReel</span>}
+                  {row.winner === 'competitor' && <span class="winner-badge winner-competitor">{competitor}</span>}
+                  {row.winner === 'draw' && <span class="winner-badge winner-draw">Draw</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detailed Sections -->
+  <section class="section-sm">
+    <div class="container prose">
+      <h2>Recording & Capture</h2>
+      <p>
+        Loom records your screen (or a specific window/tab) along with your camera and microphone. It produces polished video content with features like drawing on screen, emoji reactions, and viewer analytics. It is designed for human-to-human communication.
+      </p>
+      <p>
+        BugReel records your browser tab and captures technical context that Loom ignores entirely: console errors, JavaScript exceptions, user action timelines (clicks, scrolls, navigation), and automatic screenshots at key moments. When you stop recording, BugReel has everything a developer needs to understand and reproduce the bug. Loom gives them a video to watch.
+      </p>
+
+      <h2>AI & Analysis</h2>
+      <p>
+        Loom has AI features — it transcribes recordings, generates summaries, and creates chapters. These are great for making videos searchable and skimmable. However, Loom's AI knows nothing about bugs: it does not generate steps to reproduce, assign severity levels, detect environment details, or create structured report fields.
+      </p>
+      <p>
+        BugReel's AI pipeline is bug-report-specific. Whisper handles transcription, then an LLM analyzes the recording, console data, and user actions to generate a complete bug report card: title, steps to reproduce, expected vs. actual behavior, severity, environment, and complexity score. The output is a tracker-ready card, not a video link with a summary.
+      </p>
+
+      <h2>Integrations</h2>
+      <p>
+        Loom integrates with many productivity tools — Slack, Notion, Gmail, Salesforce — for sharing videos. However, it does not have native integrations with issue trackers for structured bug export. You can paste a Loom link into a Jira ticket, but there is no automated flow that creates the ticket with structured fields.
+      </p>
+      <p>
+        BugReel integrates directly with Jira, Linear, GitHub Issues, YouTrack, and any Webhook-compatible system. When you push a report, it arrives as a structured issue with all fields populated — not a link to a video.
+      </p>
+
+      <h2>Pricing & Plans</h2>
+      <p>
+        Loom offers a limited free plan (25 videos, 5 min each) and a Business plan at $12.50 per user per month. BugReel's free Community tier supports up to 5 users with no recording limits. The Team plan is $8 per user per month. For teams using Loom just for bug reporting, switching to BugReel saves money and produces better bug reports.
+      </p>
+
+      <h2>Privacy & Self-Hosting</h2>
+      <p>
+        Loom is cloud-only. All videos are stored on Loom's infrastructure and shared via Loom URLs. BugReel can be self-hosted via Docker, keeping recordings and reports on your own servers. For teams that need to keep bug report data internal — especially those showing sensitive user data or internal systems in recordings — self-hosting is essential.
+      </p>
+
+      <h2>Best For</h2>
+      <p>
+        <strong>Loom</strong> is best for async communication: product demos, design feedback, team updates, onboarding videos. It is a general-purpose screen recording tool with a massive user base and polished video-sharing experience. If you occasionally share a video of a bug in Slack, Loom works fine — but you are doing manual work that could be automated.
+      </p>
+      <p>
+        <strong>BugReel</strong> is best for teams that report bugs regularly and want each report to be complete, consistent, and tracker-ready. If you have ever watched a 3-minute Loom video only to realize the reporter forgot to mention the browser, URL, or what they expected to happen — BugReel solves that problem with AI.
+      </p>
+    </div>
+  </section>
+
+  <!-- Decision Matrix -->
+  <section class="section-sm">
+    <div class="container">
+      <h2 class="table-title">Which Should You Choose?</h2>
+      <div class="decision-grid">
+        <div class="decision-card card">
+          <h3 class="decision-heading decision-bugreel">Choose BugReel if...</h3>
+          <ul>
+            <li>Bug reporting is the primary use case, not general video sharing</li>
+            <li>You want AI to generate structured reports, not just video summaries</li>
+            <li>Console errors, user actions, and technical context matter</li>
+            <li>You need direct issue tracker integration with structured fields</li>
+          </ul>
+        </div>
+        <div class="decision-card card">
+          <h3 class="decision-heading decision-competitor">Choose {competitor} if...</h3>
+          <ul>
+            <li>You need a general-purpose screen recorder for many use cases</li>
+            <li>Camera overlay and polished video presentation are important</li>
+            <li>Bug reporting is occasional and informal (Slack links are fine)</li>
+            <li>Your team already has Loom licenses and just needs quick bug videos</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section-sm">
+    <div class="container prose">
+      <h2>Frequently Asked Questions</h2>
+
+      <h3>Can I use both Loom and BugReel?</h3>
+      <p>
+        Absolutely, and many teams do. Use Loom for product walkthroughs, design reviews, and async team communication. Use BugReel specifically for bug reports where you need console data, structured steps, and tracker integration. They solve different problems.
+      </p>
+
+      <h3>My team already uses Loom for bug reports. Why switch?</h3>
+      <p>
+        Loom bug reports are just videos — someone still has to watch the video, write up steps to reproduce, figure out the browser and environment, and create the ticket manually. BugReel automates all of that. The AI generates the complete report card. Over a month of bug reports, the time savings are significant.
+      </p>
+
+      <h3>Does BugReel support camera overlay like Loom?</h3>
+      <p>
+        No. BugReel is focused on capturing what is happening in the browser — the screen, console, and user actions. Camera overlay is not included because it does not add value to a bug report. If you need to explain context verbally, BugReel captures and transcribes your microphone audio.
+      </p>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-inner">
+        <div class="cta-glow" aria-hidden="true"></div>
+        <h2>Try BugReel Free</h2>
+        <p>Stop pasting Loom links into Jira tickets. Get AI-powered bug reports that write themselves.</p>
+        <div class="cta-actions">
+          <a href="https://github.com/BugReel/bugreel" class="btn btn-primary btn-lg">Get Started on GitHub</a>
+          <a href="https://docs.bugreel.io" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">Read the Docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .compare-page-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .compare-hero {
+    padding-top: 16px;
+  }
+
+  .hero-content {
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .hero-content .badge {
+    margin-bottom: 16px;
+  }
+
+  .hero-content h1 {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+  }
+
+  .verdict-box {
+    max-width: 800px;
+    margin: 0 auto;
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .verdict-box h2 {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
+  }
+
+  .verdict-box p {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .table-title {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .col-highlight {
+    background: rgba(99, 102, 241, 0.05) !important;
+    border-left: 1px solid rgba(99, 102, 241, 0.15);
+    border-right: 1px solid rgba(99, 102, 241, 0.15);
+  }
+
+  thead .col-highlight {
+    color: var(--color-primary) !important;
+    font-weight: 700;
+  }
+
+  .feature-name {
+    font-weight: 500;
+    color: var(--color-text) !important;
+  }
+
+  .cell-positive {
+    color: var(--color-success) !important;
+    font-weight: 500;
+  }
+
+  .cell-negative {
+    color: var(--color-text-dim) !important;
+  }
+
+  .winner-col {
+    width: 100px;
+  }
+
+  .winner-cell {
+    text-align: center;
+  }
+
+  .winner-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+  }
+
+  .winner-bugreel {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary);
+  }
+
+  .winner-competitor {
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+  }
+
+  .winner-draw {
+    background: rgba(113, 113, 122, 0.15);
+    color: var(--color-text-muted);
+  }
+
+  .decision-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    max-width: 900px;
+    margin: 32px auto 0;
+  }
+
+  .decision-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .decision-card li {
+    padding: 10px 0;
+    padding-left: 28px;
+    position: relative;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+    line-height: 1.5;
+  }
+
+  .decision-card li:last-child {
+    border-bottom: none;
+  }
+
+  .decision-card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .decision-bugreel + ul li::before {
+    background: var(--color-primary);
+  }
+
+  .decision-competitor + ul li::before {
+    background: var(--color-accent);
+  }
+
+  .decision-heading {
+    font-size: 1.125rem;
+    margin-bottom: 8px;
+  }
+
+  .cta-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 80px 40px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .cta-inner h2 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-inner p {
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+    max-width: 480px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px 10px;
+      font-size: 0.8125rem;
+    }
+
+    .decision-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cta-inner {
+      padding: 48px 24px;
+    }
+
+    .cta-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .cta-actions .btn {
+      width: 100%;
+    }
+  }
+</style>
