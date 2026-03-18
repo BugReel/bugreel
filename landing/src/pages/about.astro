@@ -1,0 +1,201 @@
+---
+import Base from '../layouts/Base.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'About BugReel',
+  description: 'BugReel is an open-source, AI-powered bug reporting tool. Learn about our mission, story, and how to get involved.',
+  url: 'https://bugreel.io/about',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'About', item: 'https://bugreel.io/about' },
+    ],
+  },
+};
+---
+
+<Base
+  title="About BugReel — Mission, Story, and Team"
+  description="BugReel is an open-source, AI-powered bug reporting tool. Learn about our mission, story, and how to get involved."
+  schema={schema}
+>
+  <div class="about-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <span>About</span>
+      </nav>
+    </div>
+  </div>
+
+  <section class="section-sm">
+    <div class="container about-container">
+      <h1>About BugReel</h1>
+
+      <div class="about-content">
+        <section class="about-section">
+          <h2>Our Mission</h2>
+          <p>
+            We believe bug reporting should take seconds, not minutes. Every developer and QA
+            engineer knows the pain: reproduce the bug, take screenshots, write steps, estimate
+            severity, format the ticket, paste it into the tracker. It takes 10-15 minutes for
+            a single report.
+          </p>
+          <p>
+            BugReel exists to eliminate that friction. Record your screen, let AI do the rest.
+            A complete, structured bug report — with steps to reproduce, screenshots, severity,
+            and complexity — generated in under a minute.
+          </p>
+        </section>
+
+        <section class="about-section">
+          <h2>The Story</h2>
+          <p>
+            BugReel started as an internal tool. We were building software and got tired of
+            the same repetitive cycle: find a bug, spend more time documenting it than fixing it.
+            Screen recordings captured the context perfectly, but translating a video into a
+            structured ticket was still manual work.
+          </p>
+          <p>
+            So we built a tool that watches the recording and writes the report for you. What
+            started as a quick hack turned into something the whole team relied on. We decided
+            to open-source it so other teams could benefit too.
+          </p>
+        </section>
+
+        <section class="about-section">
+          <h2>Open Source</h2>
+          <p>
+            BugReel is open source under the Business Source License (BSL). The core is free
+            for teams of up to 5 users. The source code is available on GitHub — you can inspect
+            it, modify it, and self-host it on your own infrastructure.
+          </p>
+          <p>
+            We believe developer tools should be transparent. You should know exactly what runs
+            on your server and what happens to your data. With BugReel, you do.
+          </p>
+          <div class="about-cta">
+            <a href="https://github.com/BugReel/bugreel" class="btn btn-secondary" target="_blank" rel="noopener">
+              View on GitHub
+            </a>
+          </div>
+        </section>
+
+        <section class="about-section">
+          <h2>Built by Developers, for Developers</h2>
+          <p>
+            BugReel is built and maintained by a small team of engineers who use it daily.
+            We prioritize reliability over features, clarity over cleverness, and shipping
+            over planning.
+          </p>
+          <p>
+            We are not a VC-funded startup racing to capture a market. We are developers
+            who built a tool we needed, and we are sharing it with the community.
+          </p>
+        </section>
+
+        <section class="about-section">
+          <h2>Get in Touch</h2>
+          <p>
+            Have a question, feature request, or just want to say hello? Reach out at
+            <a href="mailto:hello@bugreel.io">hello@bugreel.io</a> or
+            <a href="https://github.com/BugReel/bugreel/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.
+          </p>
+        </section>
+
+        <div class="about-footer-cta">
+          <h2>Ready to try it?</h2>
+          <p>Get started with BugReel in under five minutes. Self-hosted, open source, AI-powered.</p>
+          <a href="https://github.com/BugReel/bugreel" class="btn btn-primary btn-lg" target="_blank" rel="noopener">Get Started</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .about-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .about-container {
+    max-width: 720px;
+  }
+
+  .about-container h1 {
+    margin-bottom: 48px;
+  }
+
+  .about-section {
+    margin-bottom: 48px;
+  }
+
+  .about-section h2 {
+    font-size: 1.375rem;
+    margin-bottom: 16px;
+  }
+
+  .about-section p {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .about-section a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .about-section a:hover {
+    text-decoration: underline;
+  }
+
+  .about-cta {
+    margin-top: 24px;
+  }
+
+  .about-footer-cta {
+    padding: 48px 0;
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+  }
+
+  .about-footer-cta h2 {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
+
+  .about-footer-cta p {
+    color: var(--color-text-muted);
+    margin-bottom: 24px;
+  }
+</style>

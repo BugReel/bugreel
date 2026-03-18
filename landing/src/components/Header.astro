@@ -22,7 +22,7 @@ const currentPath = Astro.url.pathname;
       <a href="/#features" class="nav-link">{nav.features}</a>
       <a href="/tools" class="nav-link" class:list={[{ active: currentPath.startsWith('/tools') }]}>Tools</a>
       <a href="/pricing" class="nav-link" class:list={[{ active: currentPath === '/pricing/' || currentPath === '/pricing' }]}>{nav.pricing}</a>
-      <a href="https://docs.bugreel.io" class="nav-link" target="_blank" rel="noopener">{nav.docs}</a>
+      <a href="/docs" class="nav-link" class:list={[{ active: currentPath === '/docs/' || currentPath === '/docs' }]}>{nav.docs}</a>
       <a href="/blog" class="nav-link" class:list={[{ active: currentPath.startsWith('/blog') }]}>{nav.blog}</a>
       <a href="https://github.com/BugReel/bugreel" class="nav-link" target="_blank" rel="noopener">{nav.github}</a>
     </nav>
@@ -39,7 +39,7 @@ const currentPath = Astro.url.pathname;
     <a href="/#features" class="nav-mobile-link">{nav.features}</a>
     <a href="/tools" class="nav-mobile-link">Tools</a>
     <a href="/pricing" class="nav-mobile-link">{nav.pricing}</a>
-    <a href="https://docs.bugreel.io" class="nav-mobile-link" target="_blank" rel="noopener">{nav.docs}</a>
+    <a href="/docs" class="nav-mobile-link">{nav.docs}</a>
     <a href="/blog" class="nav-mobile-link">{nav.blog}</a>
     <a href="https://github.com/BugReel/bugreel" class="nav-mobile-link" target="_blank" rel="noopener">{nav.github}</a>
     <a href="https://github.com/BugReel/bugreel" class="btn btn-primary" style="margin-top: 8px;">{nav.getStarted}</a>

@@ -1,0 +1,206 @@
+---
+import Base from '../layouts/Base.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Changelog — BugReel',
+  description: 'BugReel release history. See what is new in each version, including features, fixes, and improvements.',
+  url: 'https://bugreel.io/changelog',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Changelog', item: 'https://bugreel.io/changelog' },
+    ],
+  },
+};
+
+const releases = [
+  {
+    version: 'v0.1.0',
+    date: 'March 2026',
+    title: 'Initial Public Release',
+    highlights: [
+      'AI-powered bug reporting: record your screen, get a complete bug report with steps to reproduce, severity, and complexity scoring',
+      'Speech-to-text transcription via OpenAI Whisper with automatic step extraction',
+      'GPT-powered analysis: context understanding, key frame selection, and severity assessment',
+      'Chrome extension for screen recording with console log and user action capture',
+      'One-click export to Jira, Linear, GitHub Issues, YouTrack, and custom webhooks',
+      'Self-hosted Docker deployment with one-command setup',
+      'License key gating for Team and Enterprise features',
+      'Community edition: free for up to 5 users with webhook and YouTrack export',
+      '11 free QA tools: Bug Report Generator, Severity Calculator, QA Checklist, Time Saved Calculator, Definition of Done, Bug Triage Matrix, Sprint Planner, Eisenhower Matrix, Prioritization Picker, Release Readiness Checklist, and Technical Debt Calculator',
+      'Comparison pages: BugReel vs Jam.dev, Marker.io, Bird Eats Bug, and Loom',
+      'Full REST API with JWT authentication',
+    ],
+  },
+];
+---
+
+<Base
+  title="Changelog — BugReel"
+  description="BugReel release history. See what is new in each version, including features, fixes, and improvements."
+  schema={schema}
+>
+  <div class="changelog-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <span>Changelog</span>
+      </nav>
+    </div>
+  </div>
+
+  <section class="section-sm">
+    <div class="container changelog-container">
+      <h1>Changelog</h1>
+      <p class="changelog-intro">
+        All notable changes to BugReel. Follow the
+        <a href="https://github.com/BugReel/bugreel" target="_blank" rel="noopener">GitHub repository</a>
+        for the latest updates.
+      </p>
+
+      <div class="releases">
+        {releases.map((release) => (
+          <article class="release">
+            <div class="release-header">
+              <span class="release-version">{release.version}</span>
+              <span class="release-date">{release.date}</span>
+            </div>
+            <h2>{release.title}</h2>
+            <ul>
+              {release.highlights.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .changelog-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .changelog-container {
+    max-width: 720px;
+  }
+
+  .changelog-container h1 {
+    margin-bottom: 12px;
+  }
+
+  .changelog-intro {
+    color: var(--color-text-muted);
+    margin-bottom: 48px;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+
+  .changelog-intro a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .changelog-intro a:hover {
+    text-decoration: underline;
+  }
+
+  .releases {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .release {
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .release:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .release-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+
+  .release-version {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+  }
+
+  .release-date {
+    font-size: 0.875rem;
+    color: var(--color-text-dim);
+  }
+
+  .release h2 {
+    font-size: 1.375rem;
+    margin-bottom: 16px;
+  }
+
+  .release ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .release li {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 10px;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    font-size: 0.9375rem;
+  }
+
+  .release li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 6px;
+    height: 6px;
+    background: var(--color-primary);
+    border-radius: 50%;
+  }
+</style>

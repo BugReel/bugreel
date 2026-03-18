@@ -1,0 +1,543 @@
+---
+import Base from '../layouts/Base.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Documentation — BugReel',
+  description: 'BugReel documentation: quick start guide, configuration, API reference, extension setup, integrations, and self-hosting.',
+  url: 'https://bugreel.io/docs',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Docs', item: 'https://bugreel.io/docs' },
+    ],
+  },
+};
+
+const envVars = [
+  { name: 'OPENAI_API_KEY', description: 'Your OpenAI API key for AI analysis', required: true },
+  { name: 'OPENAI_BASE_URL', description: 'Custom OpenAI-compatible endpoint (Azure, Ollama, etc.)', required: false },
+  { name: 'WHISPER_MODEL', description: 'Whisper model for transcription (default: whisper-1)', required: false },
+  { name: 'GPT_MODEL', description: 'GPT model for analysis (default: gpt-4o)', required: false },
+  { name: 'APP_PORT', description: 'Server port (default: 3000)', required: false },
+  { name: 'DB_PATH', description: 'SQLite database path (default: ./data/bugreel.db)', required: false },
+  { name: 'UPLOAD_DIR', description: 'Directory for uploaded recordings (default: ./data/uploads)', required: false },
+  { name: 'JWT_SECRET', description: 'Secret for JWT token signing', required: true },
+  { name: 'LICENSE_KEY', description: 'License key for Team/Enterprise features', required: false },
+  { name: 'MAX_RECORDING_MB', description: 'Maximum recording file size in MB (default: 500)', required: false },
+];
+
+const endpoints = [
+  { method: 'POST', path: '/api/upload', description: 'Upload a screen recording for processing' },
+  { method: 'GET', path: '/api/recordings', description: 'List all recordings with pagination' },
+  { method: 'GET', path: '/api/recordings/:id', description: 'Get a single recording and its analysis' },
+  { method: 'DELETE', path: '/api/recordings/:id', description: 'Delete a recording and its data' },
+  { method: 'GET', path: '/api/cards', description: 'List generated bug report cards' },
+  { method: 'GET', path: '/api/cards/:id', description: 'Get a single bug report card' },
+  { method: 'POST', path: '/api/cards/:id/export', description: 'Export a card to an integration' },
+  { method: 'POST', path: '/api/auth/login', description: 'Authenticate and receive JWT token' },
+  { method: 'POST', path: '/api/auth/register', description: 'Register a new user' },
+  { method: 'GET', path: '/api/auth/me', description: 'Get current authenticated user' },
+  { method: 'POST', path: '/api/license', description: 'Validate and activate a license key' },
+  { method: 'GET', path: '/api/integrations', description: 'List configured integrations' },
+  { method: 'POST', path: '/api/integrations/:type/test', description: 'Test an integration connection' },
+];
+---
+
+<Base
+  title="Documentation — BugReel"
+  description="BugReel documentation: quick start guide, configuration, API reference, extension setup, integrations, and self-hosting."
+  schema={schema}
+>
+  <div class="docs-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <span>Docs</span>
+      </nav>
+    </div>
+  </div>
+
+  <section class="section-sm">
+    <div class="container docs-container">
+      <aside class="docs-sidebar">
+        <nav aria-label="Documentation sections">
+          <ul>
+            <li><a href="#quick-start">Quick Start</a></li>
+            <li><a href="#configuration">Configuration</a></li>
+            <li><a href="#api">API Reference</a></li>
+            <li><a href="#extension">Extension Setup</a></li>
+            <li><a href="#guides">Integrations</a></li>
+            <li><a href="#self-hosting">Self-Hosting</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="docs-content">
+        <h1>Documentation</h1>
+        <p class="docs-intro">
+          Everything you need to install, configure, and use BugReel.
+          For the full source and latest updates, see the
+          <a href="https://github.com/BugReel/bugreel" target="_blank" rel="noopener">GitHub repository</a>.
+        </p>
+
+        <section id="quick-start" class="docs-section">
+          <h2>Quick Start</h2>
+          <p>Get BugReel running in under five minutes.</p>
+          <ol class="docs-steps">
+            <li>
+              <strong>Clone the repository</strong>
+              <pre><code>git clone https://github.com/BugReel/bugreel.git
+cd bugreel</code></pre>
+            </li>
+            <li>
+              <strong>Configure environment</strong>
+              <pre><code>cp .env.example .env
+# Edit .env — set OPENAI_API_KEY and JWT_SECRET at minimum</code></pre>
+            </li>
+            <li>
+              <strong>Start with Docker Compose</strong>
+              <pre><code>docker-compose up -d</code></pre>
+              <p>The server will be available at <code>http://localhost:3000</code>.</p>
+            </li>
+            <li>
+              <strong>Install the Chrome extension</strong>
+              <p>
+                Open <code>chrome://extensions</code>, enable Developer Mode, click "Load unpacked",
+                and select the <code>extension/</code> directory. Set your server URL in the extension settings.
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <section id="configuration" class="docs-section">
+          <h2>Configuration</h2>
+          <p>All configuration is done via environment variables in the <code>.env</code> file.</p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Description</th>
+                  <th>Required</th>
+                </tr>
+              </thead>
+              <tbody>
+                {envVars.map((v) => (
+                  <tr>
+                    <td><code>{v.name}</code></td>
+                    <td>{v.description}</td>
+                    <td>{v.required ? 'Yes' : 'No'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="api" class="docs-section">
+          <h2>API Reference</h2>
+          <p>
+            BugReel exposes a REST API. All endpoints (except auth) require a valid JWT token
+            in the <code>Authorization: Bearer &lt;token&gt;</code> header.
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Endpoint</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {endpoints.map((ep) => (
+                  <tr>
+                    <td><code class={`method method--${ep.method.toLowerCase()}`}>{ep.method}</code></td>
+                    <td><code>{ep.path}</code></td>
+                    <td>{ep.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p>
+            For full request/response schemas, see the
+            <a href="https://github.com/BugReel/bugreel" target="_blank" rel="noopener">GitHub README</a>.
+          </p>
+        </section>
+
+        <section id="extension" class="docs-section">
+          <h2>Extension Setup</h2>
+          <ol class="docs-steps">
+            <li>Open <code>chrome://extensions</code> in any Chromium browser.</li>
+            <li>Enable <strong>Developer Mode</strong> (top-right toggle).</li>
+            <li>Click <strong>Load unpacked</strong> and select the <code>extension/</code> folder from the repository.</li>
+            <li>Click the BugReel icon in the toolbar and open <strong>Settings</strong>.</li>
+            <li>Enter your <strong>Server URL</strong> (e.g. <code>http://localhost:3000</code> or your production domain).</li>
+            <li>Log in with your credentials. The extension will store your JWT token locally.</li>
+          </ol>
+          <p>
+            Once configured, click the extension icon and hit <strong>Record</strong> to capture a bug.
+            The recording is uploaded to your server for AI analysis automatically.
+          </p>
+        </section>
+
+        <section id="guides" class="docs-section">
+          <h2>Integrations</h2>
+          <p>BugReel can export bug report cards directly to your issue tracker.</p>
+
+          <div class="integration-list">
+            <div class="integration-item">
+              <h3>Jira</h3>
+              <p>Requires a Team or Enterprise license. Configure in Settings with your Jira domain, project key, email, and API token. Cards are exported as Jira issues with description, steps, screenshots, and priority.</p>
+            </div>
+
+            <div class="integration-item">
+              <h3>Linear</h3>
+              <p>Requires a Team or Enterprise license. Add your Linear API key and select a team. Issues are created with labels, priority mapping, and attached screenshots.</p>
+            </div>
+
+            <div class="integration-item">
+              <h3>GitHub Issues</h3>
+              <p>Available on all plans. Provide a GitHub personal access token and repository. Bug reports become GitHub issues with formatted markdown and image attachments.</p>
+            </div>
+
+            <div class="integration-item">
+              <h3>YouTrack</h3>
+              <p>Available on all plans. Configure your YouTrack URL, project ID, and permanent token. Cards are exported with full formatting and severity fields.</p>
+            </div>
+
+            <div class="integration-item">
+              <h3>Webhook</h3>
+              <p>Available on all plans. Send bug report data as JSON to any URL. Use this to integrate with Asana, ClickUp, Notion, Trello, Slack, or any tool with a webhook endpoint.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="self-hosting" class="docs-section">
+          <h2>Self-Hosting Guide</h2>
+
+          <h3>Requirements</h3>
+          <ul>
+            <li>Docker and Docker Compose</li>
+            <li>2 GB RAM minimum (4 GB recommended)</li>
+            <li>10 GB disk space for recordings (scales with usage)</li>
+            <li>An OpenAI API key (or compatible endpoint)</li>
+          </ul>
+
+          <h3>Docker Deployment</h3>
+          <pre><code>git clone https://github.com/BugReel/bugreel.git
+cd bugreel
+cp .env.example .env
+# Edit .env with your configuration
+docker-compose up -d</code></pre>
+
+          <h3>Updating</h3>
+          <pre><code>cd bugreel
+git pull
+docker-compose down
+docker-compose up -d --build</code></pre>
+          <p>Data is persisted in the <code>./data</code> directory and survives container rebuilds.</p>
+
+          <h3>Reverse Proxy</h3>
+          <p>
+            For production, place BugReel behind a reverse proxy (nginx, Caddy, Traefik) with HTTPS.
+            Point the proxy to <code>http://localhost:3000</code> and update the extension's Server URL
+            to your public domain.
+          </p>
+        </section>
+
+        <div class="docs-footer-cta">
+          <p>
+            Need more detail? Check the full
+            <a href="https://github.com/BugReel/bugreel" target="_blank" rel="noopener">README on GitHub</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .docs-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .docs-container {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .docs-sidebar {
+    position: sticky;
+    top: 96px;
+  }
+
+  .docs-sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .docs-sidebar li {
+    margin-bottom: 4px;
+  }
+
+  .docs-sidebar a {
+    display: block;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .docs-sidebar a:hover {
+    color: var(--color-text);
+    background: var(--color-surface);
+  }
+
+  .docs-content {
+    min-width: 0;
+  }
+
+  .docs-content h1 {
+    margin-bottom: 16px;
+  }
+
+  .docs-intro {
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+    margin-bottom: 48px;
+    line-height: 1.6;
+  }
+
+  .docs-intro a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .docs-intro a:hover {
+    text-decoration: underline;
+  }
+
+  .docs-section {
+    margin-bottom: 56px;
+    scroll-margin-top: 96px;
+  }
+
+  .docs-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .docs-section h3 {
+    font-size: 1.125rem;
+    margin-top: 32px;
+    margin-bottom: 12px;
+  }
+
+  .docs-section p {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .docs-section ul,
+  .docs-section ol {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+    padding-left: 24px;
+  }
+
+  .docs-section li {
+    margin-bottom: 8px;
+  }
+
+  .docs-steps {
+    list-style: none;
+    padding-left: 0;
+    counter-reset: step;
+  }
+
+  .docs-steps > li {
+    counter-increment: step;
+    padding-left: 36px;
+    position: relative;
+    margin-bottom: 24px;
+  }
+
+  .docs-steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  pre {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0 16px;
+  }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+  }
+
+  :not(pre) > code {
+    background: var(--color-surface);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    margin: 16px 0 24px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+  }
+
+  .method--get { color: #22c55e; }
+  .method--post { color: #6366f1; }
+  .method--delete { color: #ef4444; }
+
+  .integration-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .integration-item {
+    padding: 20px 24px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .integration-item h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1rem;
+  }
+
+  .integration-item p {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+  }
+
+  .docs-footer-cta {
+    padding: 32px 0;
+    border-top: 1px solid var(--color-border);
+    margin-top: 32px;
+  }
+
+  .docs-footer-cta a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .docs-footer-cta a:hover {
+    text-decoration: underline;
+  }
+
+  .docs-footer-cta p {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+
+  @media (max-width: 768px) {
+    .docs-container {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .docs-sidebar {
+      position: static;
+      padding: 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .docs-sidebar ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .docs-sidebar a {
+      padding: 6px 12px;
+      font-size: 0.8125rem;
+    }
+  }
+</style>

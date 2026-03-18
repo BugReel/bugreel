@@ -1,0 +1,253 @@
+---
+import Base from '../layouts/Base.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Privacy Policy — BugReel',
+  description: 'BugReel privacy policy. Learn how we handle data, what we collect, and how self-hosting keeps your recordings on your own server.',
+  url: 'https://bugreel.io/privacy',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bugreel.io' },
+      { '@type': 'ListItem', position: 2, name: 'Privacy Policy', item: 'https://bugreel.io/privacy' },
+    ],
+  },
+};
+---
+
+<Base
+  title="Privacy Policy — BugReel"
+  description="BugReel privacy policy. Learn how we handle data, what we collect, and how self-hosting keeps your recordings on your own server."
+  schema={schema}
+>
+  <div class="legal-header section-sm">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <span>Privacy Policy</span>
+      </nav>
+    </div>
+  </div>
+
+  <section class="section-sm">
+    <div class="container legal-container">
+      <h1>Privacy Policy</h1>
+      <p class="legal-updated">Last updated: March 2026</p>
+
+      <div class="legal-content">
+        <section>
+          <h2>Overview</h2>
+          <p>
+            BugReel is a self-hosted bug reporting tool. This means your screen recordings,
+            transcriptions, bug reports, and all associated data are stored on <strong>your own server</strong>,
+            not ours. We do not have access to your recordings or bug reports.
+          </p>
+          <p>
+            This privacy policy covers two things: the BugReel software (self-hosted) and this
+            marketing website (bugreel.io).
+          </p>
+        </section>
+
+        <section>
+          <h2>What We Collect</h2>
+
+          <h3>BugReel Software (Self-Hosted)</h3>
+          <p>
+            When you run BugReel on your own server, we collect <strong>nothing</strong>. All data
+            remains on your infrastructure. The only external communication is between your server
+            and the AI provider you configure (e.g., OpenAI) for transcription and analysis.
+          </p>
+          <p>
+            If you activate a license key, a one-time validation request is sent to our licensing
+            server. This request contains only the license key and your server's domain. No
+            recording data, user data, or bug report content is transmitted.
+          </p>
+
+          <h3>This Website (bugreel.io)</h3>
+          <p>
+            For this landing site, we collect minimal, anonymous analytics data to understand
+            page views and traffic sources. We do not collect personal information, email
+            addresses, or create user accounts on this site.
+          </p>
+        </section>
+
+        <section>
+          <h2>How We Use Data</h2>
+          <ul>
+            <li><strong>License validation:</strong> To verify your license key is valid and active.</li>
+            <li><strong>Website analytics:</strong> To understand which pages are visited and improve our documentation.</li>
+            <li><strong>Support requests:</strong> If you contact us via email, we use your message to provide support.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Data Storage</h2>
+          <p>
+            BugReel is self-hosted by design. Your recordings, transcriptions, screenshots, bug
+            report cards, and user accounts are stored exclusively on your server. You have full
+            control over data retention, backups, and deletion.
+          </p>
+          <p>
+            We do not operate any cloud service that stores your bug report data. There is no
+            "BugReel cloud" that your data passes through.
+          </p>
+        </section>
+
+        <section>
+          <h2>Third-Party Services</h2>
+          <p>
+            The BugReel software integrates with third-party services that <strong>you</strong> configure:
+          </p>
+          <ul>
+            <li>
+              <strong>OpenAI (or compatible API):</strong> Audio transcription and AI analysis are
+              processed by the AI provider you specify in your configuration. Review your AI
+              provider's privacy policy for how they handle API data.
+            </li>
+            <li>
+              <strong>Issue trackers (Jira, Linear, GitHub, YouTrack):</strong> When you export a
+              bug report, data is sent to the tracker you selected, using credentials you provide.
+            </li>
+            <li>
+              <strong>Webhooks:</strong> If configured, bug report data is sent to the webhook URL
+              you specify.
+            </li>
+          </ul>
+          <p>
+            None of these integrations send data to BugReel. All communication is directly between
+            your server and the third-party service.
+          </p>
+        </section>
+
+        <section>
+          <h2>Cookies</h2>
+          <p>
+            This website uses minimal cookies for basic functionality (e.g., remembering consent
+            preferences). We do not use advertising cookies or cross-site tracking.
+          </p>
+          <p>
+            The self-hosted BugReel application uses session cookies for authentication. These
+            cookies are stored on your domain and controlled by your server.
+          </p>
+        </section>
+
+        <section>
+          <h2>Your Rights</h2>
+          <p>
+            Since BugReel is self-hosted, you have direct control over all your data. You can view,
+            export, modify, or delete any data at any time through your server's database and file
+            system.
+          </p>
+          <p>
+            For any data we may hold (e.g., support emails, license records), you have the right to:
+          </p>
+          <ul>
+            <li>Request access to your data</li>
+            <li>Request correction of inaccurate data</li>
+            <li>Request deletion of your data</li>
+            <li>Withdraw consent at any time</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Contact</h2>
+          <p>
+            If you have questions about this privacy policy or how your data is handled,
+            contact us at <a href="mailto:hello@bugreel.io">hello@bugreel.io</a>.
+          </p>
+        </section>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .legal-header {
+    padding-top: 32px;
+    padding-bottom: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumb span {
+    color: var(--color-text-dim);
+  }
+
+  .breadcrumb span:last-child {
+    color: var(--color-text);
+  }
+
+  .legal-container {
+    max-width: 720px;
+  }
+
+  .legal-container h1 {
+    margin-bottom: 8px;
+  }
+
+  .legal-updated {
+    font-size: 0.875rem;
+    color: var(--color-text-dim);
+    margin-bottom: 48px;
+  }
+
+  .legal-content section {
+    margin-bottom: 40px;
+  }
+
+  .legal-content h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .legal-content h3 {
+    font-size: 1rem;
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+
+  .legal-content p {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+
+  .legal-content ul {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    padding-left: 24px;
+    margin-bottom: 16px;
+  }
+
+  .legal-content li {
+    margin-bottom: 8px;
+  }
+
+  .legal-content a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .legal-content a:hover {
+    text-decoration: underline;
+  }
+</style>
