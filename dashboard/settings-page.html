@@ -206,6 +206,29 @@
       width: 16px;
       height: 16px;
     }
+
+    /* Disconnect link */
+    .disconnect-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      color: var(--text3);
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      background: none;
+      padding: 0;
+    }
+
+    .disconnect-link:hover {
+      color: var(--red);
+    }
+
+    .disconnect-link svg {
+      width: 14px;
+      height: 14px;
+    }
   </style>
 </head>
 <body>
@@ -257,12 +280,12 @@
                   <input type="password" id="ytToken" class="edit-field" placeholder="perm:..." autocomplete="off" />
                   <button type="button" class="token-toggle" id="ytTokenToggle" title="Show/hide"></button>
                 </div>
+                <span class="settings-hint" id="ytTokenMask" style="display:none;"></span>
               </div>
-              <div class="settings-field">
+              <!-- Project dropdown — hidden until connection is tested -->
+              <div class="settings-field" id="ytProjectField" style="display:none;">
                 <label class="settings-label" data-i18n="settings_tracker_project">Project</label>
-                <select id="ytProject" class="edit-field" style="display:none;"></select>
-                <input type="text" id="ytProjectInput" class="edit-field" placeholder="BUG" />
-                <span class="settings-hint" id="ytProjectHint" data-i18n="settings_project_hint" style="display:none;">Select a project after testing connection</span>
+                <select id="ytProject" class="edit-field"></select>
               </div>
             </div>
 
@@ -329,21 +352,21 @@
               </div>
             </div>
 
-            <!-- Test result -->
-            <div class="test-result" id="testResult">
-              <span id="testResultIcon"></span>
-              <span id="testResultText"></span>
+            <!-- Connection result (success/error) -->
+            <div class="test-result" id="connectionResult">
+              <span id="connectionResultIcon"></span>
+              <span id="connectionResultText"></span>
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="settings-actions">
-            <button class="btn" id="btnTest" disabled>
-              <span data-i18n="settings_test">Test Connection</span>
+          <!-- Actions: single Connect button + disconnect link -->
+          <div class="settings-actions" id="trackerActions" style="display:none;">
+            <button class="btn btn-primary" id="btnConnect">
+              <span data-i18n="settings_connect">Connect</span>
             </button>
             <div class="spacer"></div>
-            <button class="btn btn-primary" id="btnSave">
-              <span data-i18n="settings_save">Save</span>
+            <button type="button" class="disconnect-link" id="btnDisconnect" style="display:none;">
+              <span data-i18n="settings_disconnect">Disconnect integration</span>
             </button>
           </div>
         </div>
@@ -359,7 +382,7 @@
           <div class="settings-field">
             <label class="settings-label" for="brandingLogoUrl" data-i18n="settings_branding_logo_url">Logo URL</label>
             <input type="url" id="brandingLogoUrl" class="edit-field" placeholder="https://example.com/logo.svg" autocomplete="off">
-            <span class="settings-hint" data-i18n="settings_branding_logo_hint">PNG, SVG or JPG. Recommended height: 28–40px</span>
+            <span class="settings-hint" data-i18n="settings_branding_logo_hint">PNG, SVG or JPG. Recommended height: 28-40px</span>
           </div>
 
           <div class="settings-field">
@@ -383,7 +406,7 @@
   <!-- Save toast -->
   <div class="save-toast" id="saveToast">
     <span id="saveToastIcon"></span>
-    <span data-i18n="settings_saved">Settings saved</span>
+    <span id="saveToastText" data-i18n="settings_saved">Settings saved</span>
   </div>
 
   <script type="module">
@@ -392,56 +415,83 @@
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('settings');
 
-    // Elements
+    // ---- Elements ----
     const loader = document.getElementById('settingsLoader');
     const body = document.getElementById('settingsBody');
     const trackerType = document.getElementById('trackerType');
     const trackerTitle = document.getElementById('trackerTitle');
     const trackerStatus = document.getElementById('trackerStatus');
-    const btnTest = document.getElementById('btnTest');
-    const btnSave = document.getElementById('btnSave');
-    const testResult = document.getElementById('testResult');
-    const testResultIcon = document.getElementById('testResultIcon');
-    const testResultText = document.getElementById('testResultText');
+    const trackerActions = document.getElementById('trackerActions');
+    const btnConnect = document.getElementById('btnConnect');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+    const connectionResult = document.getElementById('connectionResult');
+    const connectionResultIcon = document.getElementById('connectionResultIcon');
+    const connectionResultText = document.getElementById('connectionResultText');
     const saveToast = document.getElementById('saveToast');
     const saveToastIcon = document.getElementById('saveToastIcon');
+    const saveToastText = document.getElementById('saveToastText');
+    const ytProjectField = document.getElementById('ytProjectField');
+    const ytProjectSelect = document.getElementById('ytProject');
+    const ytTokenMask = document.getElementById('ytTokenMask');
+
+    // Track whether the tracker is currently connected (for button label logic)
+    let isConnected = false;
+    // Store saved project so we can pre-select it after connection test
+    let savedProject = '';
 
     // Set header title + icon
     trackerTitle.innerHTML = `${icons.externalLink} ${t('settings_tracker', 'Tracker Integration')}`;
     saveToastIcon.innerHTML = icons.checkCircle;
 
-    // Setup token show/hide toggles
+    // ---- Token show/hide toggles ----
     document.querySelectorAll('.token-toggle').forEach(btn => {
       const input = btn.parentElement.querySelector('input');
       btn.innerHTML = icons.eye;
       btn.addEventListener('click', () => {
-        if (input.type === 'password') {
-          input.type = 'text';
-          btn.innerHTML = icons.eye; // could swap icon, but eye works for both
-        } else {
-          input.type = 'password';
-          btn.innerHTML = icons.eye;
-        }
+        input.type = input.type === 'password' ? 'text' : 'password';
       });
     });
 
-    // Show/hide tracker field sections based on selected type
+    // ---- Show/hide tracker field sections based on selected type ----
     function updateTrackerFields() {
       const type = trackerType.value;
       document.querySelectorAll('.tracker-fields').forEach(el => el.classList.remove('active'));
       const fields = document.getElementById(`fields-${type}`);
       if (fields) fields.classList.add('active');
 
-      // Enable test button only when a tracker is selected
-      btnTest.disabled = (type === 'none');
+      // Show/hide the actions bar
+      trackerActions.style.display = (type === 'none') ? 'none' : 'flex';
 
-      // Hide test result when type changes
-      testResult.style.display = 'none';
+      // Hide connection result when type changes
+      connectionResult.style.display = 'none';
+
+      // Hide YT project field when type changes (will reappear on connect)
+      if (type !== 'youtrack') {
+        ytProjectField.style.display = 'none';
+      }
+
+      // If switching to "none" and was connected, disconnect
+      if (type === 'none' && isConnected) {
+        disconnectTracker();
+      }
+
+      // Reset connect button label based on connection state
+      updateConnectButton();
     }
 
     trackerType.addEventListener('change', updateTrackerFields);
 
-    // Collect form data based on selected tracker type
+    // ---- Update connect button label ----
+    function updateConnectButton() {
+      const type = trackerType.value;
+      if (type === 'none') return;
+      const label = isConnected
+        ? t('settings_reconnect', 'Reconnect')
+        : t('settings_connect', 'Connect');
+      btnConnect.querySelector('span').textContent = label;
+    }
+
+    // ---- Collect form data based on selected tracker type ----
     function collectFormData() {
       const type = trackerType.value;
       const data = { tracker_type: type };
@@ -449,11 +499,8 @@
       if (type === 'youtrack') {
         data.tracker_url = document.getElementById('ytUrl').value.trim();
         const token = document.getElementById('ytToken').value.trim();
-        if (token) data.tracker_token = token; // Only send if user typed a new token
-        // Use dropdown if visible, otherwise input
-        const ytSelect = document.getElementById('ytProject');
-        const ytInput = document.getElementById('ytProjectInput');
-        data.tracker_project = (ytSelect.style.display !== 'none' ? ytSelect.value : ytInput.value).trim();
+        if (token) data.tracker_token = token;
+        data.tracker_project = ytProjectSelect.value || '';
       } else if (type === 'jira') {
         data.tracker_url = document.getElementById('jiraUrl').value.trim();
         const token = document.getElementById('jiraToken').value.trim();
@@ -487,7 +534,7 @@
       return data;
     }
 
-    // Branding preview
+    // ---- Branding preview ----
     function updateBrandingPreview() {
       const url = document.getElementById('brandingLogoUrl').value.trim();
       const preview = document.getElementById('brandingPreview');
@@ -502,18 +549,184 @@
     }
     document.getElementById('brandingLogoUrl').addEventListener('input', updateBrandingPreview);
 
-    // Populate form from loaded settings
+    // ---- Show toast notification ----
+    function showToast(message) {
+      saveToastText.textContent = message;
+      saveToast.style.display = 'flex';
+      setTimeout(() => { saveToast.style.display = 'none'; }, 3000);
+    }
+
+    // ---- Populate project dropdown ----
+    function populateProjects(projects, currentProject) {
+      ytProjectSelect.innerHTML = '<option value="">' + t('settings_select_project', '-- Select project --') + '</option>';
+      projects.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.id + ' \u2014 ' + p.name;
+        if (p.id === currentProject) opt.selected = true;
+        ytProjectSelect.appendChild(opt);
+      });
+      ytProjectField.style.display = 'block';
+    }
+
+    // ---- Update the status badge in the header ----
+    function updateStatusBadge(connected, type) {
+      if (!type || type === 'none') {
+        trackerStatus.innerHTML = `<span class="status-badge status-badge-dim">${t('settings_not_configured', 'Not configured')}</span>`;
+      } else if (connected) {
+        trackerStatus.innerHTML = `<span class="status-badge status-badge-green">${icons.checkCircle} ${t('settings_connected', 'Connected')}</span>`;
+      } else {
+        trackerStatus.innerHTML = `<span class="status-badge status-badge-dim">${t('settings_not_configured', 'Not configured')}</span>`;
+      }
+    }
+
+    // ---- Show connection error ----
+    function showError(message) {
+      connectionResult.style.display = 'flex';
+      connectionResult.className = 'test-result test-result-error';
+      connectionResultIcon.innerHTML = icons.alertTriangle;
+      connectionResultText.textContent = message || t('settings_test_failed', 'Connection failed');
+    }
+
+    // ---- Show connection success ----
+    function showSuccess(message) {
+      connectionResult.style.display = 'flex';
+      connectionResult.className = 'test-result test-result-success';
+      connectionResultIcon.innerHTML = icons.checkCircle;
+      connectionResultText.textContent = message || t('settings_test_success', 'Connection successful');
+    }
+
+    // ---- Connect: test + save in one step ----
+    btnConnect.addEventListener('click', async () => {
+      const data = collectFormData();
+      btnConnect.disabled = true;
+      btnConnect.querySelector('span').textContent = t('settings_connecting', 'Connecting...');
+      connectionResult.style.display = 'none';
+
+      try {
+        // 1. Test connection
+        const testRes = await fetch('/api/settings/test-connection', {
+          credentials: 'include',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const testResult = await testRes.json();
+
+        if (!testResult.ok) {
+          showError(testResult.message);
+          btnConnect.disabled = false;
+          updateConnectButton();
+          return;
+        }
+
+        // 2. Save settings (only on success)
+        const saveRes = await fetch('/api/settings', {
+          credentials: 'include',
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        await saveRes.json();
+
+        // 3. Show project dropdown for YouTrack
+        if (data.tracker_type === 'youtrack' && testResult.projects && testResult.projects.length > 0) {
+          populateProjects(testResult.projects, savedProject || data.tracker_project);
+        }
+
+        // 4. Show success
+        showSuccess(testResult.message);
+        isConnected = true;
+        updateStatusBadge(true, data.tracker_type);
+        btnDisconnect.style.display = 'inline-flex';
+        showToast(t('settings_saved', 'Settings saved'));
+
+      } catch (err) {
+        showError(`Error: ${err.message}`);
+      }
+
+      btnConnect.disabled = false;
+      updateConnectButton();
+    });
+
+    // ---- Project dropdown change: auto-save ----
+    ytProjectSelect.addEventListener('change', async () => {
+      const projectValue = ytProjectSelect.value;
+      if (!projectValue) return;
+
+      try {
+        await fetch('/api/settings', {
+          credentials: 'include',
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tracker_project: projectValue }),
+        });
+        savedProject = projectValue;
+        showToast(t('settings_project_updated', 'Project updated'));
+      } catch (err) {
+        console.error('Failed to save project:', err);
+      }
+    });
+
+    // ---- Disconnect ----
+    async function disconnectTracker() {
+      try {
+        await fetch('/api/settings', {
+          credentials: 'include',
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tracker_type: 'none', tracker_url: '', tracker_token: '', tracker_project: '' }),
+        });
+      } catch (err) {
+        console.error('Failed to disconnect:', err);
+      }
+
+      // Reset UI
+      isConnected = false;
+      trackerType.value = 'none';
+      updateTrackerFields();
+      updateStatusBadge(false, 'none');
+      btnDisconnect.style.display = 'none';
+      connectionResult.style.display = 'none';
+      ytProjectField.style.display = 'none';
+      ytTokenMask.style.display = 'none';
+
+      // Clear fields
+      document.getElementById('ytUrl').value = '';
+      document.getElementById('ytToken').value = '';
+      document.getElementById('ytToken').placeholder = 'perm:...';
+      document.getElementById('jiraUrl').value = '';
+      document.getElementById('jiraToken').value = '';
+      document.getElementById('jiraProject').value = '';
+      document.getElementById('ghToken').value = '';
+      document.getElementById('ghRepo').value = '';
+      document.getElementById('linearToken').value = '';
+      document.getElementById('webhookUrl').value = '';
+      document.getElementById('webhookSecret').value = '';
+
+      showToast(t('settings_saved', 'Settings saved'));
+    }
+
+    btnDisconnect.addEventListener('click', () => {
+      disconnectTracker();
+    });
+
+    // ---- Populate form from loaded settings ----
     function populateForm(settings) {
       const type = settings.tracker_type || 'none';
       trackerType.value = type;
 
-      // Populate tracker-specific fields
-      // Token is masked (first 5 + last 2 chars) — user sees that token is saved
+      // Token is masked (first 5 + last 2 chars) -- user sees that token is saved
       const mask = settings.tracker_token_mask || '';
+      savedProject = settings.tracker_project || '';
+
       if (type === 'youtrack') {
         document.getElementById('ytUrl').value = settings.tracker_url || '';
-        document.getElementById('ytToken').placeholder = mask || t('settings_tracker_token', 'API Token');
-        document.getElementById('ytProjectInput').value = settings.tracker_project || '';
+        document.getElementById('ytToken').placeholder = mask || 'perm:...';
+        if (mask) {
+          ytTokenMask.textContent = `Masked: ${mask} (saved)`;
+          ytTokenMask.style.display = 'block';
+        }
       } else if (type === 'jira') {
         document.getElementById('jiraUrl').value = settings.tracker_url || '';
         document.getElementById('jiraToken').placeholder = mask || t('settings_tracker_token', 'API Token');
@@ -526,8 +739,29 @@
         document.getElementById('webhookSecret').placeholder = mask || '';
       }
 
+      // Determine if already connected
+      isConnected = !!(settings.tracker_connected && type !== 'none');
+
       updateTrackerFields();
-      updateStatusBadge(settings.tracker_connected, type);
+      updateStatusBadge(isConnected, type);
+
+      // If connected, show project dropdown (pre-populated on next connect) and disconnect
+      if (isConnected) {
+        btnDisconnect.style.display = 'inline-flex';
+
+        // For YouTrack, if we have a saved project, show it.
+        // The dropdown will be fully populated on next connect/reconnect.
+        // But if we got projects from the API (on load), show them.
+        if (type === 'youtrack' && savedProject) {
+          ytProjectSelect.innerHTML = '<option value="">' + t('settings_select_project', '-- Select project --') + '</option>';
+          const opt = document.createElement('option');
+          opt.value = savedProject;
+          opt.textContent = savedProject;
+          opt.selected = true;
+          ytProjectSelect.appendChild(opt);
+          ytProjectField.style.display = 'block';
+        }
+      }
 
       // Branding
       document.getElementById('brandingLogoUrl').value = settings.branding_logo_url || '';
@@ -535,108 +769,7 @@
       updateBrandingPreview();
     }
 
-    // Update the status badge in the header
-    function updateStatusBadge(connected, type) {
-      if (!type || type === 'none') {
-        trackerStatus.innerHTML = `<span class="status-badge status-badge-dim">${t('settings_not_configured', 'Not configured')}</span>`;
-      } else if (connected) {
-        trackerStatus.innerHTML = `<span class="status-badge status-badge-green">${icons.checkCircle} ${t('settings_connected', 'Connected')}</span>`;
-      } else {
-        trackerStatus.innerHTML = `<span class="status-badge status-badge-dim">${t('settings_not_configured', 'Not configured')}</span>`;
-      }
-    }
-
-    // Test connection
-    btnTest.addEventListener('click', async () => {
-      const data = collectFormData();
-      btnTest.disabled = true;
-      btnTest.querySelector('span').textContent = t('settings_testing', 'Testing...');
-      testResult.style.display = 'none';
-
-      try {
-        const res = await fetch('/api/settings/test-connection', { credentials: 'include',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        const result = await res.json();
-
-        testResult.style.display = 'flex';
-        if (result.ok) {
-          testResult.className = 'test-result test-result-success';
-          testResultIcon.innerHTML = icons.checkCircle;
-          testResultText.textContent = result.message || t('settings_test_success', 'Connection successful');
-
-          // Populate project dropdown if projects returned
-          if (result.projects && result.projects.length > 0) {
-            const select = document.getElementById('ytProject');
-            const input = document.getElementById('ytProjectInput');
-            const hint = document.getElementById('ytProjectHint');
-            const currentProject = input.value.trim();
-
-            select.innerHTML = '<option value="">' + t('settings_select_project', '— Select project —') + '</option>';
-            result.projects.forEach(p => {
-              const opt = document.createElement('option');
-              opt.value = p.id;
-              opt.textContent = p.id + ' — ' + p.name;
-              if (p.id === currentProject) opt.selected = true;
-              select.appendChild(opt);
-            });
-
-            select.style.display = '';
-            input.style.display = 'none';
-            if (hint) hint.style.display = 'none';
-          }
-
-          updateStatusBadge(true, data.tracker_type);
-        } else {
-          testResult.className = 'test-result test-result-error';
-          testResultIcon.innerHTML = icons.alertTriangle;
-          testResultText.textContent = result.message || t('settings_test_failed', 'Connection failed');
-        }
-      } catch (err) {
-        testResult.style.display = 'flex';
-        testResult.className = 'test-result test-result-error';
-        testResultIcon.innerHTML = icons.alertTriangle;
-        testResultText.textContent = `Error: ${err.message}`;
-      }
-
-      btnTest.disabled = false;
-      btnTest.querySelector('span').textContent = t('settings_test', 'Test Connection');
-    });
-
-    // Save settings
-    btnSave.addEventListener('click', async () => {
-      const data = collectFormData();
-      btnSave.disabled = true;
-      btnSave.querySelector('span').textContent = t('settings_saving', 'Saving...');
-
-      try {
-        const res = await fetch('/api/settings', { credentials: 'include',
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        const result = await res.json();
-
-        if (result.ok) {
-          // Show toast
-          saveToast.style.display = 'flex';
-          setTimeout(() => { saveToast.style.display = 'none'; }, 3000);
-
-          // Update status badge
-          const isConnected = data.tracker_type !== 'none' && (data.tracker_url || data.tracker_type === 'linear' || data.tracker_type === 'github');
-          updateStatusBadge(isConnected, data.tracker_type);
-        }
-      } catch (err) {
-        alert('Error saving settings: ' + err.message);
-      }
-
-      btnSave.disabled = false;
-      btnSave.querySelector('span').textContent = t('settings_save', 'Save');
-    });
-
-    // Load current settings
+    // ---- Load current settings ----
     async function load() {
       try {
         const res = await fetch('/api/settings', { credentials: 'include' });

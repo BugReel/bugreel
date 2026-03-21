@@ -237,6 +237,12 @@
       settings_test_failed: 'Connection failed',
       settings_tracker_url_hint_youtrack: 'e.g. https://your-instance.youtrack.cloud',
       settings_tracker_url_hint_jira: 'e.g. https://your-domain.atlassian.net',
+      settings_connect: 'Connect',
+      settings_reconnect: 'Reconnect',
+      settings_disconnect: 'Disconnect integration',
+      settings_select_project: '— Select project —',
+      settings_project_updated: 'Project updated',
+      settings_connecting: 'Connecting...',
 
       // Misc
       no_recording_id: 'No recording ID in URL',
@@ -466,6 +472,12 @@
       settings_test_failed: 'Ошибка подключения',
       settings_tracker_url_hint_youtrack: 'напр. https://your-instance.youtrack.cloud',
       settings_tracker_url_hint_jira: 'напр. https://your-domain.atlassian.net',
+      settings_connect: 'Подключить',
+      settings_reconnect: 'Переподключить',
+      settings_disconnect: 'Отключить интеграцию',
+      settings_select_project: '— Выберите проект —',
+      settings_project_updated: 'Проект обновлён',
+      settings_connecting: 'Подключение...',
 
       // Misc
       no_recording_id: 'Нет ID записи в URL',
