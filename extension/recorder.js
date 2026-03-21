@@ -278,22 +278,15 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     }
   }
 
-  // Determine the video track for recording
-  // Tab mode: webcam is shown as DOM element on the page — captured automatically, no canvas needed
-  // Desktop mode: webcam needs canvas compositing (DOM element may not be visible)
-  let finalVideoTrack;
+  // Webcam is shown as DOM element on the page by content-script-widget.js.
+  // It gets captured automatically by both tab capture and desktop capture.
+  // No canvas compositing needed — avoids quality loss and duplicates.
+  let finalVideoTrack = captureStream.getVideoTracks()[0];
 
-  if (hasWebcam && mode === 'desktop') {
-    finalVideoTrack = await setupWebcamPiP(captureStream.getVideoTracks()[0]);
-  } else {
-    // Tab mode with webcam: webcam circle is on the page, captured by tabCapture
-    // No webcam: just use the screen track directly
-    if (hasWebcam) {
-      // Stop webcam stream in recorder — content script handles it
-      webcamStream.getTracks().forEach(t => t.stop());
-      webcamStream = null;
-    }
-    finalVideoTrack = captureStream.getVideoTracks()[0];
+  if (hasWebcam && webcamStream) {
+    // Stop webcam stream in recorder — content script handles the preview
+    webcamStream.getTracks().forEach(t => t.stop());
+    webcamStream = null;
   }
 
   // Mix audio

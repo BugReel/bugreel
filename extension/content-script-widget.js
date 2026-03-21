@@ -141,34 +141,38 @@
       webcamShadow.innerHTML = `
 <style>
   :host { all: initial; }
-  .cam-wrap {
+  .cam-outer {
+    position: relative; width: 100%; height: 100%;
+    cursor: grab; user-select: none;
+  }
+  .cam-outer.dragging { cursor: grabbing; }
+  .cam-circle {
     width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
     border: 3px solid rgba(255,255,255,0.25);
     box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-    cursor: grab; user-select: none; position: relative;
   }
-  .cam-wrap:hover { border-color: rgba(255,255,255,0.5); }
-  .cam-wrap.dragging { cursor: grabbing; }
-  video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .cam-outer:hover .cam-circle { border-color: rgba(255,255,255,0.5); }
+  video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; display: block; }
   .resize-handle {
-    position: absolute; top: 2px; right: 2px;
-    width: 20px; height: 20px; cursor: nwse-resize;
+    position: absolute; top: -4px; right: -4px;
+    width: 22px; height: 22px; cursor: nwse-resize;
     display: none; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.45); border-radius: 50%;
-    backdrop-filter: blur(4px);
+    background: rgba(0,0,0,0.55); border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    z-index: 1;
   }
   .resize-handle svg { width: 10px; height: 10px; }
-  .cam-wrap:hover .resize-handle { display: flex; }
+  .cam-outer:hover .resize-handle { display: flex; }
 </style>
-<div class="cam-wrap">
-  <video autoplay playsinline muted></video>
+<div class="cam-outer">
+  <div class="cam-circle"><video autoplay playsinline muted></video></div>
   <div class="resize-handle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="10,7 17,7 17,14"/></svg></div>
 </div>`;
 
       const videoEl = webcamShadow.querySelector('video');
       videoEl.srcObject = webcamStream;
 
-      const camWrap = webcamShadow.querySelector('.cam-wrap');
+      const camWrap = webcamShadow.querySelector('.cam-outer');
       const resizeHandle = webcamShadow.querySelector('.resize-handle');
 
       // Drag webcam circle
@@ -218,7 +222,7 @@
   function onWebcamDragEnd() {
     if (!webcamDragState) return;
     webcamDragState = null;
-    webcamShadow?.querySelector('.cam-wrap')?.classList.remove('dragging');
+    webcamShadow?.querySelector('.cam-outer')?.classList.remove('dragging');
     document.removeEventListener('mousemove', onWebcamDrag, true);
     document.removeEventListener('mouseup', onWebcamDragEnd, true);
     if (webcamHost) {
