@@ -545,3 +545,6 @@ export function handleLogout(req, res) {
 }
 
 export const authRouter = router;
+
+// Exported for testing
+export { hashPassword, verifyPassword, createSession, getUserBySession };
