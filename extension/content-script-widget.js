@@ -151,16 +151,18 @@
   .cam-wrap.dragging { cursor: grabbing; }
   video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
   .resize-handle {
-    position: absolute; bottom: -2px; right: -2px;
-    width: 16px; height: 16px; cursor: se-resize;
-    background: rgba(255,255,255,0.3); border-radius: 50%;
-    display: none;
+    position: absolute; top: 2px; right: 2px;
+    width: 20px; height: 20px; cursor: nwse-resize;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.45); border-radius: 50%;
+    backdrop-filter: blur(4px);
   }
-  .cam-wrap:hover .resize-handle { display: block; }
+  .resize-handle svg { width: 10px; height: 10px; }
+  .cam-wrap:hover .resize-handle { display: flex; }
 </style>
 <div class="cam-wrap">
   <video autoplay playsinline muted></video>
-  <div class="resize-handle"></div>
+  <div class="resize-handle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="10,7 17,7 17,14"/></svg></div>
 </div>`;
 
       const videoEl = webcamShadow.querySelector('video');

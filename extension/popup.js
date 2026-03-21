@@ -431,6 +431,7 @@ if (selectWebcamDevice) {
 }
 
 
+
 async function populateWebcamDevices(savedDeviceId) {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
