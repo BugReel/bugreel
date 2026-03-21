@@ -644,13 +644,6 @@ async function doUpload(extras = {}) {
   if (extras.metadata) formData.append('metadata', extras.metadata);
   if (extras.segments) formData.append('segments', JSON.stringify(extras.segments));
 
-  // Get token from storage before starting upload
-  let uploadToken = '';
-  try {
-    const stored = await new Promise(resolve => chrome.storage.local.get('extensionToken', resolve));
-    uploadToken = stored.extensionToken || '';
-  } catch {}
-
   chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
 
   return new Promise((resolve, reject) => {
@@ -799,8 +792,9 @@ chrome.runtime.sendMessage({ type: 'recorder-ready' }).catch(() => {});
 
 /* --- Firefox: autonomous start via storage params --- */
 (async function firefoxAutoStart() {
+  if (!chrome.storage?.local) return; // Chrome offscreen — no storage API, wait for messages
   const result = await chrome.storage.local.get('recorderParams');
-  if (!result.recorderParams) return; // Chrome offscreen mode — wait for messages
+  if (!result.recorderParams) return;
 
   const params = result.recorderParams;
   await chrome.storage.local.remove('recorderParams');
