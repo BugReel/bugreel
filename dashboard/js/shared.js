@@ -300,6 +300,7 @@ export function renderHeader(activePage) {
             </a>
           `).join('')}
         </nav>
+        <div id="quota-widget" style="display:none"></div>
         <div class="lang-switcher">
           <button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
           <button class="lang-btn ${currentLang === 'ru' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>

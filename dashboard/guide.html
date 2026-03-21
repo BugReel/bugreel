@@ -300,7 +300,9 @@
 
   <script type="module">
     import { renderHeader } from './js/shared.js';
+    import { initQuotaWidget } from './js/quota.js';
     document.getElementById('header').innerHTML = renderHeader('guide');
+    initQuotaWidget();
 
     // Browser tab switching
     const tabs = document.querySelectorAll('.browser-tab');

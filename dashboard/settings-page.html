@@ -229,6 +229,72 @@
       width: 14px;
       height: 14px;
     }
+
+    /* Quota section */
+    .quota-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .quota-metric {
+      padding: 14px 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .quota-metric-label {
+      font-size: 0.7rem;
+      color: var(--text3);
+      margin-bottom: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .quota-metric-value {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .quota-metric-sub {
+      font-size: 0.72rem;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+    .quota-progress {
+      width: 100%;
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .quota-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    .quota-upgrade-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background var(--transition);
+      margin-top: 4px;
+    }
+    .quota-upgrade-btn:hover {
+      background: #2563eb;
+    }
+    @media (max-width: 480px) {
+      .quota-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -242,6 +308,21 @@
     <div class="settings-content">
       <div id="settingsLoader" class="loading"><div class="spinner"></div></div>
       <div id="settingsBody" style="display:none;">
+
+        <!-- Storage & Subscription (SaaS only) -->
+        <div class="settings-section" id="quotaSection" style="display:none">
+          <div class="settings-section-header">
+            <div>
+              <div class="settings-section-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                <span data-i18n="quota_storage_section">Storage & Subscription</span>
+              </div>
+              <div class="settings-section-desc" data-i18n="quota_storage_section_desc">Current usage, plan limits, and subscription status</div>
+            </div>
+            <div id="quotaPlanBadge"></div>
+          </div>
+          <div class="settings-section-body" id="quotaSectionBody"></div>
+        </div>
 
         <!-- Tracker Integration Section -->
         <div class="settings-section">
@@ -417,9 +498,11 @@
 
   <script type="module">
     import { renderHeader, icons, escapeHTML } from './js/shared.js';
+    import { initQuotaWidget, getQuotaDataAsync, formatBytes } from './js/quota.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('settings');
+    initQuotaWidget();
 
     // ---- Elements ----
     const loader = document.getElementById('settingsLoader');
@@ -807,6 +890,116 @@
     }
 
     load();
+
+    // ---- Quota / Storage section (SaaS only) ----
+    (async () => {
+      const data = await getQuotaDataAsync();
+      if (!data) return;
+
+      const section = document.getElementById('quotaSection');
+      const badge = document.getElementById('quotaPlanBadge');
+      const body_ = document.getElementById('quotaSectionBody');
+
+      const plan = data.plan || 'free';
+      const limits = data.limits || {};
+      const used = data.total_storage_bytes || 0;
+      const maxStorage = limits.max_storage_bytes || 0;
+      const storagePercent = maxStorage > 0 ? Math.min(used / maxStorage, 1) : 0;
+      const totalRec = data.total_recordings || 0;
+      const maxRec = limits.max_recordings || 0;
+      const retDays = limits.retention_days || 0;
+      const usage = data.usage || {};
+      const aiTransUsed = usage.ai_transcriptions || 0;
+      const aiTransLimit = limits.ai_transcriptions_per_month || 0;
+      const aiAnalUsed = usage.ai_analyses || 0;
+      const aiAnalLimit = limits.ai_analysis_per_month || 0;
+
+      const planLabels = { free: t('quota_plan_free', 'Free'), standard: t('quota_plan_standard', 'Standard'), pro: t('quota_plan_pro', 'Pro'), business: t('quota_plan_business', 'Business') };
+      const planColors = { free: 'dim', standard: 'green', pro: 'blue', business: 'violet' };
+      const color = planColors[plan] || 'dim';
+
+      function progressColor(pct) {
+        if (pct >= 0.9) return 'var(--red)';
+        if (pct >= 0.7) return 'var(--amber)';
+        return 'var(--green)';
+      }
+
+      function metricWithBar(label, valueText, subText, percent) {
+        const pColor = progressColor(percent);
+        return `<div class="quota-metric">
+          <div class="quota-metric-label">${label}</div>
+          <div class="quota-metric-value">${valueText}</div>
+          ${subText ? `<div class="quota-metric-sub">${subText}</div>` : ''}
+          <div class="quota-progress"><div class="quota-progress-fill" style="width:${Math.round(percent * 100)}%;background:${pColor}"></div></div>
+        </div>`;
+      }
+
+      function metricPlain(label, valueText, subText) {
+        return `<div class="quota-metric">
+          <div class="quota-metric-label">${label}</div>
+          <div class="quota-metric-value">${valueText}</div>
+          ${subText ? `<div class="quota-metric-sub">${subText}</div>` : ''}
+        </div>`;
+      }
+
+      // Badge
+      badge.innerHTML = `<span class="status-badge status-badge-${color === 'dim' ? 'dim' : color === 'green' ? 'green' : color}"
+        style="${!['dim','green','red'].includes(color) ? `background:var(--${color}-dim);color:var(--${color})` : ''}">${planLabels[plan] || plan}</span>`;
+
+      // Grid
+      let html = '<div class="quota-grid">';
+
+      // Storage
+      html += metricWithBar(
+        t('quota_storage', 'Storage'),
+        `${formatBytes(used)} / ${maxStorage > 0 ? formatBytes(maxStorage) : '∞'}`,
+        maxStorage > 0 ? `${Math.round(storagePercent * 100)}% ${t('quota_used', 'used')}` : null,
+        storagePercent
+      );
+
+      // Recordings
+      if (maxRec > 0) {
+        const recPercent = Math.min(totalRec / maxRec, 1);
+        html += metricWithBar(
+          t('quota_recordings', 'Recordings'),
+          `${totalRec} / ${maxRec}`,
+          `${Math.round(recPercent * 100)}% ${t('quota_used', 'used')}`,
+          recPercent
+        );
+      } else {
+        html += metricPlain(t('quota_recordings', 'Recordings'), String(totalRec), t('quota_unlimited', 'Unlimited'));
+      }
+
+      // Retention
+      const retText = retDays > 0 ? `${retDays} ${t('quota_retention_days', 'days')}` : t('quota_retention_unlimited', 'Unlimited');
+      const retWarn = retDays > 0 && retDays <= 30;
+      html += metricPlain(
+        t('quota_retention', 'Retention'),
+        retText,
+        retDays > 0 ? (retWarn ? `⚠ ${t('quota_retention_warn', 'Old recordings auto-deleted')}` : t('quota_retention_auto', 'Auto-deleted after this period')) : null
+      );
+
+      // AI Transcriptions
+      if (aiTransLimit !== 0) {
+        const aiPct = aiTransLimit > 0 ? Math.min(aiTransUsed / aiTransLimit, 1) : 0;
+        html += metricWithBar(
+          t('quota_ai_transcriptions', 'AI Transcriptions'),
+          aiTransLimit > 0 ? `${aiTransUsed} / ${aiTransLimit}` : `${aiTransUsed}`,
+          aiTransLimit > 0 ? t('quota_per_month', '/mo') : t('quota_unlimited', 'Unlimited'),
+          aiPct
+        );
+      }
+
+      html += '</div>';
+
+      // Upgrade button for free/standard
+      if (plan === 'free' || plan === 'standard') {
+        html += `<div style="margin-top:16px;"><a href="/pricing" class="quota-upgrade-btn">${t('quota_upgrade', 'Upgrade plan')}</a></div>`;
+      }
+
+      body_.innerHTML = html;
+      section.style.display = 'block';
+    })();
   </script>
 </body>
 </html>

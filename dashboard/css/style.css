@@ -243,10 +243,52 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   flex-shrink: 0;
 }
 
+/* --- Quota Widget (SaaS only, hidden for self-hosted) --- */
+#quota-widget {
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text2);
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+#quota-widget:hover {
+  background: var(--surface);
+  border-color: var(--border2);
+  color: var(--text);
+}
+.quota-bar {
+  width: 48px;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.quota-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.quota-bar-fill.green { background: var(--green); }
+.quota-bar-fill.amber { background: var(--amber); }
+.quota-bar-fill.red { background: var(--red); }
+
+@media (max-width: 768px) {
+  #quota-widget .quota-text { display: none; }
+  .quota-bar { width: 32px; }
+}
+@media (max-width: 480px) {
+  #quota-widget { display: none !important; }
+}
+
 .lang-switcher {
   display: flex;
   gap: 0;
-  margin-left: auto;
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow: hidden;

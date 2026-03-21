@@ -27,9 +27,11 @@
       renderHeader, formatDate, formatDuration, statusLabel,
       escapeHTML, icons, timeAgo
     } from './js/shared.js';
+    import { initQuotaWidget } from './js/quota.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('analytics');
+    initQuotaWidget();
 
     const container = document.getElementById('analytics');
 
