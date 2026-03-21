@@ -20,6 +20,9 @@ const toggleSystem   = $('toggle-system');
 const micLevelBar    = $('mic-level-bar');
 const micLevelLabel  = $('mic-level-label');
 const micLevelContainer = $('mic-level-container');
+const micStatus      = $('mic-status');
+const micStatusDot   = $('mic-status-dot');
+const micStatusText  = $('mic-status-text');
 const timerEl        = $('timer');
 const recAudioStatus = $('rec-audio-status');
 const badgeMic       = $('badge-mic');
@@ -44,6 +47,7 @@ let currentState = 'idle';
 let captureMode = 'tab';
 let micPreviewing = false;
 let micPermissionGranted = false;
+let micHardwareAvailable = true; // Whether a mic device exists on the system
 let isFirefox = false;
 let timerInterval = null;
 let timerStartedAt = 0;
@@ -81,6 +85,9 @@ let timerPausedElapsed = 0;
   }
   updateStartButton();
 
+  // Check if mic hardware exists
+  await checkMicHardware();
+
   // Detect Firefox
   const status = await chrome.runtime.sendMessage({ type: 'get-status' });
   isFirefox = status?.isFirefox || !!(typeof browser !== 'undefined' && browser.runtime?.getBrowserInfo);
@@ -97,12 +104,8 @@ let timerPausedElapsed = 0;
     dashLink.parentNode.insertBefore(setupLink, dashLink.nextSibling);
   }
 
-  checkMicPermission();
-
-  // Auto-start mic preview if mic is enabled and we're idle
-  if (toggleMic.checked) {
-    setTimeout(() => tryStartMicPreview(), 300);
-  }
+  await checkMicPermission();
+  updateMicStatus();
 
   // Restore state from background
   const st = status?.state || stored.extensionState || 'idle';
@@ -128,6 +131,9 @@ let timerPausedElapsed = 0;
 
   // Load recent recordings (after author is set)
   loadRecentRecordings();
+
+  // Show popup after state is determined (prevents flash of idle state)
+  document.body.classList.add('loaded');
 })();
 
 /* --- User info / Auth --- */
@@ -195,6 +201,9 @@ function showState(st) {
   currentState = st;
   [stateIdle, stateRecording, statePaused, stateReady].forEach(el => el.classList.add('hidden'));
 
+  const recentEl = $('recent-recordings');
+  const isActive = st === 'recording' || st === 'paused';
+
   if (st === 'idle') {
     stateIdle.classList.remove('hidden');
     controls.classList.remove('hidden');
@@ -227,52 +236,115 @@ function showState(st) {
     timerEl.classList.add('hidden');
     $('status-bar-wrap').classList.add('hidden');
   }
+
+  // Hide Recent during recording/paused — less clutter
+  if (recentEl) {
+    if (isActive) recentEl.classList.add('hidden');
+  }
+
+  updateMicStatus();
 }
 
-/* --- Mic permission check --- */
+/* --- Mic hardware detection --- */
+
+async function checkMicHardware() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const audioInputs = devices.filter(d => d.kind === 'audioinput');
+    micHardwareAvailable = audioInputs.length > 0 && audioInputs.some(d => d.deviceId !== '');
+  } catch {
+    micHardwareAvailable = true; // Assume available if we can't check
+  }
+
+  if (!micHardwareAvailable) {
+    toggleMic.checked = false;
+    chrome.storage.local.set({ micEnabled: false });
+  }
+}
+
+/* --- Mic permission check (storage flag + permissions.query fallback) --- */
 
 async function checkMicPermission() {
+  // Primary: check storage flag (set by mic-permission.html and setup page)
+  const stored = await chrome.storage.local.get(['micPermissionGranted']);
+  if (stored.micPermissionGranted) {
+    micPermissionGranted = true;
+    return;
+  }
+
+  // Fallback: permissions.query (works in some contexts)
   try {
     const result = await navigator.permissions.query({ name: 'microphone' });
     micPermissionGranted = result.state === 'granted';
+    if (micPermissionGranted) {
+      chrome.storage.local.set({ micPermissionGranted: true });
+    }
     result.addEventListener('change', () => {
       micPermissionGranted = result.state === 'granted';
-      updateMicWarning();
+      if (micPermissionGranted) {
+        chrome.storage.local.set({ micPermissionGranted: true });
+      }
+      updateMicStatus();
     });
   } catch {
-    // permissions.query not supported — assume not granted, will check at record time
     micPermissionGranted = false;
   }
-  updateMicWarning();
 }
 
-function updateMicWarning() {
+// React to permission granted from mic-permission.html while popup is open
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.micPermissionGranted?.newValue) {
+    micPermissionGranted = true;
+    updateMicStatus();
+  }
+});
+
+function updateMicStatus() {
   const warn = $('mic-permission-warn');
-  if (!warn) return;
-  // Hide warning — mic permission is handled in setup page, not blocking recording
-  warn.classList.add('hidden');
-}
+  const isRecording = currentState === 'recording' || currentState === 'paused';
 
-/* --- Mic preview --- */
+  if (isRecording) {
+    // During recording: show live level bar, hide status dot
+    micStatus.classList.add('hidden');
+    micLevelContainer.classList.remove('hidden');
+    micLevelContainer.classList.remove('inactive');
+    if (warn) warn.classList.add('hidden');
+    return;
+  }
 
-let localMicStream = null;
-let localMicCtx = null;
-let localMicInterval = null;
+  // Idle/ready: hide level bar, show status indicator
+  micLevelContainer.classList.add('hidden');
 
-function tryStartMicPreview() {
-  if (micPreviewing || (currentState !== 'idle' && currentState !== 'ready')) return;
-  micPreviewing = true;
-  micLevelContainer.classList.remove('inactive');
-  micLevelLabel.textContent = '';
-  micLevelLabel.style.color = '';
+  if (!toggleMic.checked) {
+    if (!micHardwareAvailable) {
+      micStatusDot.className = 'mic-status-dot denied';
+      micStatusText.textContent = 'Not found';
+      micStatus.classList.remove('hidden');
+    } else {
+      micStatus.classList.add('hidden');
+    }
+    if (warn) warn.classList.add('hidden');
+    return;
+  }
 
-  if (isFirefox) {
-    // Firefox: run mic preview directly in popup (no offscreen needed)
-    startLocalMicPreview();
+  // Mic toggle is ON — show permission status
+  if (!micHardwareAvailable) {
+    micStatusDot.className = 'mic-status-dot denied';
+    micStatusText.textContent = 'Not found';
+    micStatus.classList.remove('hidden');
+    if (warn) warn.classList.add('hidden');
+  } else if (micPermissionGranted) {
+    micStatusDot.className = 'mic-status-dot ready';
+    micStatusText.textContent = 'Ready';
+    micStatus.classList.remove('hidden');
+    if (warn) warn.classList.add('hidden');
   } else {
-    chrome.runtime.sendMessage({ type: 'mic-preview-start' }).catch(() => {});
+    micStatus.classList.add('hidden');
+    if (warn) warn.classList.remove('hidden');
   }
 }
+
+/* --- Mic preview (used only for cleanup on popup close) --- */
 
 function stopMicPreview() {
   if (!micPreviewing) return;
@@ -280,50 +352,10 @@ function stopMicPreview() {
   micLevelBar.style.width = '0%';
 
   if (isFirefox) {
-    stopLocalMicPreview();
+    // No local preview anymore
   } else {
     chrome.runtime.sendMessage({ type: 'mic-preview-stop' }).catch(() => {});
   }
-}
-
-async function startLocalMicPreview() {
-  stopLocalMicPreview();
-  try {
-    localMicStream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: false
-    });
-    localMicCtx = new AudioContext();
-    const analyser = localMicCtx.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.5;
-    localMicCtx.createMediaStreamSource(localMicStream).connect(analyser);
-    const data = new Uint8Array(analyser.frequencyBinCount);
-    localMicInterval = setInterval(() => {
-      analyser.getByteFrequencyData(data);
-      let sum = 0;
-      for (let i = 0; i < data.length; i++) sum += data[i];
-      const level = Math.min(100, Math.round((sum / data.length) * 1.5));
-      micLevelBar.style.width = level + '%';
-      micLevelBar.style.background = level > 5 ? '#22c55e' : '#475569';
-    }, 100);
-    micPermissionGranted = true;
-    updateMicWarning();
-  } catch (e) {
-    micLevelContainer.classList.add('inactive');
-    micLevelLabel.innerHTML = '<a href="#" id="grant-mic-link" style="color:#3b82f6;text-decoration:underline;cursor:pointer;font-size:10px;">Grant access</a>';
-    micPreviewing = false;
-    document.getElementById('grant-mic-link')?.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      chrome.tabs.create({ url: chrome.runtime.getURL('mic-permission.html') });
-    });
-  }
-}
-
-function stopLocalMicPreview() {
-  if (localMicInterval) { clearInterval(localMicInterval); localMicInterval = null; }
-  if (localMicStream) { localMicStream.getTracks().forEach(t => t.stop()); localMicStream = null; }
-  if (localMicCtx) { localMicCtx.close().catch(() => {}); localMicCtx = null; }
 }
 
 /* --- Toggle handlers --- */
@@ -331,10 +363,9 @@ function stopLocalMicPreview() {
 toggleMic.addEventListener('change', () => {
   chrome.storage.local.set({ micEnabled: toggleMic.checked });
   if (!toggleMic.checked) {
-    micLevelContainer.classList.add('inactive');
-    micLevelLabel.textContent = '';
+    stopMicPreview();
   }
-  updateMicWarning();
+  updateMicStatus();
 });
 toggleSystem.addEventListener('change', () => chrome.storage.local.set({ systemAudioEnabled: toggleSystem.checked }));
 if (inputAuthor) {
@@ -501,15 +532,11 @@ chrome.runtime.onMessage.addListener((msg) => {
     badgeSystem.className = `rec-audio-badge ${msg.systemAudio ? 'on' : 'off'}`;
   }
   if (msg.type === 'mic-level') {
-    if (msg.level === -1) {
-      micLevelContainer.classList.add('inactive');
-      micLevelLabel.innerHTML = '<a href="#" id="grant-mic-link" style="color:#3b82f6;text-decoration:underline;cursor:pointer;font-size:10px;">Grant access</a>';
-      micPreviewing = false;
-      document.getElementById('grant-mic-link')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        chrome.tabs.create({ url: chrome.runtime.getURL('mic-permission.html') });
-      });
-    } else {
+    if (msg.level >= 0) {
+      // Live level during recording — ensure level bar is visible
+      micLevelContainer.classList.remove('hidden');
+      micLevelContainer.classList.remove('inactive');
+      micStatus.classList.add('hidden');
       micLevelBar.style.width = msg.level + '%';
       micLevelBar.style.background = msg.level > 5 ? '#22c55e' : '#475569';
     }
@@ -522,8 +549,10 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'upload-done') {
     showState('idle');
     $('status-bar-wrap').classList.remove('hidden');
-    setStatusWithLink('done', 'Uploaded!', msg.recordingId);
-    loadRecentRecordings(); // refresh recent list
+    const recUrl = `${SERVER_URL}/recording/${encodeURIComponent(msg.recordingId)}`;
+    navigator.clipboard.writeText(recUrl).catch(() => {});
+    setStatusWithLink('done', 'Link copied!', msg.recordingId);
+    loadRecentRecordings();
   }
   if (msg.type === 'upload-error') setStatus('error', msg.error);
   if (msg.type === 'recording-stopped-max') {
@@ -634,6 +663,11 @@ document.getElementById('grant-mic-btn')?.addEventListener('click', (e) => {
 
 // Load recent on popup open
 loadRecentRecordings();
+
+/* --- Cleanup on popup close --- */
+window.addEventListener('pagehide', () => {
+  stopMicPreview();
+});
 
 /* --- Dashboard link --- */
 document.getElementById('dashboard-link')?.addEventListener('click', (e) => {

@@ -120,6 +120,13 @@ export function requireAuth(req, res, next) {
     if (req.path.startsWith('/api/')) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    // Smart link: /recording/{id} → redirect to /report/{id} for non-authenticated users
+    const recMatch = req.path.match(/^\/recording\/(.+)$/);
+    if (recMatch) {
+      return res.redirect(`/report/${recMatch[1]}`);
+    }
+
     return res.redirect('/login');
   }
   next();

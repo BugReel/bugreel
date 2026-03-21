@@ -71,9 +71,9 @@
             ${card?.summary ? `<p class="card-summary">${escapeHTML(card.summary)}</p>` : ''}
           </div>
           ${r.status === 'complete' && card ? `
-            <a href="/report/${encodeURIComponent(r.id)}" class="btn btn-sm" title="Share report" target="_blank" style="margin-top:4px;">
+            <button class="btn btn-sm" id="btnShareLink" title="Copy link" style="margin-top:4px;">
               ${icons.share}
-            </a>
+            </button>
           ` : ''}
         </div>
 
@@ -264,7 +264,25 @@
       }
       setupTranscriptEdit(transcript);
       setupContextEdit(r);
+      setupShareButton();
       setupYoutrackPanel(r, card);
+    }
+
+    // --- Share link button (copy to clipboard) ---
+    function setupShareButton() {
+      const btn = document.getElementById('btnShareLink');
+      if (!btn) return;
+
+      btn.addEventListener('click', () => {
+        const url = `${location.origin}/recording/${encodeURIComponent(recordingId)}`;
+        navigator.clipboard.writeText(url).then(() => {
+          const orig = btn.innerHTML;
+          btn.innerHTML = `${icons.checkCircle} Copied`;
+          setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }).catch(() => {
+          prompt('Copy link:', url);
+        });
+      });
     }
 
     // --- YouTrack section rendering (4 states) ---

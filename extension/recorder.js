@@ -21,6 +21,11 @@ let micPreviewCtx = null;
 let micPreviewAnalyser = null;
 let micPreviewInterval = null;
 
+// Live mic level during recording
+let micLevelCtx = null;
+let micLevelAnalyser = null;
+let micLevelInterval = null;
+
 // Upload state
 let pendingServerUrl = '';
 let pendingAuthor = '';
@@ -166,24 +171,54 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     hasSystemAudio = captureStream.getAudioTracks().length > 0;
   } else {
     // Screen/desktop capture via getDisplayMedia (Chrome desktop + all Firefox modes)
-    captureStream = await navigator.mediaDevices.getDisplayMedia({
-      video: true,
-      audio: systemAudioEnabled
-    });
+    const displayMediaOptions = {
+      video: {
+        displaySurface: 'monitor',    // Hint: prefer full-screen capture
+      },
+      audio: systemAudioEnabled,
+      selfBrowserSurface: 'exclude',  // Don't offer current tab in picker
+      monitorTypeSurfaces: 'include', // Ensure monitor surfaces appear in picker
+      surfaceSwitching: 'include',    // Allow switching captured surface during recording
+    };
+
+    // CaptureController: prevent Chrome from stealing focus after screen selection (macOS fix)
+    if (typeof CaptureController !== 'undefined') {
+      const controller = new CaptureController();
+      displayMediaOptions.controller = controller;
+      captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+      // Must call setFocusBehavior synchronously after getDisplayMedia resolves
+      try { controller.setFocusBehavior('no-focus-change'); } catch (e) {
+        console.warn('[BugReel] setFocusBehavior not supported:', e.message);
+      }
+    } else {
+      captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+    }
     hasSystemAudio = captureStream.getAudioTracks().length > 0;
   }
 
   // If mic wasn't reused from preview, try to get it fresh
   if (micEnabled && !hasMic) {
+    // Check if any audio input device exists before requesting getUserMedia
+    let hasAudioInput = true;
     try {
-      micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: false
-      });
-      hasMic = micStream.getAudioTracks().length > 0;
-    } catch (e) {
-      console.error('Mic capture failed:', e.message);
-      micStream = null;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      hasAudioInput = devices.some(d => d.kind === 'audioinput' && d.deviceId !== '');
+    } catch { /* assume available */ }
+
+    if (hasAudioInput) {
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: false
+        });
+        hasMic = micStream.getAudioTracks().length > 0;
+      } catch (e) {
+        console.error('Mic capture failed:', e.message);
+        micStream = null;
+        hasMic = false;
+      }
+    } else {
+      console.log('[BugReel] No audio input device found, skipping mic capture');
       hasMic = false;
     }
   }
@@ -243,6 +278,11 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
   maxDurationRemaining = MAX_DURATION_MS;
   startMaxDurationTimer();
 
+  // Start live mic level monitoring (sends mic-level messages to popup)
+  if (micStream) {
+    startMicLevelMonitor(micStream);
+  }
+
   // Update visible timer in recorder window (Firefox popup mode)
   startRecorderWindowTimer();
   updateRecorderWindowUI('recording');
@@ -252,6 +292,7 @@ function pauseRecording() {
   if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
   mediaRecorder.pause();
   clearMaxDurationTimer();
+  stopMicLevelMonitor();
   stopRecorderWindowTimer();
   updateRecorderWindowUI('paused');
 }
@@ -260,12 +301,14 @@ function resumeRecording() {
   if (!mediaRecorder || mediaRecorder.state !== 'paused') return;
   mediaRecorder.resume();
   startMaxDurationTimer();
+  if (micStream) startMicLevelMonitor(micStream);
   startRecorderWindowTimer();
   updateRecorderWindowUI('recording');
 }
 
 function finishRecording() {
   clearMaxDurationTimer();
+  stopMicLevelMonitor();
   stopRecorderWindowTimer();
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
@@ -274,7 +317,37 @@ function finishRecording() {
   }
 }
 
+/* --- Live mic level during recording --- */
+
+function startMicLevelMonitor(stream) {
+  stopMicLevelMonitor();
+  try {
+    micLevelCtx = new AudioContext();
+    micLevelAnalyser = micLevelCtx.createAnalyser();
+    micLevelAnalyser.fftSize = 256;
+    micLevelAnalyser.smoothingTimeConstant = 0.5;
+    micLevelCtx.createMediaStreamSource(stream).connect(micLevelAnalyser);
+    const dataArray = new Uint8Array(micLevelAnalyser.frequencyBinCount);
+    micLevelInterval = setInterval(() => {
+      micLevelAnalyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+      const level = Math.min(100, Math.round((sum / dataArray.length) * 1.5));
+      chrome.runtime.sendMessage({ type: 'mic-level', level }).catch(() => {});
+    }, 100);
+  } catch (e) {
+    console.warn('[BugReel] Mic level monitor failed:', e.message);
+  }
+}
+
+function stopMicLevelMonitor() {
+  if (micLevelInterval) { clearInterval(micLevelInterval); micLevelInterval = null; }
+  if (micLevelCtx) { micLevelCtx.close().catch(() => {}); micLevelCtx = null; }
+  micLevelAnalyser = null;
+}
+
 function releaseStreams() {
+  stopMicLevelMonitor();
   if (captureStream) { captureStream.getTracks().forEach(t => t.stop()); captureStream = null; }
   if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
   if (mixedStream) { mixedStream.getTracks().forEach(t => t.stop()); mixedStream = null; }
