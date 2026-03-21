@@ -193,12 +193,13 @@ export function escapeHTML(str) {
 
 /**
  * Extract route parameter from URL path
- * e.g., extractParam('/recording/', '/recording/REC-2026-0001') => 'REC-2026-0001'
+ * Works with optional path prefix (e.g., /app/recording/ID or /recording/ID)
  */
 export function extractParam(prefix) {
   const path = window.location.pathname;
-  if (path.startsWith(prefix)) {
-    return decodeURIComponent(path.slice(prefix.length));
+  const idx = path.indexOf(prefix);
+  if (idx !== -1) {
+    return decodeURIComponent(path.slice(idx + prefix.length));
   }
   return null;
 }
