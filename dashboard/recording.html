@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recording - BugReel</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/i18n-dashboard.js"></script>
 </head>
 <body>
   <div id="header"></div>
@@ -21,15 +22,20 @@
       updateKeyframes, addKeyframe, deleteKeyframe,
       updateCard, updateTranscript, updateContext,
       exportToYoutrack, searchYoutrackIssues, linkToYoutrack,
-      preLinkYoutrack, clearPreLink
-    } from '/js/api.js';
+      preLinkYoutrack, clearPreLink,
+      getVideoComments, addVideoComment, deleteVideoComment,
+      setRecordingPassword, removeRecordingPassword
+    } from '../js/api.js';
     import {
       renderHeader, extractParam, formatDate, formatDuration, formatTimecode,
       statusLabel, categoryLabel, csCircleHTML,
       renderDescription, escapeHTML, icons, timeAgo
-    } from '/js/shared.js';
-    import { createTimeline } from '/js/timeline.js';
+    } from '../js/shared.js';
+    import { createTimeline } from '../js/timeline.js';
+    import { renderViewAnalytics } from '../js/analytics.js';
+    import { showEmbedModal } from '../js/embed-modal.js';
 
+    const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('recordings');
 
     const content = document.getElementById('content');
@@ -39,7 +45,7 @@
     let currentData = null;
 
     if (!recordingId) {
-      content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>No recording ID in URL</p></div>`;
+      content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>${t('no_recording_id', 'No recording ID in URL')}</p></div>`;
     }
 
     async function load() {
@@ -51,7 +57,7 @@
           ? `${data.card.title} - BugReel`
           : `${recordingId} - BugReel`;
       } catch (err) {
-        content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>Failed to load recording: ${escapeHTML(err.message)}</p></div>`;
+        content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>${t('failed_load_recordings', 'Failed to load recording')}: ${escapeHTML(err.message)}</p></div>`;
       }
     }
 
@@ -61,7 +67,7 @@
       const transcript = r.transcript || {};
       content.innerHTML = `
         <!-- Back link -->
-        <a href="/" class="back-link">${icons.arrowLeft} Back to recordings</a>
+        <a href="../" class="back-link">${icons.arrowLeft} ${t('back_to_recordings', 'Back to recordings')}</a>
 
         <!-- Header -->
         <div class="detail-header" style="align-items:flex-start;">
@@ -71,16 +77,58 @@
             ${card?.summary ? `<p class="card-summary">${escapeHTML(card.summary)}</p>` : ''}
           </div>
           ${r.status === 'complete' && card ? `
+            <button class="btn btn-sm" id="btnPassword" title="${r.has_password ? t('password_protected', 'Password protected') : t('set_password', 'Set password')}" style="margin-top:4px; ${r.has_password ? 'color:var(--amber);' : ''}">
+              ${r.has_password ? icons.lock : icons.unlock}
+            </button>
+            <button class="btn btn-sm" id="btnEmbed" title="Embed" style="margin-top:4px;">
+              ${icons.code}
+            </button>
             <button class="btn btn-sm" id="btnShareLink" title="Copy link" style="margin-top:4px;">
               ${icons.share}
             </button>
           ` : ''}
         </div>
 
+        <!-- Password protection panel (hidden by default) -->
+        <div class="password-panel hidden mb-16" id="passwordPanel">
+          <div class="column-panel" style="max-width:480px;">
+            <div class="column-panel-header">
+              <span class="column-panel-label">${icons.lock} ${t('password_protection', 'Password Protection')}</span>
+              <button class="column-edit-btn" id="btnClosePassword" title="Close">${icons.x}</button>
+            </div>
+            <div class="column-panel-body" style="padding:16px;">
+              ${r.has_password ? `
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                  <span class="badge badge-amber" style="background:var(--amber-dim); color:var(--amber);">${icons.lock} ${t('protected', 'Protected')}</span>
+                  <span class="text-dim text-xs">${t('password_set_desc', 'Viewers must enter a password to access this recording')}</span>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-sm" id="btnChangePassword">${t('change_password', 'Change password')}</button>
+                  <button class="btn btn-sm" id="btnRemovePassword" style="color:var(--red);">${t('remove_password', 'Remove password')}</button>
+                </div>
+                <div class="hidden" id="changePasswordForm" style="margin-top:12px;">
+                  <div style="display:flex; gap:8px;">
+                    <input type="password" id="newPasswordInput" class="edit-field" placeholder="${t('new_password', 'New password')}" style="flex:1; padding:8px 12px;" />
+                    <button class="btn btn-sm btn-primary" id="btnSaveNewPassword">${t('save', 'Save')}</button>
+                  </div>
+                </div>
+              ` : `
+                <p class="text-dim" style="margin-bottom:12px; font-size:0.85rem;">${t('password_not_set_desc', 'Set a password to restrict access to this recording. Viewers will need to enter the password before watching.')}</p>
+                <div style="display:flex; gap:8px;">
+                  <input type="password" id="newPasswordInput" class="edit-field" placeholder="${t('enter_password', 'Enter password (min 4 chars)')}" style="flex:1; padding:8px 12px;" />
+                  <button class="btn btn-sm btn-primary" id="btnSaveNewPassword">${t('set_password', 'Set password')}</button>
+                </div>
+              `}
+              <div class="text-xs hidden" id="passwordStatus" style="margin-top:8px;"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- Meta (single line: badge + author + date + duration + youtrack) -->
         <div class="detail-meta mb-16">
           ${card?.type ? `<span class="badge badge-${card.type}">${escapeHTML(card.type)}</span>` : ''}
           ${card?.cs_category ? `<span class="badge badge-${card.cs_category}">${categoryLabel(card.cs_category)}</span>` : ''}
+          ${r.has_password ? `<span class="badge badge-amber" style="background:var(--amber-dim); color:var(--amber); gap:4px;">${icons.lock} ${t('protected', 'Protected')}</span>` : ''}
           <span class="detail-meta-item">${icons.user} ${escapeHTML(r.author || '--')}</span>
           <span class="detail-meta-item">${icons.calendar} ${formatDate(r.created_at)}</span>
           <span class="detail-meta-item">${icons.clock} ${formatDuration(r.duration_seconds)}</span>
@@ -93,7 +141,7 @@
             <div class="processing-banner-content">
               <div class="spinner-sm"></div>
               <div>
-                <div class="processing-banner-title">Processing recording...</div>
+                <div class="processing-banner-title">${t('processing_recording', 'Processing recording...')}</div>
                 <div class="processing-banner-status">${renderPipelineStatus(r.status)}</div>
               </div>
             </div>
@@ -107,8 +155,8 @@
             <div class="processing-banner-content">
               ${icons.alertTriangle}
               <div>
-                <div class="processing-banner-title">Processing error</div>
-                <div class="processing-banner-status">Try uploading the recording again</div>
+                <div class="processing-banner-title">${t('processing_error', 'Processing error')}</div>
+                <div class="processing-banner-status">${t('try_again', 'Try uploading the recording again')}</div>
               </div>
             </div>
           </div>
@@ -138,7 +186,7 @@
           <!-- RIGHT: Key Frames Index -->
           <div class="keyframes-index" id="keyframesIndex">
             <div class="keyframes-index-header">
-              <span>Key Moments</span>
+              <span>${t('key_moments', 'Key Moments')}</span>
               <span class="text-dim text-xs">${frames.length}</span>
             </div>
             <div class="keyframes-index-list" id="keyframesList">
@@ -154,7 +202,7 @@
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 </div>
-              `).join('') : '<div class="keyframes-empty text-dim">No key frames</div>'}
+              `).join('') : `<div class="keyframes-empty text-dim">${t('no_key_frames', 'No key frames')}</div>`}
             </div>
           </div>
         </div>
@@ -164,18 +212,18 @@
           <!-- Column 1: Description (editable via modal) -->
           <div class="column-panel">
             <div class="column-panel-header">
-              <span class="column-panel-label">${icons.sparkle} Description</span>
+              <span class="column-panel-label">${icons.sparkle} ${t('description', 'Description')}</span>
               ${card ? `<button class="column-edit-btn" id="btnEditDesc" title="Edit">${icons.pencil}</button>` : ''}
             </div>
             <div class="column-panel-body">
-              ${Object.keys(analysis).length > 0 ? renderAnalysisFields(analysis) : '<div class="text-dim">No analysis data</div>'}
+              ${Object.keys(analysis).length > 0 ? renderAnalysisFields(analysis) : `<div class="text-dim">${t('no_analysis', 'No analysis data')}</div>`}
             </div>
           </div>
 
           <!-- Column 2: Transcript (word-level editing) -->
           <div class="column-panel">
             <div class="column-panel-header">
-              <span class="column-panel-label">${icons.messageCircle} Transcript</span>
+              <span class="column-panel-label">${icons.messageCircle} ${t('transcript', 'Transcript')}</span>
               ${transcript.words?.length ? `<button class="column-edit-btn" id="btnEditTranscript" title="Edit">${icons.pencil}</button>` : ''}
             </div>
             <div class="column-panel-body">
@@ -184,13 +232,13 @@
                   <div id="transcriptBox" style="font-size:0.85rem; line-height:1.7; color:var(--text2);">
                     ${renderTranscript(transcript)}
                   </div>
-                ` : '<div class="text-dim">No transcript</div>'}
+                ` : `<div class="text-dim">${t('no_transcript', 'No transcript')}</div>`}
               </div>
               <div id="transcriptEdit" class="hidden column-edit-form">
                 <div class="transcript-words-editor" id="wordsEditor"></div>
                 <div class="column-edit-actions">
-                  <button class="btn btn-edit-save" id="btnSaveTranscript">Save</button>
-                  <button class="btn btn-edit-cancel" id="btnCancelTranscript">Cancel</button>
+                  <button class="btn btn-edit-save" id="btnSaveTranscript">${t('save', 'Save')}</button>
+                  <button class="btn btn-edit-cancel" id="btnCancelTranscript">${t('cancel', 'Cancel')}</button>
                 </div>
               </div>
             </div>
@@ -199,7 +247,7 @@
           <!-- Column 3: Context (editable — delete items) -->
           <div class="column-panel">
             <div class="column-panel-header">
-              <span class="column-panel-label">${icons.layers} Context</span>
+              <span class="column-panel-label">${icons.layers} ${t('context', 'Context')}</span>
               <button class="column-edit-btn" id="btnEditContext" title="Edit">${icons.pencil}</button>
             </div>
             <div class="column-panel-body">
@@ -209,10 +257,40 @@
               <div id="contextEdit" class="hidden">
                 <div id="contextEditList"></div>
                 <div class="column-edit-actions">
-                  <button class="btn btn-edit-save" id="btnSaveContext">Save</button>
-                  <button class="btn btn-edit-cancel" id="btnCancelContext">Cancel</button>
+                  <button class="btn btn-edit-save" id="btnSaveContext">${t('save', 'Save')}</button>
+                  <button class="btn btn-edit-cancel" id="btnCancelContext">${t('cancel', 'Cancel')}</button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View Analytics Panel -->
+        <div id="viewAnalyticsPanel" class="mb-16"></div>
+
+        <!-- Video Comments Panel -->
+        <div class="column-panel mb-16" id="videoCommentsPanel">
+          <div class="column-panel-header">
+            <span class="column-panel-label">${icons.messageCircle} Comments <span id="vCommentCount" style="color:var(--text3);font-size:0.75rem;margin-left:4px;">...</span></span>
+          </div>
+          <div class="column-panel-body">
+            <div id="vCommentList" style="max-height:400px;overflow-y:auto;margin-bottom:12px;">
+              <div class="text-dim" style="text-align:center;padding:12px;">Loading comments...</div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:12px;">
+              <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <input type="text" id="vCommentAuthor" placeholder="Your name" maxlength="100" class="edit-field" style="flex:1;" />
+              </div>
+              <textarea id="vCommentText" placeholder="Write a comment..." rows="2" maxlength="2000" class="edit-field" style="width:100%;resize:vertical;"></textarea>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text2);cursor:pointer;">
+                  <input type="checkbox" id="vCommentTimecodeCheck" style="accent-color:var(--blue);" />
+                  Link to current time
+                  <span id="vCommentTimecodePreview" style="display:none;background:var(--blue-dim);color:var(--blue);font-size:0.75rem;font-weight:600;padding:2px 8px;border-radius:4px;font-family:monospace;"></span>
+                </label>
+                <button class="btn btn-sm btn-primary" id="vCommentSubmit" style="gap:4px;">${icons.send} Post</button>
+              </div>
+              <div id="vCommentError" style="display:none;color:var(--red);font-size:0.8rem;margin-top:6px;"></div>
             </div>
           </div>
         </div>
@@ -222,31 +300,31 @@
         <div class="modal-overlay hidden" id="descModal">
           <div class="modal-dialog">
             <div class="modal-header">
-              <h3>${icons.sparkle} Edit Description</h3>
+              <h3>${icons.sparkle} ${t('edit_description', 'Edit Description')}</h3>
               <button class="modal-close" id="btnCloseDescModal">${icons.x}</button>
             </div>
             <div class="modal-body">
               <div class="modal-row">
                 <div class="modal-field" style="flex:1;">
-                  <label class="column-edit-label">Title</label>
+                  <label class="column-edit-label">${t('title', 'Title')}</label>
                   <input type="text" id="editTitle" class="edit-field" value="${escapeHTML(card.title || '')}" />
                 </div>
                 <div class="modal-field" style="width:160px;">
-                  <label class="column-edit-label">Type</label>
+                  <label class="column-edit-label">${t('type', 'Type')}</label>
                   <select id="editType" class="edit-field">
-                    <option value="bug" ${card.type === 'bug' ? 'selected' : ''}>Bug</option>
-                    <option value="feature" ${card.type === 'feature' ? 'selected' : ''}>Feature</option>
-                    <option value="enhancement" ${card.type === 'enhancement' ? 'selected' : ''}>Enhancement</option>
-                    <option value="demo" ${card.type === 'demo' ? 'selected' : ''}>Demo</option>
+                    <option value="bug" ${card.type === 'bug' ? 'selected' : ''}>${t('type_bug', 'Bug')}</option>
+                    <option value="feature" ${card.type === 'feature' ? 'selected' : ''}>${t('type_feature', 'Feature')}</option>
+                    <option value="enhancement" ${card.type === 'enhancement' ? 'selected' : ''}>${t('type_enhancement', 'Enhancement')}</option>
+                    <option value="demo" ${card.type === 'demo' ? 'selected' : ''}>${t('type_demo', 'Demo')}</option>
                   </select>
                 </div>
               </div>
-              <label class="column-edit-label">Description</label>
+              <label class="column-edit-label">${t('description', 'Description')}</label>
               <textarea id="editDescription" class="edit-field" rows="14">${escapeHTML(card.description || '')}</textarea>
             </div>
             <div class="modal-footer">
-              <button class="btn btn-edit-cancel" id="btnCancelDesc">Cancel</button>
-              <button class="btn btn-edit-save" id="btnSaveDesc">Save</button>
+              <button class="btn btn-edit-cancel" id="btnCancelDesc">${t('cancel', 'Cancel')}</button>
+              <button class="btn btn-edit-save" id="btnSaveDesc">${t('save', 'Save')}</button>
             </div>
           </div>
         </div>
@@ -265,7 +343,18 @@
       setupTranscriptEdit(transcript);
       setupContextEdit(r);
       setupShareButton();
+      setupEmbedButton();
+      setupPasswordPanel(r);
       setupYoutrackPanel(r, card);
+
+      // Load view analytics panel (non-blocking)
+      const analyticsPanel = document.getElementById('viewAnalyticsPanel');
+      if (analyticsPanel) {
+        renderViewAnalytics(analyticsPanel, r.id);
+      }
+
+      // Load video comments panel (non-blocking)
+      setupVideoCommentsPanel();
     }
 
     // --- Share link button (copy to clipboard) ---
@@ -277,12 +366,119 @@
         const url = `${location.origin}/recording/${encodeURIComponent(recordingId)}`;
         navigator.clipboard.writeText(url).then(() => {
           const orig = btn.innerHTML;
-          btn.innerHTML = `${icons.checkCircle} Copied`;
+          btn.innerHTML = `${icons.checkCircle} ${t('copied', 'Copied')}`;
           setTimeout(() => { btn.innerHTML = orig; }, 2000);
         }).catch(() => {
           prompt('Copy link:', url);
         });
       });
+    }
+
+    // --- Embed button ---
+    function setupEmbedButton() {
+      const btn = document.getElementById('btnEmbed');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        showEmbedModal(recordingId);
+      });
+    }
+
+    // --- Password protection panel ---
+    function setupPasswordPanel(recording) {
+      const btn = document.getElementById('btnPassword');
+      const panel = document.getElementById('passwordPanel');
+      const btnClose = document.getElementById('btnClosePassword');
+      if (!btn || !panel) return;
+
+      btn.addEventListener('click', () => {
+        panel.classList.toggle('hidden');
+      });
+
+      if (btnClose) {
+        btnClose.addEventListener('click', () => {
+          panel.classList.add('hidden');
+        });
+      }
+
+      // Change password button (when password is already set)
+      const btnChange = document.getElementById('btnChangePassword');
+      const changeForm = document.getElementById('changePasswordForm');
+      if (btnChange && changeForm) {
+        btnChange.addEventListener('click', () => {
+          changeForm.classList.toggle('hidden');
+          const input = document.getElementById('newPasswordInput');
+          if (input) setTimeout(() => input.focus(), 100);
+        });
+      }
+
+      // Remove password
+      const btnRemove = document.getElementById('btnRemovePassword');
+      if (btnRemove) {
+        btnRemove.addEventListener('click', async () => {
+          btnRemove.disabled = true;
+          btnRemove.textContent = t('removing', 'Removing...');
+          const status = document.getElementById('passwordStatus');
+          try {
+            await removeRecordingPassword(recordingId);
+            const data = await getRecording(recordingId);
+            currentData = data;
+            render(data);
+          } catch (err) {
+            if (status) {
+              status.textContent = t('error', 'Error') + ': ' + err.message;
+              status.style.color = 'var(--red)';
+              status.classList.remove('hidden');
+            }
+            btnRemove.disabled = false;
+            btnRemove.textContent = t('remove_password', 'Remove password');
+          }
+        });
+      }
+
+      // Save new password (set or change)
+      const btnSave = document.getElementById('btnSaveNewPassword');
+      const passwordInput = document.getElementById('newPasswordInput');
+      if (btnSave && passwordInput) {
+        const handleSave = async () => {
+          const password = passwordInput.value.trim();
+          const status = document.getElementById('passwordStatus');
+
+          if (!password || password.length < 4) {
+            if (status) {
+              status.textContent = t('password_too_short', 'Password must be at least 4 characters');
+              status.style.color = 'var(--amber)';
+              status.classList.remove('hidden');
+            }
+            return;
+          }
+
+          btnSave.disabled = true;
+          btnSave.textContent = t('saving', 'Saving...');
+
+          try {
+            await setRecordingPassword(recordingId, password);
+            const data = await getRecording(recordingId);
+            currentData = data;
+            render(data);
+          } catch (err) {
+            if (status) {
+              status.textContent = t('error', 'Error') + ': ' + err.message;
+              status.style.color = 'var(--red)';
+              status.classList.remove('hidden');
+            }
+            btnSave.disabled = false;
+            btnSave.textContent = recording.has_password ? t('save', 'Save') : t('set_password', 'Set password');
+          }
+        };
+
+        btnSave.addEventListener('click', handleSave);
+        passwordInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSave();
+          }
+        });
+      }
     }
 
     // --- YouTrack section rendering (4 states) ---
@@ -296,7 +492,7 @@
       if (r.pending_youtrack_issue_id && card) {
         return `<div class="yt-prelinked" style="margin-left:auto; display:flex; gap:8px; align-items:center;">
           <a href="${config_youtrackUrl}/issue/${r.pending_youtrack_issue_id}" target="_blank" class="detail-meta-item yt-pending">${icons.clock} ${escapeHTML(r.pending_youtrack_issue_id)}</a>
-          <button class="btn btn-sm btn-primary" id="btnSendPreLinked" style="gap:6px;">${icons.send} Send</button>
+          <button class="btn btn-sm btn-primary" id="btnSendPreLinked" style="gap:6px;">${icons.send} ${t('yt_send', 'Send')}</button>
           <button class="btn btn-sm" id="btnClearPreLink" title="Unlink">&times;</button>
         </div>`;
       }
@@ -316,26 +512,26 @@
           <button class="btn btn-sm btn-primary" id="btnYouTrack" style="gap:6px;">${icons.externalLink} YouTrack</button>
           <div class="yt-popover hidden" id="ytPopover">
             <div class="yt-popover-header">
-              <input type="text" id="ytSearch" placeholder="Search by ID or title..." autocomplete="off" />
+              <input type="text" id="ytSearch" placeholder="${t('yt_search_placeholder', 'Search by ID or title...')}" autocomplete="off" />
             </div>
             <div class="yt-popover-filters">
               <select id="ytAuthorFilter"></select>
               <select id="ytProjectFilter">
-                <option value="">All projects</option>
+                <option value="">${t('yt_all_projects', 'All projects')}</option>
               </select>
               <select id="ytStateFilter">
-                <option value="">All unresolved</option>
+                <option value="">${t('yt_all_unresolved', 'All unresolved')}</option>
                 <option value="In Review">In Review</option>
                 <option value="Open">Open</option>
                 <option value="Reopened">Reopened</option>
                 <option value="In Progress">In Progress</option>
-                <option value="*">All (incl. resolved)</option>
+                <option value="*">${t('yt_all_incl_resolved', 'All (incl. resolved)')}</option>
               </select>
             </div>
             <div class="yt-popover-list" id="ytIssueList"></div>
             ${showCreateNew ? `<div class="yt-popover-footer">
               <div class="yt-export-meta" id="ytExportMeta"></div>
-              <button class="btn btn-sm" id="ytCreateNew">${icons.send} Create new issue</button>
+              <button class="btn btn-sm" id="ytCreateNew">${icons.send} ${t('yt_create_new', 'Create new issue')}</button>
             </div>` : ''}
           </div>
         </div>`;
@@ -346,13 +542,13 @@
 
     // --- Pipeline status rendering ---
     const PIPELINE_STEPS = [
-      { key: 'uploaded', doing: 'Extracting audio from video...' },
-      { key: 'audio_extracted', doing: 'Extracting audio from video...' },
-      { key: 'transcribing', doing: 'Transcribing speech...' },
-      { key: 'transcribed', doing: 'Analyzing transcript...' },
-      { key: 'analyzed', doing: 'Extracting key frames...' },
-      { key: 'frames_extracted', doing: 'Creating card...' },
-      { key: 'complete', doing: 'Done' },
+      { key: 'uploaded', doing: t('extracting_audio', 'Extracting audio from video...') },
+      { key: 'audio_extracted', doing: t('extracting_audio', 'Extracting audio from video...') },
+      { key: 'transcribing', doing: t('transcribing_speech', 'Transcribing speech...') },
+      { key: 'transcribed', doing: t('analyzing_transcript', 'Analyzing transcript...') },
+      { key: 'analyzed', doing: t('extracting_frames', 'Extracting key frames...') },
+      { key: 'frames_extracted', doing: t('creating_card', 'Creating card...') },
+      { key: 'complete', doing: t('done', 'Done') },
     ];
 
     function renderPipelineStatus(status) {
@@ -408,28 +604,28 @@
       let html = '';
 
       if (type === 'bug') {
-        html += list('Steps to Reproduce', a.steps);
-        html += field('Expected Result', a.expected);
-        html += field('Actual Result', a.actual);
+        html += list(t('steps_to_reproduce', 'Steps to Reproduce'), a.steps);
+        html += field(t('expected_result', 'Expected Result'), a.expected);
+        html += field(t('actual_result', 'Actual Result'), a.actual);
       } else if (type === 'feature') {
-        html += field('Proposal', a.proposal);
-        html += field('Use Case', a.use_case);
+        html += field(t('proposal', 'Proposal'), a.proposal);
+        html += field(t('use_case', 'Use Case'), a.use_case);
       } else if (type === 'enhancement') {
-        html += field('Current Behavior', a.current_behavior);
-        html += field('Proposed Change', a.proposed_change);
+        html += field(t('current_behavior', 'Current Behavior'), a.current_behavior);
+        html += field(t('proposed_change', 'Proposed Change'), a.proposed_change);
       } else if (type === 'demo') {
-        html += bullets('Key Points', a.key_points);
-        html += field('Details', a.details);
+        html += bullets(t('key_points', 'Key Points'), a.key_points);
+        html += field(t('details', 'Details'), a.details);
       }
 
       // Fallback: if GPT returned old-style fields, show them
       if (!html && a.steps?.length) {
-        html += list('Steps', a.steps);
-        html += field('Expected', a.expected);
-        html += field('Actual', a.actual);
+        html += list(t('steps_to_reproduce', 'Steps'), a.steps);
+        html += field(t('expected_result', 'Expected'), a.expected);
+        html += field(t('actual_result', 'Actual'), a.actual);
       }
 
-      html += field('Context', a.context);
+      html += field(t('context', 'Context'), a.context);
       return html;
     }
 
@@ -461,7 +657,7 @@
         const dpr = meta.devicePixelRatio || meta.screen?.devicePixelRatio;
 
         html += `<div class="context-section">
-          <h4 class="context-section-title">${icons.cards} Environment</h4>
+          <h4 class="context-section-title">${icons.cards} ${t('env_environment', 'Environment')}</h4>
           <div class="context-env">
             <span class="context-env-item">${escapeHTML(browser)}</span>
             <span class="context-env-item">${escapeHTML(os)}</span>
@@ -481,7 +677,7 @@
             p.source ? `<span class="context-env-item" title="Source">${escapeHTML(p.source)}</span>` : '',
           ].filter(Boolean).join('');
           html += `<div class="context-section">
-            <h4 class="context-section-title">${icons.user} CRM Profile</h4>
+            <h4 class="context-section-title">${icons.user} ${t('env_crm_profile', 'CRM Profile')}</h4>
             <div class="context-env">${items}</div>
           </div>`;
         }
@@ -491,7 +687,7 @@
       const urlEvents = recording.url_events || [];
       if (urlEvents.length > 0) {
         html += `<div class="context-section">
-          <h4 class="context-section-title">${icons.externalLink} Pages visited (${urlEvents.length})</h4>
+          <h4 class="context-section-title">${icons.externalLink} ${t('env_pages_visited', 'Pages visited')} (${urlEvents.length})</h4>
           <div class="context-list">`;
         for (const ev of urlEvents) {
           const mins = Math.floor(ev.ts / 60);
@@ -514,7 +710,7 @@
       const consoleEvents = recording.console_events || [];
       if (consoleEvents.length > 0) {
         html += `<div class="context-section">
-          <h4 class="context-section-title">${icons.alertTriangle} Console (${consoleEvents.length})</h4>
+          <h4 class="context-section-title">${icons.alertTriangle} ${t('env_console', 'Console')} (${consoleEvents.length})</h4>
           <div class="context-list">`;
         for (const ev of consoleEvents) {
           const mins = Math.floor(ev.ts / 60);
@@ -537,7 +733,7 @@
         const ACTION_ICONS = { click: '🖱', modal_open: '📂', modal_close: '📁', form_submit: '📤' };
         const ACTION_LABELS = { click: 'click', modal_open: 'open', modal_close: 'close', form_submit: 'submit' };
         html += `<div class="context-section">
-          <h4 class="context-section-title">${icons.activity} Actions (${actionEvents.length})</h4>
+          <h4 class="context-section-title">${icons.activity} ${t('env_actions', 'Actions')} (${actionEvents.length})</h4>
           <div class="context-list">`;
         for (const ev of actionEvents) {
           const mins = Math.floor(ev.ts / 60);
@@ -560,7 +756,7 @@
       }
 
       if (!html) {
-        html = '<div class="text-dim">No context data captured. Update Chrome extension to capture URL events and console errors.</div>';
+        html = `<div class="text-dim">${t('no_context', 'No context data captured. Update Chrome extension to capture URL events and console errors.')}</div>`;
       }
 
       return html;
@@ -590,13 +786,13 @@
           const frameId = parseInt(btn.dataset.frameId);
           const status = document.getElementById('timelineStatus');
           try {
-            if (status) status.textContent = 'Deleting...';
+            if (status) status.textContent = t('deleting', 'Deleting...');
             await deleteKeyframe(recordingId, frameId);
             const data = await getRecording(recordingId);
             currentData = data;
             render(data);
           } catch (err) {
-            if (status) status.textContent = 'Error: ' + err.message;
+            if (status) status.textContent = t('status_error', 'Error') + ': ' + err.message;
           }
         });
       });
@@ -633,13 +829,13 @@
           onKeyframeChange: async (frameId, newTime) => {
             const status = document.getElementById('timelineStatus');
             try {
-              status.textContent = 'Saving...';
+              status.textContent = t('saving', 'Saving...');
               const allFrames = timeline.getFrames();
               await updateKeyframes(recordingId, allFrames.map(f => ({ id: f.id, time_seconds: f.time_seconds })));
-              status.textContent = 'Saved';
+              status.textContent = t('saved', 'Saved');
               setTimeout(() => { status.textContent = ''; }, 2000);
             } catch (err) {
-              status.textContent = 'Error: ' + err.message;
+              status.textContent = t('status_error', 'Error') + ': ' + err.message;
             }
           },
           onKeyframeSelect: (frameId, time) => {
@@ -648,26 +844,26 @@
           onKeyframeDelete: async (frameId) => {
             const status = document.getElementById('timelineStatus');
             try {
-              if (status) status.textContent = 'Deleting...';
+              if (status) status.textContent = t('deleting', 'Deleting...');
               await deleteKeyframe(recordingId, frameId);
               const data = await getRecording(recordingId);
               currentData = data;
               render(data);
             } catch (err) {
-              if (status) status.textContent = 'Error: ' + err.message;
+              if (status) status.textContent = t('status_error', 'Error') + ': ' + err.message;
             }
           },
           onKeyframeAdd: async (time) => {
             const status = document.getElementById('timelineStatus');
             try {
-              status.textContent = 'Extracting frame...';
+              status.textContent = t('extracting_frame', 'Extracting frame...');
               const result = await addKeyframe(recordingId, time, '');
               // Reload to show new thumbnail on timeline + in frames tab
               const data = await getRecording(recordingId);
               currentData = data;
               render(data);
             } catch (err) {
-              status.textContent = 'Error: ' + err.message;
+              status.textContent = t('status_error', 'Error') + ': ' + err.message;
             }
           },
         });
@@ -1265,6 +1461,161 @@
             createNewBtn.innerHTML = `${icons.send} Create new issue`;
             createNewBtn.classList.remove('btn-primary');
           }
+        });
+      }
+    }
+
+    // --- Video Comments Panel (dashboard with moderation) ---
+
+    async function loadDashboardComments() {
+      const list = document.getElementById('vCommentList');
+      const countEl = document.getElementById('vCommentCount');
+      if (!list) return;
+
+      try {
+        const data = await getVideoComments(recordingId);
+        const comments = data.comments || [];
+        countEl.textContent = `(${comments.length})`;
+
+        if (comments.length === 0) {
+          list.innerHTML = '<div class="text-dim" style="text-align:center;padding:12px;">No comments yet</div>';
+          return;
+        }
+
+        list.innerHTML = comments.map(c => {
+          const timecodeHTML = c.timecode_seconds != null
+            ? `<span class="vc-timecode" data-time="${c.timecode_seconds}" style="display:inline-flex;align-items:center;gap:3px;background:var(--blue-dim);color:var(--blue);font-size:0.7rem;font-weight:600;padding:1px 7px;border-radius:4px;cursor:pointer;font-family:monospace;">${formatTimecode(c.timecode_seconds)}</span>`
+            : '';
+          return `
+            <div style="padding:8px 12px;border-radius:var(--radius);display:flex;align-items:flex-start;gap:8px;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+                  <span style="font-weight:600;font-size:0.85rem;">${escapeHTML(c.author_name)}</span>
+                  ${timecodeHTML}
+                  <span style="font-size:0.75rem;color:var(--text3);">${timeAgo(c.created_at)}</span>
+                </div>
+                <div style="font-size:0.85rem;color:var(--text2);line-height:1.5;white-space:pre-wrap;word-break:break-word;">${escapeHTML(c.text)}</div>
+              </div>
+              <button class="btn btn-sm vc-delete-btn" data-comment-id="${c.id}" title="Delete comment" style="flex-shrink:0;padding:4px 6px;opacity:0.4;">
+                ${icons.x}
+              </button>
+            </div>
+          `;
+        }).join('');
+
+        // Timecode click -> seek video
+        list.querySelectorAll('.vc-timecode').forEach(el => {
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+              video.currentTime = parseFloat(el.dataset.time);
+              video.play();
+            }
+          });
+        });
+
+        // Delete buttons
+        list.querySelectorAll('.vc-delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Delete this comment?')) return;
+            btn.disabled = true;
+            try {
+              await deleteVideoComment(recordingId, btn.dataset.commentId);
+              await loadDashboardComments();
+            } catch (err) {
+              alert('Failed to delete: ' + err.message);
+              btn.disabled = false;
+            }
+          });
+        });
+      } catch (err) {
+        list.innerHTML = '<div class="text-dim" style="text-align:center;padding:12px;">Failed to load comments</div>';
+      }
+    }
+
+    function setupVideoCommentsPanel() {
+      loadDashboardComments();
+
+      const authorInput = document.getElementById('vCommentAuthor');
+      const textInput = document.getElementById('vCommentText');
+      const timecodeCheck = document.getElementById('vCommentTimecodeCheck');
+      const timecodePreview = document.getElementById('vCommentTimecodePreview');
+      const submitBtn = document.getElementById('vCommentSubmit');
+      const errorEl = document.getElementById('vCommentError');
+      if (!submitBtn) return;
+
+      // Restore saved name
+      const savedName = localStorage.getItem('bugreel_comment_name');
+      if (savedName && authorInput) authorInput.value = savedName;
+
+      // Timecode preview
+      const video = document.getElementById('videoPlayer');
+
+      if (timecodeCheck) {
+        timecodeCheck.addEventListener('change', () => {
+          if (timecodeCheck.checked && video && timecodePreview) {
+            timecodePreview.textContent = formatTimecode(video.currentTime);
+            timecodePreview.style.display = '';
+          } else if (timecodePreview) {
+            timecodePreview.style.display = 'none';
+          }
+        });
+      }
+
+      if (video && timecodeCheck) {
+        video.addEventListener('timeupdate', () => {
+          if (timecodeCheck.checked && timecodePreview) {
+            timecodePreview.textContent = formatTimecode(video.currentTime);
+          }
+        });
+      }
+
+      submitBtn.addEventListener('click', async () => {
+        const authorName = authorInput?.value.trim();
+        const text = textInput?.value.trim();
+        if (errorEl) errorEl.style.display = 'none';
+
+        if (!authorName) {
+          if (errorEl) { errorEl.textContent = 'Please enter your name.'; errorEl.style.display = ''; }
+          authorInput?.focus();
+          return;
+        }
+        if (!text) {
+          if (errorEl) { errorEl.textContent = 'Please enter a comment.'; errorEl.style.display = ''; }
+          textInput?.focus();
+          return;
+        }
+
+        const timecode = timecodeCheck?.checked && video ? video.currentTime : null;
+
+        submitBtn.disabled = true;
+        const origHTML = submitBtn.innerHTML;
+        submitBtn.textContent = 'Posting...';
+
+        try {
+          await addVideoComment(recordingId, authorName, text, timecode);
+          localStorage.setItem('bugreel_comment_name', authorName);
+          if (textInput) textInput.value = '';
+          if (timecodeCheck) timecodeCheck.checked = false;
+          if (timecodePreview) timecodePreview.style.display = 'none';
+          await loadDashboardComments();
+        } catch (err) {
+          const msg = err.message || 'Failed to post comment.';
+          if (errorEl) {
+            errorEl.textContent = msg.includes('429') ? 'Too many comments. Please wait.' : msg;
+            errorEl.style.display = '';
+          }
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origHTML;
+        }
+      });
+
+      // Ctrl+Enter to submit
+      if (textInput) {
+        textInput.addEventListener('keydown', (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submitBtn.click();
         });
       }
     }

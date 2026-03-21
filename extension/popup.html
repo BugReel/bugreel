@@ -4,14 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BugReel</title>
+  <script src="i18n.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      width: 300px;
+      width: 340px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #060a14; color: #e2e8f0; padding: 0;
       -webkit-font-smoothing: antialiased;
+      opacity: 0; transition: opacity 0.12s ease;
     }
+    body.loaded { opacity: 1; }
 
     .popup-inner { padding: 0 16px 16px; }
 
@@ -57,10 +60,18 @@
     .toggle input:checked + .toggle-slider::after { transform: translateX(16px); background: white; }
 
     .mic-level-container { margin-top: 3px; padding-left: 19px; height: 14px; display: flex; align-items: center; gap: 6px; }
+    .mic-level-container.hidden { display: none; }
     .mic-level-track { flex: 1; height: 3px; background: #0e1525; border-radius: 2px; overflow: hidden; }
     .mic-level-bar { height: 100%; width: 0%; background: #22c55e; border-radius: 2px; transition: width 0.05s linear; }
     .mic-level-label { font-size: 9px; color: #334155; white-space: nowrap; min-width: 20px; }
     .mic-level-container.inactive .mic-level-bar { width: 0% !important; background: #334155; }
+
+    .mic-status { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; margin-left: 6px; }
+    .mic-status.hidden { display: none; }
+    .mic-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .mic-status-dot.ready { background: #22c55e; }
+    .mic-status-dot.denied { background: #f59e0b; }
+    .mic-status-text { color: #64748b; }
 
     .mic-warn { background: #1c1306; border: 1px solid #854d0e; border-radius: 6px; padding: 6px 8px; margin-top: 6px; font-size: 10px; color: #fbbf24; line-height: 1.4; display: flex; align-items: flex-start; gap: 5px; }
     .mic-warn svg { width: 12px; height: 12px; flex-shrink: 0; margin-top: 1px; }
@@ -130,8 +141,8 @@
     <div class="brand-logo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
     </div>
-    <h1>BugReel</h1>
-    <div class="subtitle">Screen Recorder</div>
+    <h1 data-i18n="brandName">BugReel</h1>
+    <div class="subtitle" data-i18n="popup_subtitle">Screen Recorder</div>
   </div>
 
   <!-- Controls (hidden during recording) -->
@@ -143,44 +154,78 @@
         <span id="user-display-name" style="font-size:11px;color:#e2e8f0;flex:1;"></span>
       </div>
       <div id="user-not-connected" class="hidden" style="padding:6px 10px;background:#1c1306;border:1px solid #854d0e;border-radius:8px;font-size:11px;color:#fbbf24;">
-        Not connected &mdash; <a href="#" id="link-setup-auth" style="color:#3b82f6;text-decoration:underline;cursor:pointer;">Set up account</a>
+        <span data-i18n="popup_notConnected">Not connected</span> &mdash; <a href="#" id="link-setup-auth" style="color:#3b82f6;text-decoration:underline;cursor:pointer;" data-i18n="popup_setupAccount">Set up account</a>
       </div>
     </div>
     <!-- Legacy author dropdown (hidden when token auth is active) -->
     <div class="field hidden" id="author-field">
-      <label>Author</label>
-      <select id="input-author"><option value="">Loading...</option></select>
+      <label data-i18n="popup_labelAuthor">Author</label>
+      <select id="input-author"><option value="" data-i18n="popup_loading">Loading...</option></select>
     </div>
     <div class="field">
-      <label>Source</label>
+      <label data-i18n="popup_labelSource">Source</label>
       <div class="source-selector" id="source-selector">
         <button class="source-option active" data-mode="tab">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          Tab
+          <span data-i18n="popup_sourceTab">Tab</span>
         </button>
         <button class="source-option" data-mode="desktop">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 16 21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          Screen
+          <span data-i18n="popup_sourceScreen">Screen</span>
         </button>
       </div>
     </div>
     <div class="audio-toggles">
       <div class="toggle-row">
-        <span class="toggle-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Microphone</span>
+        <span class="toggle-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> <span data-i18n="popup_toggleMicrophone">Microphone</span> <span class="mic-status hidden" id="mic-status"><span class="mic-status-dot" id="mic-status-dot"></span><span class="mic-status-text" id="mic-status-text"></span></span></span>
         <label class="toggle"><input type="checkbox" id="toggle-mic" checked><span class="toggle-slider"></span></label>
       </div>
-      <div class="mic-level-container inactive" id="mic-level-container">
-        <div class="mic-level-track"><div class="mic-level-bar" id="mic-level-bar"></div></div>
-        <span class="mic-level-label" id="mic-level-label"></span>
-      </div>
       <div class="toggle-row">
-        <span class="toggle-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> System audio</span>
+        <span class="toggle-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> <span data-i18n="popup_toggleSystemAudio">System audio</span></span>
         <label class="toggle"><input type="checkbox" id="toggle-system" checked><span class="toggle-slider"></span></label>
       </div>
+      <div class="toggle-row">
+        <span class="toggle-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14V10z"/><rect x="1" y="6" width="14" height="12" rx="2" ry="2"/></svg> <span data-i18n="popup_toggleWebcam">Webcam</span></span>
+        <label class="toggle"><input type="checkbox" id="toggle-webcam"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+    <div class="field hidden" id="webcam-device-field" style="margin-bottom:10px;">
+      <label data-i18n="popup_labelWebcamDevice">Camera</label>
+      <select id="select-webcam-device" style="padding:6px 8px;font-size:11px;">
+        <option value="" data-i18n="popup_defaultCamera">Default camera</option>
+      </select>
     </div>
     <div class="mic-warn hidden" id="mic-permission-warn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span>Microphone not allowed. <a id="grant-mic-btn">Grant access</a></span>
+      <span><span data-i18n="popup_micNotAllowed">Microphone not allowed.</span> <a id="grant-mic-btn" data-i18n="popup_grantAccess">Grant access</a></span>
+    </div>
+
+    <!-- Settings -->
+    <div style="margin-top:8px;">
+      <div style="display:flex;gap:6px;">
+        <div class="field" style="flex:1;margin-bottom:0;">
+          <label data-i18n="popup_settingMax">Max</label>
+          <select id="setting-max-duration" style="padding:6px 8px;font-size:11px;">
+            <option value="5" data-i18n="popup_setting5min">5 min</option>
+            <option value="10" selected data-i18n="popup_setting10min">10 min</option>
+            <option value="15" data-i18n="popup_setting15min">15 min</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1;margin-bottom:0;">
+          <label data-i18n="popup_settingQuality">Quality</label>
+          <select id="setting-quality" style="padding:6px 8px;font-size:11px;">
+            <option value="720p" selected>720p</option>
+            <option value="1080p">1080p</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1;margin-bottom:0;">
+          <label data-i18n="popup_settingAfterRec">After rec</label>
+          <select id="setting-after-recording" style="padding:6px 8px;font-size:11px;">
+            <option value="review" selected data-i18n="popup_settingReview">Review</option>
+            <option value="auto-upload" data-i18n="popup_settingAuto">Auto</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -188,30 +233,38 @@
   <div class="divider"></div>
 
   <div class="record-section">
+    <!-- Timer + audio status (shown during recording/paused, above buttons) -->
+    <div class="timer inactive" id="timer">00:00</div>
+
+    <div class="rec-audio-status hidden" id="rec-audio-status">
+      <span class="rec-audio-badge" id="badge-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> <span data-i18n="popup_badgeMic">Mic</span></span>
+      <span class="rec-audio-badge" id="badge-system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> <span data-i18n="popup_badgeSystem">System</span></span>
+      <span class="rec-audio-badge hidden" id="badge-webcam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14V10z"/><rect x="1" y="6" width="14" height="12" rx="2" ry="2"/></svg> <span data-i18n="popup_badgeCam">Cam</span></span>
+    </div>
+
+    <!-- Mic level bar (visible during recording) -->
+    <div class="mic-level-container hidden" id="mic-level-container">
+      <div class="mic-level-track"><div class="mic-level-bar" id="mic-level-bar"></div></div>
+      <span class="mic-level-label" id="mic-level-label"></span>
+    </div>
+
     <!-- State: idle -->
     <div id="state-idle" class="hidden">
       <button class="btn btn-red btn-full" id="btn-start">
-        <span class="rec-dot"></span> Start Recording
+        <span class="rec-dot"></span> <span data-i18n="popup_startRecording">Start Recording</span>
       </button>
     </div>
 
     <!-- State: recording -->
     <div id="state-recording" class="hidden">
-      <div class="rec-hint" id="rec-hint" style="font-size:10px;color:#64748b;background:#0e1525;border:1px solid #1e2d48;border-radius:8px;padding:7px 10px;margin-bottom:8px;text-align:left;line-height:1.5;transition:opacity 0.3s;">
-        <span style="color:#94a3b8;font-weight:600;">Say:</span>
-        <span style="color:#e2e8f0;">WHAT</span> you're doing &middot;
-        <span style="color:#e2e8f0;">WHAT</span> you see &middot;
-        <span style="color:#e2e8f0;">WHAT</span> you expected &middot;
-        <span style="color:#f59e0b;">WHY</span> it matters
-      </div>
       <div class="btn-row">
         <button class="btn btn-amber" id="btn-pause">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-          Pause
+          <span data-i18n="popup_pause">Pause</span>
         </button>
         <button class="btn btn-outline" id="btn-stop">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-          Stop
+          <span data-i18n="popup_stop">Stop</span>
         </button>
       </div>
     </div>
@@ -220,15 +273,15 @@
     <div id="state-paused" class="hidden">
       <div class="btn-row">
         <button class="btn btn-red" id="btn-resume">
-          <span class="rec-dot pulse"></span> Resume
+          <span class="rec-dot pulse"></span> <span data-i18n="popup_resume">Resume</span>
         </button>
         <button class="btn btn-blue" id="btn-finish">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Finish
+          <span data-i18n="popup_finish">Finish</span>
         </button>
       </div>
       <div style="text-align:center;margin-top:6px;">
-        <button id="btn-discard" style="background:none;border:none;color:#475569;font-size:11px;cursor:pointer;padding:2px 8px;text-decoration:underline;">Discard recording</button>
+        <button id="btn-discard" style="background:none;border:none;color:#475569;font-size:11px;cursor:pointer;padding:2px 8px;text-decoration:underline;" data-i18n="popup_discardRecording">Discard recording</button>
       </div>
     </div>
 
@@ -236,36 +289,29 @@
     <div id="state-ready" class="hidden">
       <button class="btn btn-blue btn-full" id="btn-open-review" style="margin-bottom:6px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Review &amp; Upload
+        <span data-i18n="popup_reviewUpload">Review &amp; Upload</span>
       </button>
-      <button class="btn btn-outline btn-full" id="btn-new-recording" style="font-size:11px;">
+      <button class="btn btn-outline btn-full" id="btn-new-recording" style="font-size:11px;" data-i18n="popup_newRecording">
         New recording (discards current)
       </button>
-    </div>
-
-    <div class="timer inactive" id="timer">00:00</div>
-
-    <div class="rec-audio-status hidden" id="rec-audio-status">
-      <span class="rec-audio-badge" id="badge-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Mic</span>
-      <span class="rec-audio-badge" id="badge-system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> System</span>
     </div>
   </div>
 
   <div id="status-bar-wrap" class="hidden">
     <div class="status-bar">
       <span class="status-dot gray" id="status-dot"></span>
-      <span class="status-text" id="status-text">Ready</span>
+      <span class="status-text" id="status-text" data-i18n="popup_statusReady">Ready</span>
     </div>
   </div>
 
   <div id="recent-recordings" class="hidden" style="margin-top:8px;">
-    <div style="font-size:10px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Recent</div>
+    <div style="font-size:10px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;" data-i18n="popup_recent">Recent</div>
     <div id="recent-list"></div>
   </div>
 
   <a href="#" class="dashboard-link" id="dashboard-link">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-    Open Dashboard
+    <span data-i18n="popup_openDashboard">Open Dashboard</span>
   </a>
   </div>
 

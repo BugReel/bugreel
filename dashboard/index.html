@@ -4,38 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recordings - BugReel</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/i18n-dashboard.js"></script>
 </head>
 <body>
   <div id="header"></div>
 
   <main class="container page">
     <div class="page-header">
-      <h1>Recordings</h1>
-      <p class="page-desc">Screen recordings from QA team</p>
+      <h1 data-i18n="index_title">Recordings</h1>
+      <p class="page-desc" data-i18n="index_desc">Screen recordings from QA team</p>
     </div>
 
     <!-- Filters -->
     <div class="filter-bar">
       <div class="filter-group">
-        <label>Status</label>
+        <label data-i18n="filter_status">Status</label>
         <select id="filterStatus">
-          <option value="">All statuses</option>
-          <option value="uploaded">Uploaded</option>
-          <option value="transcribed">Transcribed</option>
-          <option value="analyzed">Analyzed</option>
-          <option value="complete">Complete</option>
-          <option value="error">Error</option>
-          <option value="yt_pending">Not sent to tracker</option>
+          <option value="" data-i18n="filter_all_statuses">All statuses</option>
+          <option value="uploaded" data-i18n="status_uploaded">Uploaded</option>
+          <option value="transcribed" data-i18n="status_transcribed">Transcribed</option>
+          <option value="analyzed" data-i18n="status_analyzed">Analyzed</option>
+          <option value="complete" data-i18n="status_complete">Complete</option>
+          <option value="error" data-i18n="status_error">Error</option>
+          <option value="yt_pending" data-i18n="filter_not_sent">Not sent to tracker</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Author</label>
-        <input type="text" id="filterAuthor" placeholder="Filter by author...">
+        <label data-i18n="filter_author">Author</label>
+        <input type="text" id="filterAuthor" data-i18n="filter_author_placeholder" data-i18n-attr="placeholder" placeholder="Filter by author...">
       </div>
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="search" id="filterSearch" placeholder="Search recordings...">
+        <input type="search" id="filterSearch" data-i18n="filter_search_placeholder" data-i18n-attr="placeholder" placeholder="Search recordings...">
       </div>
     </div>
 
@@ -46,9 +47,10 @@
   </main>
 
   <script type="module">
-    import { getRecordings } from '/js/api.js';
-    import { renderHeader, formatDate, formatDuration, statusLabel, icons, escapeHTML } from '/js/shared.js';
+    import { getRecordings } from './js/api.js';
+    import { renderHeader, formatDate, formatDuration, statusLabel, icons, escapeHTML } from './js/shared.js';
 
+    const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     const YOUTRACK_URL = window.__BUGREEL_CONFIG__?.youtrackUrl || '';
 
     // Render header
@@ -86,7 +88,7 @@
         tableWrapper.innerHTML = `
           <div class="empty-state">
             ${icons.alertTriangle}
-            <p>Failed to load recordings: ${escapeHTML(err.message)}</p>
+            <p>${t('failed_load_recordings', 'Failed to load recordings')}: ${escapeHTML(err.message)}</p>
           </div>
         `;
       }
@@ -97,7 +99,7 @@
         tableWrapper.innerHTML = `
           <div class="empty-state">
             ${icons.inbox}
-            <p>No recordings found</p>
+            <p>${t('no_recordings', 'No recordings found')}</p>
           </div>
         `;
         return;
@@ -120,12 +122,12 @@
           <thead>
             <tr>
               <th style="width:56px;"></th>
-              <th>Recording</th>
-              <th>Author</th>
-              <th>Date</th>
-              <th>Status</th>
+              <th>${t('th_recording', 'Recording')}</th>
+              <th>${t('th_author', 'Author')}</th>
+              <th>${t('th_date', 'Date')}</th>
+              <th>${t('th_status', 'Status')}</th>
               <th>YT</th>
-              <th>Duration</th>
+              <th>${t('th_duration', 'Duration')}</th>
             </tr>
           </thead>
           <tbody>
@@ -139,9 +141,11 @@
                 </td>
                 <td>
                   <div class="rec-info">
-                    <a href="/recording/${encodeURIComponent(r.id)}" style="font-weight:600; font-family:'JetBrains Mono','Fira Code',monospace; font-size:0.8rem;">
+                    <a href="recording/${encodeURIComponent(r.id)}" style="font-weight:600; font-family:'JetBrains Mono','Fira Code',monospace; font-size:0.8rem;">
                       ${escapeHTML(r.id)}
                     </a>
+                    ${r.has_password ? `<span class="badge" style="background:var(--amber-dim); color:var(--amber); font-size:0.6rem; padding:1px 6px; gap:3px;" title="Password protected">${icons.lock}</span>` : ''}
+                    ${r.comment_count > 0 ? `<span class="badge" style="background:var(--blue-dim); color:var(--blue); font-size:0.6rem; padding:1px 6px; gap:3px;" title="${r.comment_count} comment${r.comment_count > 1 ? 's' : ''}">${icons.messageCircle} ${r.comment_count}</span>` : ''}
                     ${r.card_title ? `<span class="rec-title">${escapeHTML(r.card_title)}</span>` : ''}
                   </div>
                 </td>
@@ -168,7 +172,7 @@
         ${total > PAGE_SIZE ? `
           <div class="pagination">
             <div class="pagination-info">
-              Showing ${currentOffset + 1}-${Math.min(currentOffset + PAGE_SIZE, total)} of ${total}
+              ${t('showing', 'Showing')} ${currentOffset + 1}-${Math.min(currentOffset + PAGE_SIZE, total)} ${t('of', 'of')} ${total}
             </div>
             <div class="pagination-buttons">
               <button class="btn btn-sm" ${currentPage <= 1 ? 'disabled' : ''} data-page="prev">

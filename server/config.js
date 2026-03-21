@@ -1,13 +1,17 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(__dirname, '..');
+
+// Load .env from project root (not CWD) — works regardless of how the process is launched
+dotenv.config({ path: path.join(projectRoot, '.env') });
 
 export const config = {
   port: process.env.PORT || 3500,
   host: process.env.HOST || '0.0.0.0',
-  dataDir: path.resolve(process.env.DATA_DIR || path.join(__dirname, '..', 'data', 'recordings')),
+  dataDir: path.resolve(process.env.DATA_DIR || path.join(projectRoot, 'data')),
   whisper: {
     url: process.env.WHISPER_URL || 'https://api.openai.com/v1/audio/transcriptions',
   },

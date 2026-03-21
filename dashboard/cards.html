@@ -4,48 +4,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cards - BugReel</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/i18n-dashboard.js"></script>
 </head>
 <body>
   <div id="header"></div>
 
   <main class="container page">
     <div class="page-header">
-      <h1>Cards Queue</h1>
-      <p class="page-desc">Task cards generated from recordings</p>
+      <h1 data-i18n="cards_title">Cards Queue</h1>
+      <p class="page-desc" data-i18n="cards_desc">Task cards generated from recordings</p>
     </div>
 
     <!-- Filters -->
     <div class="filter-bar">
       <div class="filter-group">
-        <label>Status</label>
+        <label data-i18n="filter_status">Status</label>
         <select id="filterStatus">
-          <option value="">All statuses</option>
-          <option value="draft">Draft</option>
-          <option value="scored">Scored</option>
-          <option value="done">Done</option>
+          <option value="" data-i18n="filter_all_statuses">All statuses</option>
+          <option value="draft" data-i18n="status_draft">Draft</option>
+          <option value="scored" data-i18n="status_scored">Scored</option>
+          <option value="done" data-i18n="status_done">Done</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Priority</label>
+        <label data-i18n="filter_priority">Priority</label>
         <select id="filterPriority">
-          <option value="">All priorities</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="urgent">Urgent</option>
+          <option value="" data-i18n="filter_all_priorities">All priorities</option>
+          <option value="low" data-i18n="priority_low">Low</option>
+          <option value="medium" data-i18n="priority_medium">Medium</option>
+          <option value="high" data-i18n="priority_high">High</option>
+          <option value="urgent" data-i18n="priority_urgent">Urgent</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Assigned to</label>
-        <input type="text" id="filterAssigned" placeholder="Filter by assignee...">
+        <label data-i18n="filter_assigned">Assigned to</label>
+        <input type="text" id="filterAssigned" data-i18n="filter_assigned_placeholder" data-i18n-attr="placeholder" placeholder="Filter by assignee...">
       </div>
       <div class="sort-bar">
-        <label>Sort by</label>
+        <label data-i18n="sort_by">Sort by</label>
         <select id="sortBy">
-          <option value="date">Date</option>
-          <option value="cs">CS Score</option>
-          <option value="priority">Priority</option>
+          <option value="date" data-i18n="sort_date">Date</option>
+          <option value="cs" data-i18n="sort_cs">CS Score</option>
+          <option value="priority" data-i18n="sort_priority">Priority</option>
         </select>
       </div>
     </div>
@@ -57,12 +58,13 @@
   </main>
 
   <script type="module">
-    import { getCards } from '/js/api.js';
+    import { getCards } from './js/api.js';
     import {
       renderHeader, formatDate, statusLabel, categoryLabel, csCircleHTML,
       escapeHTML, icons, timeAgo
-    } from '/js/shared.js';
+    } from './js/shared.js';
 
+    const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('cards');
 
     // State
@@ -95,7 +97,7 @@
         container.innerHTML = `
           <div class="empty-state">
             ${icons.alertTriangle}
-            <p>Failed to load cards: ${escapeHTML(err.message)}</p>
+            <p>${t('failed_load_cards', 'Failed to load cards')}: ${escapeHTML(err.message)}</p>
           </div>
         `;
       }
@@ -118,7 +120,7 @@
         container.innerHTML = `
           <div class="empty-state">
             ${icons.inbox}
-            <p>No cards found</p>
+            <p>${t('no_cards', 'No cards found')}</p>
           </div>
         `;
         return;
@@ -139,7 +141,18 @@
     }
 
     function renderCardItem(card) {
-      const priorityMap = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' };
+      const priorityMap = {
+        low: t('priority_low', 'Low'),
+        medium: t('priority_medium', 'Medium'),
+        high: t('priority_high', 'High'),
+        urgent: t('priority_urgent', 'Urgent'),
+      };
+      const typeMap = {
+        bug: t('type_bug', 'Bug'),
+        feature: t('type_feature', 'Feature'),
+        enhancement: t('type_enhancement', 'Enhancement'),
+        demo: t('type_demo', 'Demo'),
+      };
 
       return `
         <div class="card-item" data-id="${card.id}">
@@ -149,20 +162,20 @@
               : ''
             }
             <div style="flex:1; min-width:0;">
-              <div class="card-item-title">${escapeHTML(card.title || 'Untitled')}</div>
+              <div class="card-item-title">${escapeHTML(card.title || t('untitled', 'Untitled'))}</div>
               ${card.summary ? `<div class="card-item-summary">${escapeHTML(card.summary)}</div>` : ''}
             </div>
             ${card.cs_total != null ? csCircleHTML(card.cs_total, card.cs_category, 'cs-circle-sm') : ''}
           </div>
           <div class="card-item-meta">
-            ${card.type ? `<span class="badge badge-${card.type}">${escapeHTML(card.type)}</span>` : ''}
+            ${card.type ? `<span class="badge badge-${card.type}">${escapeHTML(typeMap[card.type] || card.type)}</span>` : ''}
             ${card.cs_category ? `<span class="badge badge-${card.cs_category}">${categoryLabel(card.cs_category)}</span>` : ''}
             ${card.priority ? `<span class="badge badge-priority-${card.priority}">${priorityMap[card.priority] || card.priority}</span>` : ''}
             ${card.status ? `<span class="badge badge-${card.status}">${statusLabel(card.status)}</span>` : ''}
           </div>
           <div class="card-item-footer">
             <span class="meta-text">
-              ${card.assigned_to ? `${icons.user} ${escapeHTML(card.assigned_to)}` : '<span class="text-dim">Unassigned</span>'}
+              ${card.assigned_to ? `${icons.user} ${escapeHTML(card.assigned_to)}` : `<span class="text-dim">${t('unassigned', 'Unassigned')}</span>`}
             </span>
             <span class="meta-text">${timeAgo(card.created_at)}</span>
           </div>

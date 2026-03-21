@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import path from 'path';
 import fs from 'fs';
 
 const execAsync = promisify(exec);
@@ -91,5 +92,81 @@ export async function extractFrame(videoPath, timeSeconds, outputPath) {
     );
   } catch (err) {
     throw new Error(`ffmpeg extractFrame failed at ${timeSeconds}s: ${err.stderr || err.message}`);
+  }
+}
+
+/**
+ * Trim video to a specific time range. Re-encodes for frame-accurate seeking
+ * (MediaRecorder WebM has sparse keyframes — stream copy can't seek accurately).
+ * Uses same compression settings as compressVideo, so result is already compressed.
+ * Replaces original file.
+ * @param {string} videoPath - path to source video
+ * @param {number} startSec - trim start in seconds
+ * @param {number} endSec - trim end in seconds
+ */
+export async function trimVideo(videoPath, startSec, endSec) {
+  const tmpPath = videoPath.replace('.webm', '.trimmed.webm');
+  const duration = endSec - startSec;
+  try {
+    await execAsync(
+      `ffmpeg -y -i "${videoPath}" -ss ${startSec} -t ${duration} -c:v libvpx-vp9 -crf 35 -b:v 0 -cpu-used 4 -row-mt 1 -vf "scale='min(1920,iw)':-2" -c:a libopus -b:a 64k -max_muxing_queue_size 4096 "${tmpPath}"`,
+      { timeout: 300000 }
+    );
+    fs.renameSync(tmpPath, videoPath);
+  } catch (err) {
+    try { fs.unlinkSync(tmpPath); } catch {}
+    throw new Error(`ffmpeg trimVideo failed: ${err.stderr || err.message}`);
+  }
+}
+
+/**
+ * Extract multiple segments and concatenate them (stream copy, no re-encoding).
+ * Used for trim + middle cuts. Replaces original file.
+ * @param {string} videoPath - path to source video
+ * @param {Array<{start: number, end: number}>} segments - time ranges to keep
+ */
+export async function segmentVideo(videoPath, segments) {
+  if (segments.length === 0) return;
+  if (segments.length === 1) {
+    return trimVideo(videoPath, segments[0].start, segments[0].end);
+  }
+
+  const dir = path.dirname(videoPath);
+  const segFiles = [];
+
+  try {
+    // Extract each segment with re-encode (MediaRecorder WebM has sparse keyframes — stream copy can't seek accurately)
+    // Uses same compression settings as compressVideo, so result is already compressed
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      const duration = seg.end - seg.start;
+      const segPath = path.join(dir, `seg_${i}.webm`);
+      await execAsync(
+        `ffmpeg -y -i "${videoPath}" -ss ${seg.start} -t ${duration} -c:v libvpx-vp9 -crf 35 -b:v 0 -cpu-used 4 -row-mt 1 -vf "scale='min(1920,iw)':-2" -c:a libopus -b:a 64k -max_muxing_queue_size 4096 "${segPath}"`,
+        { timeout: 300000 }
+      );
+      segFiles.push(segPath);
+    }
+
+    // Concat re-encoded segments (stream copy is fine here — all segments have same codec settings)
+    const listPath = path.join(dir, 'concat_list.txt');
+    fs.writeFileSync(listPath, segFiles.map(f => `file '${f}'`).join('\n'));
+
+    const tmpPath = videoPath.replace('.webm', '.concat.webm');
+    await execAsync(
+      `ffmpeg -y -f concat -safe 0 -i "${listPath}" -c copy "${tmpPath}"`,
+      { timeout: 120000 }
+    );
+    fs.renameSync(tmpPath, videoPath);
+
+    // Cleanup temp files
+    for (const f of segFiles) { try { fs.unlinkSync(f); } catch {} }
+    try { fs.unlinkSync(listPath); } catch {}
+  } catch (err) {
+    // Cleanup on error
+    for (const f of segFiles) { try { fs.unlinkSync(f); } catch {} }
+    try { fs.unlinkSync(path.join(dir, 'concat_list.txt')); } catch {}
+    try { fs.unlinkSync(videoPath.replace('.webm', '.concat.webm')); } catch {}
+    throw new Error(`ffmpeg segmentVideo failed: ${err.stderr || err.message}`);
   }
 }

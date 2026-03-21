@@ -64,7 +64,9 @@ chrome.commands.onCommand.addListener(async (command) => {
 // Notification click → open recording page
 chrome.notifications.onClicked.addListener(async (notifId) => {
   const serverUrl = await getServerUrl();
-  const url = `${serverUrl}/recording/${encodeURIComponent(notifId)}`;
+  const stored = await chrome.storage.local.get('dashboardPath');
+  const dashPath = stored.dashboardPath || '/';
+  const url = `${serverUrl}${dashPath}recording/${encodeURIComponent(notifId)}`;
   chrome.tabs.create({ url });
   chrome.notifications.clear(notifId);
 });
@@ -222,6 +224,9 @@ async function closeRecorderContext() {
     console.log('[BugReel] Closing recorder tab:', recorderTabId);
     try { await chrome.tabs.remove(recorderTabId); } catch {}
     recorderTabId = null;
+  } else if (HAS_OFFSCREEN) {
+    // Chrome: close offscreen document to release mic/streams
+    try { await chrome.offscreen.closeDocument(); } catch {}
   }
 }
 
@@ -311,7 +316,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // --- Commands from popup/review ---
   if (message.type === 'start-recording') {
     if (message.screenInfo) screenInfo = message.screenInfo;
-    handleStartRecording(message.tabId, message.mode, message.micEnabled, message.systemAudioEnabled)
+    handleStartRecording(message.tabId, message.mode, message.micEnabled, message.systemAudioEnabled, message.webcamEnabled, message.webcamDeviceId)
       .then(r => { try { sendResponse(r); } catch {} })
       .catch(e => {
         console.error('[BugReel] handleStartRecording error:', e);
@@ -350,6 +355,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.runtime.sendMessage({ type: 'offscreen-finish', target: 'offscreen' }).catch(() => {});
     (async () => {
       await setState('ready');
+      // Auto-open review page
+      chrome.tabs.create({ url: chrome.runtime.getURL('review.html'), active: true }).catch(() => {});
       sendResponse({ success: true });
     })();
     return true;
@@ -362,11 +369,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: false, error: 'Not recording' });
         return;
       }
-      chrome.runtime.sendMessage({
-        type: 'offscreen-finish', target: 'offscreen',
-        autoUpload: true, ...buildUploadExtras()
-      }).catch(() => {});
-      await setState('uploading');
+      // Check user preference: review first or auto-upload
+      const prefs = await chrome.storage.local.get('afterRecording');
+      if (prefs.afterRecording === 'auto-upload') {
+        chrome.runtime.sendMessage({
+          type: 'offscreen-finish', target: 'offscreen',
+          autoUpload: true, ...buildUploadExtras()
+        }).catch(() => {});
+        await setState('uploading');
+      } else {
+        // Default: save blob and go to review screen
+        chrome.runtime.sendMessage({ type: 'offscreen-finish', target: 'offscreen' }).catch(() => {});
+        await setState('ready');
+        // Auto-open review page so user doesn't have to guess
+        chrome.tabs.create({ url: chrome.runtime.getURL('review.html'), active: true }).catch(() => {});
+      }
       sendResponse({ success: true });
     })();
     return true;
@@ -374,8 +391,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'start-upload') {
     if (state !== 'ready') return sendResponse({ success: false, error: 'No recording ready' });
+    const segments = message.segments; // [{start, end}, ...] or undefined
     ensureRecorderContext().then(() => {
-      chrome.runtime.sendMessage({ type: 'offscreen-upload', target: 'offscreen', ...buildUploadExtras() }).catch(() => {});
+      chrome.runtime.sendMessage({
+        type: 'offscreen-upload', target: 'offscreen',
+        ...buildUploadExtras(),
+        segments
+      }).catch(() => {});
       setState('uploading');
     });
     sendResponse({ success: true });
@@ -406,15 +428,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   // --- Mic preview ---
-  if (message.type === 'mic-preview-start' || message.type === 'mic-preview-stop') {
+  if (message.type === 'mic-preview-start') {
     if (IS_FIREFOX) {
-      // Firefox: skip mic preview (creating recorder tab for preview breaks UX)
       sendResponse({ ok: true });
       return false;
     }
     ensureRecorderContext().then(() => {
       chrome.runtime.sendMessage({ ...message, target: 'offscreen' }).catch(() => {});
     });
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  if (message.type === 'mic-preview-stop') {
+    if (IS_FIREFOX) {
+      sendResponse({ ok: true });
+      return false;
+    }
+    // Stop mic preview and close offscreen if not recording (releases mic indicator)
+    if (HAS_OFFSCREEN) {
+      chrome.runtime.getContexts({
+        contextTypes: ['OFFSCREEN_DOCUMENT'],
+        documentUrls: [chrome.runtime.getURL('recorder.html')]
+      }).then(ctx => {
+        if (ctx.length > 0) {
+          chrome.runtime.sendMessage({ ...message, target: 'offscreen' }).catch(() => {});
+          if (state === 'idle') {
+            setTimeout(() => closeRecorderContext(), 300);
+          }
+        }
+      }).catch(() => {});
+    }
     sendResponse({ ok: true });
     return false;
   }
@@ -435,8 +479,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.notifications.create(recId, {
         type: 'basic',
         iconUrl: 'icons/icon128.png',
-        title: 'BugReel',
-        message: `Recording ${recId} uploaded. Processing started.`,
+        title: 'Video uploaded',
+        message: `${recId} — link copied to clipboard`,
       });
     }
     if (message.type === 'upload-error' && state === 'uploading') {
@@ -457,12 +501,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 /* ── Start recording ── */
 
-async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioEnabled = true) {
+async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioEnabled = true, webcamEnabled = false, webcamDeviceId = '') {
   if (state === 'recording' || state === 'paused') {
     return { success: false, error: 'Already recording' };
   }
 
-  console.log('[BugReel] Starting recording: mode=' + mode + ' mic=' + micEnabled + ' sys=' + systemAudioEnabled);
+  console.log('[BugReel] Starting recording: mode=' + mode + ' mic=' + micEnabled + ' sys=' + systemAudioEnabled + ' webcam=' + webcamEnabled);
 
   // Reset tracking state
   urlEvents = [];
@@ -512,6 +556,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
         serverUrl: serverUrl_,
         author: storage_.extensionToken ? (storage_.userName || 'unknown') : (storage_.author || 'unknown'),
         mode, micEnabled, systemAudioEnabled, streamId,
+        webcamEnabled, webcamDeviceId,
         extensionToken: storage_.extensionToken || ''
       }
     });
@@ -529,7 +574,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
   }
 
   const serverUrl = await getServerUrl();
-  const storage = await chrome.storage.local.get(['author', 'extensionToken', 'userName']);
+  const storage = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'maxDuration', 'videoQuality']);
   const author = storage.extensionToken ? (storage.userName || 'unknown') : (storage.author || 'unknown');
 
   console.log('[BugReel] Sending offscreen-start to recorder...');
@@ -542,7 +587,11 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
     mode,
     micEnabled,
     systemAudioEnabled,
+    webcamEnabled,
+    webcamDeviceId,
     extensionToken: storage.extensionToken || '',
+    maxDuration: storage.maxDuration || 10,
+    videoQuality: storage.videoQuality || '720p',
   });
 
   console.log('[BugReel] Recorder response:', offscreenResult);

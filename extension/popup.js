@@ -23,6 +23,9 @@ const inputAuthor    = $('input-author');
 const sourceSelector = $('source-selector');
 const toggleMic      = $('toggle-mic');
 const toggleSystem   = $('toggle-system');
+const toggleWebcam   = $('toggle-webcam');
+const webcamDeviceField = $('webcam-device-field');
+const selectWebcamDevice = $('select-webcam-device');
 const micLevelBar    = $('mic-level-bar');
 const micLevelLabel  = $('mic-level-label');
 const micLevelContainer = $('mic-level-container');
@@ -33,6 +36,7 @@ const timerEl        = $('timer');
 const recAudioStatus = $('rec-audio-status');
 const badgeMic       = $('badge-mic');
 const badgeSystem    = $('badge-system');
+const badgeWebcam    = $('badge-webcam');
 const statusDot      = $('status-dot');
 const statusText     = $('status-text');
 
@@ -64,8 +68,10 @@ let timerPausedElapsed = 0;
 (async function init() {
   const stored = await chrome.storage.local.get([
     'author', 'captureMode', 'micEnabled', 'systemAudioEnabled',
+    'webcamEnabled', 'webcamDeviceId',
     'extensionState', 'recordingStartedAt', 'pausedElapsed', 'serverUrl',
-    'extensionToken', 'userName', 'userEmail'
+    'extensionToken', 'userName', 'userEmail',
+    'maxDuration', 'videoQuality', 'afterRecording'
   ]);
   SERVER_URL = stored.serverUrl || '';
 
@@ -73,6 +79,19 @@ let timerPausedElapsed = 0;
   updateSourceSelector();
   toggleMic.checked = stored.micEnabled !== false;
   toggleSystem.checked = stored.systemAudioEnabled !== false;
+  toggleWebcam.checked = stored.webcamEnabled === true;
+  if (toggleWebcam.checked) {
+    webcamDeviceField.classList.remove('hidden');
+    populateWebcamDevices(stored.webcamDeviceId || '');
+  }
+
+  // Settings
+  const selMaxDur = $('setting-max-duration');
+  const selQuality = $('setting-quality');
+  const selAfterRec = $('setting-after-recording');
+  if (selMaxDur) { selMaxDur.value = stored.maxDuration || '10'; selMaxDur.addEventListener('change', () => chrome.storage.local.set({ maxDuration: parseInt(selMaxDur.value) })); }
+  if (selQuality) { selQuality.value = stored.videoQuality || '720p'; selQuality.addEventListener('change', () => chrome.storage.local.set({ videoQuality: selQuality.value })); }
+  if (selAfterRec) { selAfterRec.value = stored.afterRecording || 'review'; selAfterRec.addEventListener('change', () => chrome.storage.local.set({ afterRecording: selAfterRec.value })); }
 
   // Check for token-based auth vs legacy author dropdown
   if (stored.extensionToken) {
@@ -83,11 +102,12 @@ let timerPausedElapsed = 0;
     const authorField = $('author-field');
     if (authorField) authorField.classList.add('hidden');
   } else {
-    // No token: show legacy author dropdown for backward compat
+    // No token: show setup prompt, hide author dropdown and recent recordings
     showSetupPrompt();
     const authorField = $('author-field');
-    if (authorField) authorField.classList.remove('hidden');
-    await loadAuthors(stored.author || '');
+    if (authorField) authorField.classList.add('hidden');
+    const recentEl = $('recent-recordings');
+    if (recentEl) recentEl.classList.add('hidden');
   }
   updateStartButton();
 
@@ -135,8 +155,10 @@ let timerPausedElapsed = 0;
     showState('idle');
   }
 
-  // Load recent recordings (after author is set)
-  loadRecentRecordings();
+  // Load recent recordings only if authenticated (without token, API returns ALL recordings on server)
+  if (hasExtensionToken) {
+    loadRecentRecordings();
+  }
 
   // Show popup after state is determined (prevents flash of idle state)
   document.body.classList.add('loaded');
@@ -374,6 +396,48 @@ toggleMic.addEventListener('change', () => {
   updateMicStatus();
 });
 toggleSystem.addEventListener('change', () => chrome.storage.local.set({ systemAudioEnabled: toggleSystem.checked }));
+
+// Webcam toggle
+toggleWebcam.addEventListener('change', () => {
+  chrome.storage.local.set({ webcamEnabled: toggleWebcam.checked });
+  if (toggleWebcam.checked) {
+    webcamDeviceField.classList.remove('hidden');
+    populateWebcamDevices();
+  } else {
+    webcamDeviceField.classList.add('hidden');
+  }
+});
+
+// Webcam device selection
+if (selectWebcamDevice) {
+  selectWebcamDevice.addEventListener('change', () => {
+    chrome.storage.local.set({ webcamDeviceId: selectWebcamDevice.value });
+  });
+}
+
+async function populateWebcamDevices(savedDeviceId) {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoInputs = devices.filter(d => d.kind === 'videoinput');
+    selectWebcamDevice.innerHTML = '';
+    if (videoInputs.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = t('popup_noWebcam', 'No camera found');
+      selectWebcamDevice.appendChild(opt);
+      return;
+    }
+    for (const dev of videoInputs) {
+      const opt = document.createElement('option');
+      opt.value = dev.deviceId;
+      opt.textContent = dev.label || t('popup_defaultCamera', 'Camera') + ' ' + (selectWebcamDevice.options.length + 1);
+      if (savedDeviceId && dev.deviceId === savedDeviceId) opt.selected = true;
+      selectWebcamDevice.appendChild(opt);
+    }
+  } catch {
+    selectWebcamDevice.innerHTML = '<option value="">' + t('popup_defaultCamera', 'Default camera') + '</option>';
+  }
+}
 if (inputAuthor) {
   inputAuthor.addEventListener('change', () => {
     chrome.storage.local.set({ author: inputAuthor.value });
@@ -397,11 +461,12 @@ function updateSourceSelector() {
 /* --- Button handlers --- */
 
 function updateStartButton() {
-  // With token auth: always enabled. Without token: require author selection (legacy).
-  const disabled = !hasExtensionToken && !inputAuthor.value;
-  btnStart.disabled = disabled;
+  // Always enabled — recording works with or without token.
+  // With token: user identified via Bearer token.
+  // Without token: recording uploads as anonymous (self-hosted use case).
+  btnStart.disabled = false;
   const btnNew = document.getElementById('btn-new-recording');
-  if (btnNew) btnNew.disabled = disabled;
+  if (btnNew) btnNew.disabled = false;
 }
 
 // Ready state buttons
@@ -412,9 +477,8 @@ document.getElementById('btn-new-recording')?.addEventListener('click', () => st
 btnStart.addEventListener('click', () => startNewRecording());
 
 async function startNewRecording() {
-  // Determine author: from token (userName) or legacy dropdown
-  const author = hasExtensionToken ? currentUserName : inputAuthor.value;
-  if (!author && !hasExtensionToken) { setStatus('error', t('error_selectAuthor', 'Select an author')); return; }
+  // Determine author: from token (userName), legacy dropdown, or fallback to 'anonymous'
+  const author = hasExtensionToken ? currentUserName : (inputAuthor.value || 'anonymous');
 
   // Mic not granted: record without mic instead of blocking
   let micEnabled = toggleMic.checked;
@@ -438,9 +502,15 @@ async function startNewRecording() {
   stopMicPreview();
 
   try {
+    const webcamSettings = toggleWebcam.checked ? {
+      webcamEnabled: true,
+      webcamDeviceId: selectWebcamDevice.value || ''
+    } : { webcamEnabled: false };
+
     const result = await chrome.runtime.sendMessage({
       type: 'start-recording', tabId: tab?.id, mode: captureMode,
       micEnabled: micEnabled, systemAudioEnabled: toggleSystem.checked,
+      ...webcamSettings,
       screenInfo: {
         width: screen.width,
         height: screen.height,
@@ -482,11 +552,18 @@ btnPause.addEventListener('click', async () => {
 });
 
 btnStop.addEventListener('click', async () => {
+  const prefs = await chrome.storage.local.get('afterRecording');
   await chrome.runtime.sendMessage({ type: 'stop-and-upload' });
   stopTimer();
-  showState('idle');
-  $('status-bar-wrap').classList.remove('hidden');
-  setStatus('working', t('status_uploadingToServer', 'Uploading to server...'));
+  if (prefs.afterRecording === 'auto-upload') {
+    showState('idle');
+    $('status-bar-wrap').classList.remove('hidden');
+    setStatus('working', t('status_uploadingToServer', 'Uploading to server...'));
+  } else {
+    // Default: go to review screen
+    $('status-bar-wrap').classList.remove('hidden');
+    setStatus('working', t('status_saving', 'Saving recording...'));
+  }
 });
 
 btnResume.addEventListener('click', async () => {
@@ -536,6 +613,12 @@ chrome.runtime.onMessage.addListener((msg) => {
     recAudioStatus.classList.remove('hidden');
     badgeMic.className = `rec-audio-badge ${msg.mic ? 'on' : 'off'}`;
     badgeSystem.className = `rec-audio-badge ${msg.systemAudio ? 'on' : 'off'}`;
+    if (msg.webcam !== undefined) {
+      badgeWebcam.classList.remove('hidden');
+      badgeWebcam.className = `rec-audio-badge ${msg.webcam ? 'on' : 'off'}`;
+    } else {
+      badgeWebcam.classList.add('hidden');
+    }
   }
   if (msg.type === 'mic-level') {
     if (msg.level >= 0) {
@@ -548,14 +631,15 @@ chrome.runtime.onMessage.addListener((msg) => {
     }
   }
   if (msg.type === 'blob-saved') {
-    setStatus('working', t('status_uploadingToServer', 'Uploading to server...'));
+    // Blob saved to IDB — show review state
+    showState('ready');
   }
   if (msg.type === 'upload-started') setStatus('working', t('status_uploading', 'Uploading...'));
   if (msg.type === 'upload-progress') setStatus('working', t('status_uploadingPercent', 'Uploading') + ` ${msg.percent}%`);
   if (msg.type === 'upload-done') {
     showState('idle');
     $('status-bar-wrap').classList.remove('hidden');
-    const recUrl = `${SERVER_URL}/recording/${encodeURIComponent(msg.recordingId)}`;
+    const recUrl = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(msg.recordingId)}`;
     navigator.clipboard.writeText(recUrl).catch(() => {});
     setStatusWithLink('done', t('status_linkCopied', 'Link copied!'), msg.recordingId);
     loadRecentRecordings();
@@ -601,7 +685,7 @@ function setStatus(type, text) {
 }
 
 function setStatusWithLink(type, text, recordingId) {
-  const url = `${SERVER_URL}/recording/${encodeURIComponent(recordingId)}`;
+  const url = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(recordingId)}`;
   statusText.innerHTML = `${text} <a href="${url}" class="status-link" id="rec-link">${recordingId}</a>`;
   document.getElementById('rec-link')?.addEventListener('click', (e) => { e.preventDefault(); chrome.tabs.create({ url }); });
   statusDot.className = 'status-dot green';
@@ -609,6 +693,12 @@ function setStatusWithLink(type, text, recordingId) {
 
 /* --- Recent Recordings --- */
 async function loadRecentRecordings() {
+  // Without a token, API returns ALL recordings on the server (no user scoping)
+  if (!hasExtensionToken) {
+    const wrap = $('recent-recordings');
+    if (wrap) wrap.classList.add('hidden');
+    return;
+  }
   try {
     // With token auth, don't filter by author — the token scopes to the user
     const author = hasExtensionToken ? '' : inputAuthor.value;
@@ -646,7 +736,7 @@ async function loadRecentRecordings() {
       } else {
         statusClass = 'complete'; statusLabel = t('status_done', 'done');
       }
-      const url = `${SERVER_URL}/recording/${encodeURIComponent(r.id)}`;
+      const url = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(r.id)}`;
       return `<a href="${url}" class="recent-item" data-url="${url}">
         <span class="ri-title">${title.length > 35 ? title.slice(0, 32) + '...' : title}</span>
         <span class="ri-status ${statusClass}">${statusLabel}</span>
@@ -668,8 +758,7 @@ document.getElementById('grant-mic-btn')?.addEventListener('click', (e) => {
   chrome.tabs.create({ url: chrome.runtime.getURL('mic-permission.html') });
 });
 
-// Load recent on popup open
-loadRecentRecordings();
+// Recent recordings are loaded inside init() — no need for a duplicate call here.
 
 /* --- Cleanup on popup close --- */
 window.addEventListener('pagehide', () => {

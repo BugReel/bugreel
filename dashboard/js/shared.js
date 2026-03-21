@@ -3,6 +3,9 @@
  * Lucide-style SVG icons rendered inline (no emoji)
  */
 
+// --- i18n helper (loaded via i18n-dashboard.js before this module) ---
+const t = window.__dashboardI18n?.t || ((k, f) => f || k);
+
 // --- SVG Icons (Lucide-style, 24x24 viewBox) ---
 export const icons = {
   video: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`,
@@ -64,6 +67,12 @@ export const icons = {
   pencil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
 
   x: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+
+  code: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`,
+
+  lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
+
+  unlock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 5-5 5 5 0 0 1 5 5"></path></svg>`,
 };
 
 // --- Helpers ---
@@ -116,31 +125,36 @@ export function statusBadge(status) {
 }
 
 /**
- * Human label for recording status
+ * Human label for recording status (i18n-aware)
  */
 export function statusLabel(status) {
   const map = {
-    uploaded: 'Uploaded',
-    audio_extracted: 'Audio',
-    transcribing: 'Transcribing',
-    transcribed: 'Transcribed',
-    analyzed: 'Analyzed',
-    frames_extracted: 'Frames',
-    compressing: 'Compressing',
-    complete: 'Complete',
-    error: 'Error',
-    draft: 'Draft',
-    scored: 'Scored',
-    done: 'Done',
+    uploaded: t('status_uploaded', 'Uploaded'),
+    audio_extracted: t('status_audio_extracted', 'Audio'),
+    transcribing: t('status_transcribing', 'Transcribing'),
+    transcribed: t('status_transcribed', 'Transcribed'),
+    analyzed: t('status_analyzed', 'Analyzed'),
+    frames_extracted: t('status_frames_extracted', 'Frames'),
+    compressing: t('status_compressing', 'Compressing'),
+    complete: t('status_complete', 'Complete'),
+    error: t('status_error', 'Error'),
+    draft: t('status_draft', 'Draft'),
+    scored: t('status_scored', 'Scored'),
+    done: t('status_done', 'Done'),
   };
   return map[status] || status || '--';
 }
 
 /**
- * Human label for CS category
+ * Human label for CS category (i18n-aware)
  */
 export function categoryLabel(category) {
-  const map = { easy: 'Easy', medium: 'Medium', hard: 'Hard', critical: 'Critical' };
+  const map = {
+    easy: t('cs_easy', 'Easy'),
+    medium: t('cs_medium', 'Medium'),
+    hard: t('cs_hard', 'Hard'),
+    critical: t('cs_critical', 'Critical'),
+  };
   return map[category] || category || '--';
 }
 
@@ -252,14 +266,19 @@ export function renderComment(comment) {
 }
 
 /**
- * Build header + nav HTML (reusable across pages)
+ * Build header + nav HTML (reusable across pages, i18n-aware)
  */
 export function renderHeader(activePage) {
   const navItems = [
-    { href: '/', label: 'Recordings', icon: icons.video, key: 'recordings' },
-    { href: '/analytics', label: 'Analytics', icon: icons.chart, key: 'analytics' },
-    { href: '/guide', label: 'Guide', icon: icons.fileText, key: 'guide' },
+    { href: '/', label: t('nav_recordings', 'Recordings'), icon: icons.video, key: 'recordings' },
+    { href: '/analytics', label: t('nav_analytics', 'Analytics'), icon: icons.chart, key: 'analytics' },
+    { href: '/guide', label: t('nav_guide', 'Guide'), icon: icons.fileText, key: 'guide' },
   ];
+
+  const currentLang = window.__dashboardI18n?.lang || 'en';
+  const langSwitch = currentLang === 'ru'
+    ? `<button class="lang-btn" onclick="window.__dashboardI18n.setLang('en')" title="Switch to English">EN</button>`
+    : `<button class="lang-btn" onclick="window.__dashboardI18n.setLang('ru')" title="Переключить на русский">RU</button>`;
 
   return `
     <header class="app-header">
@@ -275,6 +294,7 @@ export function renderHeader(activePage) {
               <span>${item.label}</span>
             </a>
           `).join('')}
+          ${langSwitch}
         </nav>
       </div>
     </header>

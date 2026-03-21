@@ -94,6 +94,7 @@ router.get('/recordings', (req, res) => {
   const rows = db.prepare(
     `SELECT r.*,
       (SELECT f.filename FROM frames f WHERE f.recording_id = r.id ORDER BY f.time_seconds LIMIT 1) as first_frame,
+      (SELECT COUNT(*) FROM video_comments vc WHERE vc.recording_id = r.id) as comment_count,
       c.title as card_title,
       c.summary as card_summary,
       c.id as card_id,
@@ -105,6 +106,12 @@ router.get('/recordings', (req, res) => {
     ORDER BY r.created_at DESC LIMIT ? OFFSET ?`
   ).all(...params, parseInt(limit), parseInt(offset));
 
+  // Add has_password flag, remove password_hash from response
+  for (const row of rows) {
+    row.has_password = !!row.password_hash;
+    delete row.password_hash;
+  }
+
   res.json({ recordings: rows, total: countRow.total });
 });
 
@@ -113,6 +120,10 @@ router.get('/recordings/:id', (req, res) => {
   const db = getDB();
   const recording = db.prepare('SELECT * FROM recordings WHERE id = ?').get(req.params.id);
   if (!recording) return res.status(404).json({ error: 'Not found' });
+
+  // Add has_password flag, remove password_hash from response
+  recording.has_password = !!recording.password_hash;
+  delete recording.password_hash;
 
   // Parse JSON fields
   if (recording.transcript_json) {
@@ -146,7 +157,11 @@ router.get('/recordings/:id', (req, res) => {
     ? db.prepare('SELECT * FROM comments WHERE card_id = ? ORDER BY created_at').all(card.id)
     : [];
 
-  res.json({ recording, frames, card, comments });
+  const video_comments = db.prepare(
+    'SELECT id, recording_id, author_name, text, timecode_seconds, created_at FROM video_comments WHERE recording_id = ? ORDER BY created_at ASC'
+  ).all(req.params.id);
+
+  res.json({ recording, frames, card, comments, video_comments });
 });
 
 // Update transcript (words array — word-level editing)

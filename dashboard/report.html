@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Report - BugReel</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/i18n-dashboard.js"></script>
   <style>
     /* Report-specific gallery */
     .report-gallery {
@@ -129,6 +130,169 @@
       color: rgba(255,255,255,0.5);
       font-size: 0.8rem;
     }
+
+    /* --- Video Comments --- */
+    .video-comments {
+      margin-top: 32px;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+    }
+    .video-comments-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .video-comments-header h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .video-comments-header .comment-count {
+      background: var(--surface2);
+      color: var(--text3);
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .comment-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .comment-form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .comment-form input[type="text"],
+    .comment-form textarea {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .comment-form input[type="text"]:focus,
+    .comment-form textarea:focus {
+      border-color: var(--blue);
+    }
+    .comment-form textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .comment-form-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .comment-timecode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--text2);
+      cursor: pointer;
+      user-select: none;
+    }
+    .comment-timecode-toggle input[type="checkbox"] {
+      accent-color: var(--blue);
+    }
+    .comment-timecode-preview {
+      background: var(--blue-dim);
+      color: var(--blue);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    .comment-form .btn-submit {
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity var(--transition);
+    }
+    .comment-form .btn-submit:hover { opacity: 0.9; }
+    .comment-form .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .comment-form-error {
+      color: var(--red);
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+
+    .comment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .video-comment {
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      transition: background var(--transition);
+    }
+    .video-comment:hover {
+      background: var(--surface);
+    }
+    .video-comment-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .video-comment-author {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+    .video-comment-time {
+      font-size: 0.75rem;
+      color: var(--text3);
+    }
+    .video-comment-timecode {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: var(--blue-dim);
+      color: var(--blue);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      transition: background var(--transition);
+    }
+    .video-comment-timecode:hover {
+      background: rgba(59, 130, 246, 0.25);
+    }
+    .video-comment-text {
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .comments-empty {
+      text-align: center;
+      color: var(--text3);
+      font-size: 0.85rem;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
@@ -137,12 +301,14 @@
   </div>
 
   <script type="module">
-    import { getRecording, videoUrl, frameUrl } from '/js/api.js';
+    import { getRecording, videoUrl, frameUrl, getVideoComments, addVideoComment } from '../js/api.js';
     import {
       extractParam, formatDate, formatDuration, formatTimecode,
-      renderDescription, escapeHTML, icons
-    } from '/js/shared.js';
-    import { createTimeline } from '/js/timeline.js';
+      renderDescription, escapeHTML, icons, timeAgo
+    } from '../js/shared.js';
+    import { createTimeline } from '../js/timeline.js';
+
+    const t = window.__dashboardI18n?.t || ((k, f) => f || k);
 
     function formatFileSize(bytes) {
       if (!bytes) return '';
@@ -197,7 +363,7 @@
             <span class="detail-meta-item">${icons.calendar} ${formatDate(r.created_at)}</span>
             <span class="detail-meta-item">${icons.clock} ${formatDuration(r.duration_seconds)}</span>
             <a href="${videoUrl(r.id)}" download="${r.id}.webm" class="btn btn-sm" style="margin-left:auto; gap:6px; font-size:0.75rem;">
-              ${icons.video} Download
+              ${icons.video} ${t('report_download', 'Download')}
               <span style="font-size:0.65rem; color:var(--text3);">${formatFileSize(r.file_size_bytes)}</span>
             </a>
           </div>
@@ -233,6 +399,36 @@
               ${renderReportAnalysis(analysis, card)}
             </div>
           </div>
+
+          <!-- Video Comments Section -->
+          <div class="video-comments" id="videoComments">
+            <div class="video-comments-header">
+              <h2>${icons.messageCircle} Comments</h2>
+              <span class="comment-count" id="commentCount">...</span>
+            </div>
+
+            <!-- Add Comment Form -->
+            <div class="comment-form" id="commentForm">
+              <div class="comment-form-row">
+                <input type="text" id="commentAuthor" placeholder="Your name" maxlength="100" />
+              </div>
+              <textarea id="commentText" placeholder="Write a comment..." rows="3" maxlength="2000"></textarea>
+              <div class="comment-form-footer">
+                <label class="comment-timecode-toggle">
+                  <input type="checkbox" id="commentTimecodeCheck" />
+                  Link to current time
+                  <span class="comment-timecode-preview" id="commentTimecodePreview" style="display:none;"></span>
+                </label>
+                <button class="btn-submit" id="commentSubmit">Post comment</button>
+              </div>
+              <div class="comment-form-error" id="commentError" style="display:none;"></div>
+            </div>
+
+            <!-- Comments List -->
+            <div class="comment-list" id="commentList">
+              <div class="comments-empty">Loading comments...</div>
+            </div>
+          </div>
         </div>
 
         <!-- Lightbox -->
@@ -249,6 +445,8 @@
       setupTimeline(validFrames, r.duration_seconds);
       setupGallery(validFrames);
       setupLightbox();
+      loadComments();
+      setupCommentForm();
     }
 
     function renderReportAnalysis(a, card) {
@@ -263,31 +461,31 @@
       let html = '';
 
       if (type === 'bug') {
-        html += secList('Steps to Reproduce', a.steps, true);
-        html += sec('Expected Result', a.expected);
-        html += sec('Actual Result', a.actual);
+        html += secList(t('steps_to_reproduce', 'Steps to Reproduce'), a.steps, true);
+        html += sec(t('expected_result', 'Expected Result'), a.expected);
+        html += sec(t('actual_result', 'Actual Result'), a.actual);
       } else if (type === 'feature') {
-        html += sec('Proposal', a.proposal);
-        html += sec('Use Case', a.use_case);
+        html += sec(t('proposal', 'Proposal'), a.proposal);
+        html += sec(t('use_case', 'Use Case'), a.use_case);
       } else if (type === 'enhancement') {
-        html += sec('Current Behavior', a.current_behavior);
-        html += sec('Proposed Change', a.proposed_change);
+        html += sec(t('current_behavior', 'Current Behavior'), a.current_behavior);
+        html += sec(t('proposed_change', 'Proposed Change'), a.proposed_change);
       } else if (type === 'demo') {
-        html += secList('Key Points', a.key_points, false);
-        html += sec('Details', a.details);
+        html += secList(t('key_points', 'Key Points'), a.key_points, false);
+        html += sec(t('details', 'Details'), a.details);
       }
 
       // Fallback for old recordings
       if (!html && a.steps?.length) {
-        html += secList('Steps to reproduce', a.steps, true);
-        html += sec('Expected result', a.expected);
-        html += sec('Actual result', a.actual);
+        html += secList(t('steps_to_reproduce', 'Steps to reproduce'), a.steps, true);
+        html += sec(t('expected_result', 'Expected result'), a.expected);
+        html += sec(t('actual_result', 'Actual result'), a.actual);
       }
 
-      html += sec('Context', a.context);
+      html += sec(t('context', 'Context'), a.context);
 
       if (!html && card?.description) {
-        html += `<div class="report-section"><h3>Description</h3><div class="formatted-text">${renderDescription(card.description)}</div></div>`;
+        html += `<div class="report-section"><h3>${t('description', 'Description')}</h3><div class="formatted-text">${renderDescription(card.description)}</div></div>`;
       }
 
       return html;
@@ -374,9 +572,210 @@
       document.getElementById('lb-next').style.display = lightboxFrames.length > 1 ? '' : 'none';
     }
 
+    // --- Video Comments ---
+
+    async function loadComments() {
+      const list = document.getElementById('commentList');
+      const countEl = document.getElementById('commentCount');
+      if (!list) return;
+
+      try {
+        const data = await getVideoComments(recordingId);
+        const comments = data.comments || [];
+        countEl.textContent = comments.length;
+
+        if (comments.length === 0) {
+          list.innerHTML = '<div class="comments-empty">No comments yet. Be the first to comment!</div>';
+          return;
+        }
+
+        list.innerHTML = comments.map(c => {
+          const timecodeHTML = c.timecode_seconds != null
+            ? `<span class="video-comment-timecode" data-time="${c.timecode_seconds}">${formatTimecode(c.timecode_seconds)}</span>`
+            : '';
+          return `
+            <div class="video-comment">
+              <div class="video-comment-header">
+                <span class="video-comment-author">${escapeHTML(c.author_name)}</span>
+                ${timecodeHTML}
+                <span class="video-comment-time">${timeAgo(c.created_at)}</span>
+              </div>
+              <div class="video-comment-text">${escapeHTML(c.text)}</div>
+            </div>
+          `;
+        }).join('');
+
+        // Timecode click → seek video
+        list.querySelectorAll('.video-comment-timecode').forEach(el => {
+          el.addEventListener('click', () => {
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+              video.currentTime = parseFloat(el.dataset.time);
+              video.play();
+              video.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          });
+        });
+      } catch (err) {
+        list.innerHTML = '<div class="comments-empty">Failed to load comments.</div>';
+      }
+    }
+
+    function setupCommentForm() {
+      const form = document.getElementById('commentForm');
+      const authorInput = document.getElementById('commentAuthor');
+      const textInput = document.getElementById('commentText');
+      const timecodeCheck = document.getElementById('commentTimecodeCheck');
+      const timecodePreview = document.getElementById('commentTimecodePreview');
+      const submitBtn = document.getElementById('commentSubmit');
+      const errorEl = document.getElementById('commentError');
+      if (!form || !submitBtn) return;
+
+      // Restore saved author name from localStorage
+      const savedName = localStorage.getItem('bugreel_comment_name');
+      if (savedName) authorInput.value = savedName;
+
+      // Update timecode preview when checkbox changes or video plays
+      function updateTimecodePreview() {
+        const video = document.getElementById('videoPlayer');
+        if (timecodeCheck.checked && video) {
+          timecodePreview.textContent = formatTimecode(video.currentTime);
+          timecodePreview.style.display = '';
+        } else {
+          timecodePreview.style.display = 'none';
+        }
+      }
+
+      timecodeCheck.addEventListener('change', updateTimecodePreview);
+
+      // Update preview periodically when checked
+      const video = document.getElementById('videoPlayer');
+      if (video) {
+        video.addEventListener('timeupdate', () => {
+          if (timecodeCheck.checked) {
+            timecodePreview.textContent = formatTimecode(video.currentTime);
+          }
+        });
+      }
+
+      submitBtn.addEventListener('click', async () => {
+        const authorName = authorInput.value.trim();
+        const text = textInput.value.trim();
+
+        errorEl.style.display = 'none';
+
+        if (!authorName) {
+          errorEl.textContent = 'Please enter your name.';
+          errorEl.style.display = '';
+          authorInput.focus();
+          return;
+        }
+        if (!text) {
+          errorEl.textContent = 'Please enter a comment.';
+          errorEl.style.display = '';
+          textInput.focus();
+          return;
+        }
+
+        const video = document.getElementById('videoPlayer');
+        const timecode = timecodeCheck.checked && video ? video.currentTime : null;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Posting...';
+
+        try {
+          await addVideoComment(recordingId, authorName, text, timecode);
+          // Save name for next time
+          localStorage.setItem('bugreel_comment_name', authorName);
+          // Clear form
+          textInput.value = '';
+          timecodeCheck.checked = false;
+          timecodePreview.style.display = 'none';
+          // Reload comments
+          await loadComments();
+        } catch (err) {
+          const msg = err.message || 'Failed to post comment.';
+          if (msg.includes('429')) {
+            errorEl.textContent = 'Too many comments. Please wait a minute before posting again.';
+          } else {
+            errorEl.textContent = msg;
+          }
+          errorEl.style.display = '';
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Post comment';
+        }
+      });
+
+      // Allow Ctrl+Enter to submit
+      textInput.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          submitBtn.click();
+        }
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       if (recordingId) load();
     });
+  </script>
+
+  <!-- View analytics tracking -->
+  <script>
+    (function() {
+      var rid = location.pathname.split('/report/')[1];
+      if (!rid) return;
+      rid = decodeURIComponent(rid.replace(/\/$/, ''));
+
+      var viewId = null;
+      var heartbeatInterval = null;
+
+      // Log the view
+      fetch('/api/analytics/view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recording_id: rid })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.ok && data.view_id) {
+          viewId = data.view_id;
+          // Start heartbeat every 30 seconds
+          heartbeatInterval = setInterval(sendHeartbeat, 30000);
+        }
+      })
+      .catch(function() { /* analytics is non-critical */ });
+
+      function sendHeartbeat() {
+        if (!viewId) return;
+        fetch('/api/analytics/heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ view_id: viewId, seconds: 30 })
+        }).catch(function() {});
+      }
+
+      // Send final heartbeat on page unload via Beacon API
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden' && viewId) {
+          var data = JSON.stringify({ view_id: viewId, seconds: 30 });
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon('/api/analytics/heartbeat',
+              new Blob([data], { type: 'application/json' }));
+          }
+        }
+      });
+
+      window.addEventListener('beforeunload', function() {
+        if (!viewId) return;
+        var data = JSON.stringify({ view_id: viewId, seconds: 30 });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/analytics/heartbeat',
+            new Blob([data], { type: 'application/json' }));
+        }
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+      });
+    })();
   </script>
 </body>
 </html>

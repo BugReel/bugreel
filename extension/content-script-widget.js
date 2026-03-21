@@ -7,6 +7,12 @@
   let state = { extensionState: 'idle', recordingStartedAt: 0, pausedElapsed: 0, pausedAt: 0 };
   let dragState = null;
 
+  /** i18n helper — returns translated string or fallback */
+  const t = (key, fallback) => {
+    try { return chrome.i18n?.getMessage(key) || fallback || key; }
+    catch { return fallback || key; }
+  };
+
   function formatTime(ms) {
     const s = Math.floor(ms / 1000);
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -111,12 +117,12 @@
 <div class="widget">
   <span class="dot"></span>
   <span class="time">0:00</span>
-  <button class="btn btn-mark" title="Mark screenshot (⌘⇧S)">
+  <button class="btn btn-mark" title="${t('widget_titleMark', 'Mark screenshot')} (⌘⇧S)">
     <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
     <span class="mark-count"></span>
   </button>
-  <button class="btn btn-toggle" title="Pause"></button>
-  <button class="btn btn-stop" title="Stop">
+  <button class="btn btn-toggle" title="${t('widget_titlePause', 'Pause')}"></button>
+  <button class="btn btn-stop" title="${t('widget_titleStop', 'Stop')}">
     <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
   </button>
 </div>`;
@@ -175,12 +181,12 @@
 
     if (isRec) {
       btnToggle.className = 'btn btn-toggle btn-pause';
-      btnToggle.title = 'Pause';
+      btnToggle.title = t('widget_titlePause', 'Pause');
       btnToggle.innerHTML = '<svg viewBox="0 0 24 24"><rect x="7" y="5" width="3" height="14" rx="1"/><rect x="14" y="5" width="3" height="14" rx="1"/></svg>';
       startTimer();
     } else {
       btnToggle.className = 'btn btn-toggle btn-resume';
-      btnToggle.title = 'Resume';
+      btnToggle.title = t('widget_titleResume', 'Resume');
       btnToggle.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg>';
       stopTimer();
       showFrozenTimer();

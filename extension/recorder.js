@@ -15,6 +15,14 @@ let audioContext = null;
 let maxDurationTimer = null;
 let maxDurationRemaining = 0;
 
+// Webcam PiP
+let webcamStream = null;
+let webcamVideo = null;
+let pipCanvas = null;
+let pipCtx = null;
+let pipAnimationFrame = null;
+let screenVideo = null;
+
 // Mic preview
 let micPreviewStream = null;
 let micPreviewCtx = null;
@@ -35,15 +43,16 @@ let pendingAutoUpload = null;
 // Firefox recorder window timer
 let recorderTimerInterval = null;
 
-const MAX_DURATION_MS = 10 * 60 * 1000;
-const MAX_VIDEO_WIDTH = 1280;
+// Defaults — overridden by user settings from chrome.storage.local
+let MAX_DURATION_MS = 10 * 60 * 1000;
+let MAX_VIDEO_WIDTH = 1280;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.target !== 'offscreen') return;
 
   switch (message.type) {
     case 'offscreen-start':
-      startRecording(message.streamId, message.serverUrl, message.author, message.mode, message.micEnabled, message.systemAudioEnabled, message.extensionToken)
+      startRecording(message.streamId, message.serverUrl, message.author, message.mode, message.micEnabled, message.systemAudioEnabled, message.extensionToken, message.maxDuration, message.videoQuality, message.webcamEnabled, message.webcamDeviceId)
         .then(() => sendResponse({ success: true }))
         .catch((err) => sendResponse({ success: false, error: err.message }));
       return true;
@@ -76,7 +85,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
 
     case 'offscreen-upload':
-      doUpload({ urlEvents: message.urlEvents, consoleEvents: message.consoleEvents, actionEvents: message.actionEvents, manualMarkers: message.manualMarkers, metadata: message.metadata })
+      doUpload({ urlEvents: message.urlEvents, consoleEvents: message.consoleEvents, actionEvents: message.actionEvents, manualMarkers: message.manualMarkers, metadata: message.metadata, segments: message.segments })
         .then(() => sendResponse({ success: true }))
         .catch((err) => sendResponse({ success: false, error: err.message }));
       return true;
@@ -137,13 +146,19 @@ function stopMicPreview() {
 
 /* --- Recording --- */
 
-async function startRecording(streamId, serverUrl, author, mode, micEnabled, systemAudioEnabled, extensionToken) {
+async function startRecording(streamId, serverUrl, author, mode, micEnabled, systemAudioEnabled, extensionToken, maxDuration, videoQuality, webcamEnabled, webcamDeviceId) {
   pendingServerUrl = serverUrl;
   pendingAuthor = author;
   pendingExtensionToken = extensionToken || '';
 
+  // Apply user settings (passed via message from background.js — chrome.storage is not available in offscreen)
+  const maxDurationMin = maxDuration || 10;
+  MAX_DURATION_MS = maxDurationMin * 60 * 1000;
+  MAX_VIDEO_WIDTH = videoQuality === '1080p' ? 1920 : 1280;
+
   let hasMic = false;
   let hasSystemAudio = false;
+  let hasWebcam = false;
 
   // Reuse mic stream from preview if available
   if (micEnabled && micPreviewStream && micPreviewStream.getAudioTracks().length > 0) {
@@ -223,7 +238,26 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     }
   }
 
-  chrome.runtime.sendMessage({ type: 'audio-status', mic: hasMic, systemAudio: hasSystemAudio }).catch(() => {});
+  // Webcam capture for PiP overlay
+  if (webcamEnabled) {
+    try {
+      const webcamConstraints = {
+        video: webcamDeviceId
+          ? { deviceId: { exact: webcamDeviceId }, width: { ideal: 200 }, height: { ideal: 200 } }
+          : { width: { ideal: 200 }, height: { ideal: 200 } },
+        audio: false
+      };
+      webcamStream = await navigator.mediaDevices.getUserMedia(webcamConstraints);
+      hasWebcam = webcamStream.getVideoTracks().length > 0;
+      console.log('[BugReel] Webcam captured for PiP overlay');
+    } catch (e) {
+      console.warn('[BugReel] Webcam capture failed:', e.message);
+      webcamStream = null;
+      hasWebcam = false;
+    }
+  }
+
+  chrome.runtime.sendMessage({ type: 'audio-status', mic: hasMic, systemAudio: hasSystemAudio, webcam: hasWebcam }).catch(() => {});
 
   // Downscale video to max 1280px width
   const videoTrack = captureStream.getVideoTracks()[0];
@@ -242,6 +276,15 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     }
   }
 
+  // Determine the video track for recording: composite via canvas if webcam is active
+  let finalVideoTrack;
+
+  if (hasWebcam) {
+    finalVideoTrack = await setupWebcamPiP(captureStream.getVideoTracks()[0]);
+  } else {
+    finalVideoTrack = captureStream.getVideoTracks()[0];
+  }
+
   // Mix audio
   let combinedStream;
   const captureHasAudio = captureStream.getAudioTracks().length > 0;
@@ -251,14 +294,14 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     const dest = audioContext.createMediaStreamDestination();
     audioContext.createMediaStreamSource(captureStream).connect(dest);
     audioContext.createMediaStreamSource(micStream).connect(dest);
-    mixedStream = new MediaStream([captureStream.getVideoTracks()[0], dest.stream.getAudioTracks()[0]]);
+    mixedStream = new MediaStream([finalVideoTrack, dest.stream.getAudioTracks()[0]]);
     combinedStream = mixedStream;
   } else if (captureHasAudio) {
-    combinedStream = captureStream;
+    combinedStream = new MediaStream([finalVideoTrack, ...captureStream.getAudioTracks()]);
   } else if (hasMic) {
-    combinedStream = new MediaStream([captureStream.getVideoTracks()[0], micStream.getAudioTracks()[0]]);
+    combinedStream = new MediaStream([finalVideoTrack, micStream.getAudioTracks()[0]]);
   } else {
-    combinedStream = captureStream;
+    combinedStream = new MediaStream([finalVideoTrack]);
   }
 
   // MediaRecorder
@@ -286,6 +329,121 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
   // Update visible timer in recorder window (Firefox popup mode)
   startRecorderWindowTimer();
   updateRecorderWindowUI('recording');
+}
+
+/* --- Webcam PiP compositing via Canvas --- */
+
+async function setupWebcamPiP(screenTrack) {
+  const PIP_DIAMETER = 150;
+  const PIP_MARGIN = 20;
+
+  // Get screen video dimensions
+  const screenSettings = screenTrack.getSettings();
+  const canvasWidth = screenSettings.width || 1280;
+  const canvasHeight = screenSettings.height || 720;
+  const fps = screenSettings.frameRate || 30;
+
+  // Create canvas for compositing
+  pipCanvas = document.createElement('canvas');
+  pipCanvas.width = canvasWidth;
+  pipCanvas.height = canvasHeight;
+  pipCtx = pipCanvas.getContext('2d');
+
+  // Create hidden video element for screen capture
+  screenVideo = document.createElement('video');
+  screenVideo.srcObject = new MediaStream([screenTrack]);
+  screenVideo.muted = true;
+  screenVideo.playsInline = true;
+  await screenVideo.play();
+
+  // Create hidden video element for webcam
+  webcamVideo = document.createElement('video');
+  webcamVideo.srcObject = webcamStream;
+  webcamVideo.muted = true;
+  webcamVideo.playsInline = true;
+  await webcamVideo.play();
+
+  // PiP position: bottom-left corner
+  const pipX = PIP_MARGIN + PIP_DIAMETER / 2;
+  const pipY = canvasHeight - PIP_MARGIN - PIP_DIAMETER / 2;
+  const pipRadius = PIP_DIAMETER / 2;
+
+  // Compositing render loop
+  function drawFrame() {
+    // Draw screen capture
+    pipCtx.drawImage(screenVideo, 0, 0, canvasWidth, canvasHeight);
+
+    // Draw webcam in a circular mask (bottom-left)
+    if (webcamVideo.readyState >= 2) {
+      pipCtx.save();
+
+      // Draw circular border/shadow behind the webcam
+      pipCtx.beginPath();
+      pipCtx.arc(pipX, pipY, pipRadius + 3, 0, Math.PI * 2);
+      pipCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      pipCtx.fill();
+
+      // Clip to circle
+      pipCtx.beginPath();
+      pipCtx.arc(pipX, pipY, pipRadius, 0, Math.PI * 2);
+      pipCtx.closePath();
+      pipCtx.clip();
+
+      // Draw webcam video — center-crop to square
+      const ww = webcamVideo.videoWidth;
+      const wh = webcamVideo.videoHeight;
+      const side = Math.min(ww, wh);
+      const sx = (ww - side) / 2;
+      const sy = (wh - side) / 2;
+      pipCtx.drawImage(
+        webcamVideo,
+        sx, sy, side, side,         // source: center-cropped square
+        pipX - pipRadius, pipY - pipRadius, PIP_DIAMETER, PIP_DIAMETER  // dest: circle area
+      );
+
+      // Draw a subtle ring border
+      pipCtx.beginPath();
+      pipCtx.arc(pipX, pipY, pipRadius, 0, Math.PI * 2);
+      pipCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      pipCtx.lineWidth = 2;
+      pipCtx.stroke();
+
+      pipCtx.restore();
+    }
+
+    pipAnimationFrame = requestAnimationFrame(drawFrame);
+  }
+
+  drawFrame();
+
+  // Capture the canvas as a video track
+  const canvasStream = pipCanvas.captureStream(fps);
+  const compositeTrack = canvasStream.getVideoTracks()[0];
+  console.log('[BugReel] Webcam PiP compositing started: ' + canvasWidth + 'x' + canvasHeight + '@' + fps + 'fps');
+  return compositeTrack;
+}
+
+function stopWebcamPiP() {
+  if (pipAnimationFrame) {
+    cancelAnimationFrame(pipAnimationFrame);
+    pipAnimationFrame = null;
+  }
+  if (screenVideo) {
+    screenVideo.pause();
+    screenVideo.srcObject = null;
+    screenVideo = null;
+  }
+  if (webcamVideo) {
+    webcamVideo.pause();
+    webcamVideo.srcObject = null;
+    webcamVideo = null;
+  }
+  if (webcamStream) {
+    webcamStream.getTracks().forEach(t => t.stop());
+    webcamStream = null;
+  }
+  pipCanvas = null;
+  pipCtx = null;
 }
 
 function pauseRecording() {
@@ -348,6 +506,7 @@ function stopMicLevelMonitor() {
 
 function releaseStreams() {
   stopMicLevelMonitor();
+  stopWebcamPiP();
   if (captureStream) { captureStream.getTracks().forEach(t => t.stop()); captureStream = null; }
   if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
   if (mixedStream) { mixedStream.getTracks().forEach(t => t.stop()); mixedStream = null; }
@@ -386,30 +545,32 @@ async function handleRecordingFinished() {
   recordedChunks = [];
   console.log('[BugReel] Blob created: ' + (blob.size / 1048576).toFixed(1) + 'MB');
 
-  if (pendingAutoUpload) {
-    console.log('[BugReel] Direct upload (no IDB)...');
-    updateRecorderWindowUI('uploading');
-    const extras = pendingAutoUpload;
-    pendingAutoUpload = null;
-    await directUpload(blob, extras);
-  } else {
-    try {
-      await saveRecordingBlob(blob, {
-        serverUrl: pendingServerUrl,
-        author: pendingAuthor,
-        timestamp: Date.now(),
-        size: blob.size,
-      });
-      console.log('[BugReel] Blob saved to IDB OK');
-      chrome.runtime.sendMessage({ type: 'blob-saved', fileSize: blob.size }).catch(() => {});
-    } catch (e) {
-      console.error('[BugReel] Failed to save blob:', e);
-      chrome.runtime.sendMessage({ type: 'upload-error', error: 'Failed to save: ' + e.message }).catch(() => {});
+  try {
+    if (pendingAutoUpload) {
+      console.log('[BugReel] Direct upload (no IDB)...');
+      updateRecorderWindowUI('uploading');
+      const extras = pendingAutoUpload;
+      pendingAutoUpload = null;
+      await directUpload(blob, extras);
+    } else {
+      try {
+        await saveRecordingBlob(blob, {
+          serverUrl: pendingServerUrl,
+          author: pendingAuthor,
+          timestamp: Date.now(),
+          size: blob.size,
+        });
+        console.log('[BugReel] Blob saved to IDB OK');
+        chrome.runtime.sendMessage({ type: 'blob-saved', fileSize: blob.size }).catch(() => {});
+      } catch (e) {
+        console.error('[BugReel] Failed to save blob:', e);
+        chrome.runtime.sendMessage({ type: 'upload-error', error: 'Failed to save: ' + e.message }).catch(() => {});
+      }
     }
+  } finally {
+    mediaRecorder = null;
+    releaseStreams();
   }
-
-  mediaRecorder = null;
-  releaseStreams();
 }
 
 async function directUpload(blob, extras) {
@@ -481,6 +642,7 @@ async function doUpload(extras = {}) {
   if (extras.actionEvents) formData.append('action_events', extras.actionEvents);
   if (extras.manualMarkers) formData.append('manual_markers', extras.manualMarkers);
   if (extras.metadata) formData.append('metadata', extras.metadata);
+  if (extras.segments) formData.append('segments', JSON.stringify(extras.segments));
 
   // Get token from storage before starting upload
   let uploadToken = '';
@@ -626,6 +788,12 @@ function getSupportedMimeType() {
   return 'video/webm';
 }
 
+/* --- Cleanup on unload (offscreen closed externally, tab closed, etc.) --- */
+window.addEventListener('pagehide', () => {
+  releaseStreams();
+  stopMicPreview();
+});
+
 /* --- Signal readiness to background (Chrome offscreen flow) --- */
 chrome.runtime.sendMessage({ type: 'recorder-ready' }).catch(() => {});
 
@@ -653,7 +821,11 @@ chrome.runtime.sendMessage({ type: 'recorder-ready' }).catch(() => {});
       params.mode,
       params.micEnabled,
       params.systemAudioEnabled,
-      params.extensionToken
+      params.extensionToken,
+      undefined, // maxDuration — use default
+      undefined, // videoQuality — use default
+      params.webcamEnabled,
+      params.webcamDeviceId
     );
     console.log('[BugReel] Firefox recording started successfully');
     chrome.runtime.sendMessage({ type: 'firefox-recording-started' }).catch(() => {});
@@ -697,7 +869,11 @@ function showFallbackButton(params, label, hint) {
         params.mode,
         params.micEnabled,
         params.systemAudioEnabled,
-        params.extensionToken
+        params.extensionToken,
+        undefined, // maxDuration
+        undefined, // videoQuality
+        params.webcamEnabled,
+        params.webcamDeviceId
       );
       chrome.runtime.sendMessage({ type: 'firefox-recording-started' }).catch(() => {});
       if (label) label.textContent = 'Recording';

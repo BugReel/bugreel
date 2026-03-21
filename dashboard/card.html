@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redirecting... - BugReel</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/i18n-dashboard.js"></script>
 </head>
 <body>
   <main class="container page">
@@ -12,9 +13,10 @@
   </main>
 
   <script type="module">
-    import { getCard } from '/js/api.js';
-    import { extractParam } from '/js/shared.js';
+    import { getCard } from '../js/api.js';
+    import { extractParam } from '../js/shared.js';
 
+    const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     const cardId = extractParam('/card/');
     if (cardId) {
       try {
@@ -22,10 +24,10 @@
         if (data.card && data.card.recording_id) {
           window.location.replace(`/recording/${encodeURIComponent(data.card.recording_id)}`);
         } else {
-          document.querySelector('main').innerHTML = '<div class="empty-state"><p>Card not found</p></div>';
+          document.querySelector('main').innerHTML = `<div class="empty-state"><p>${t('card_not_found', 'Card not found')}</p></div>`;
         }
       } catch {
-        document.querySelector('main').innerHTML = '<div class="empty-state"><p>Card not found</p></div>';
+        document.querySelector('main').innerHTML = `<div class="empty-state"><p>${t('card_not_found', 'Card not found')}</p></div>`;
       }
     }
   </script>

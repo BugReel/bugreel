@@ -10,6 +10,7 @@ btn.addEventListener('click', async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     stream.getTracks().forEach(t => t.stop());
+    chrome.storage.local.set({ micPermissionGranted: true });
     contentEl.innerHTML = '<p class="success">Microphone access granted!</p><p>You can close this tab and use the extension.</p>';
   } catch (e) {
     btn.disabled = false;

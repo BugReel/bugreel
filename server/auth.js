@@ -154,6 +154,9 @@ function isPublicRoute(req) {
   // Report pages (public share links)
   if (p.startsWith('/report/')) return true;
 
+  // Embed pages (public, embeddable in iframes)
+  if (p.startsWith('/embed/')) return true;
+
   // Static assets
   if (p.startsWith('/css/') || p.startsWith('/js/')) return true;
 
@@ -162,6 +165,15 @@ function isPublicRoute(req) {
 
   // Public read-only: individual recording data (report page needs this)
   if (req.method === 'GET' && /^\/api\/recordings\/[^/]+/.test(p)) return true;
+
+  // Video comments: GET and POST are public, DELETE is handled by the route (requires auth)
+  if (/^\/api\/recordings\/[^/]+\/comments/.test(p)) return true;
+
+  // Password verification: public endpoint for unlocking password-protected recordings
+  if (req.method === 'POST' && /^\/api\/recordings\/[^/]+\/verify-password$/.test(p)) return true;
+
+  // View analytics tracking (POST view + heartbeat called from public report page)
+  if (req.method === 'POST' && (p === '/api/analytics/view' || p === '/api/analytics/heartbeat')) return true;
 
   return false;
 }

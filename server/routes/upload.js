@@ -44,10 +44,13 @@ router.post('/upload', (req, res, next) => {
   const consoleEvents = req.body.console_events || null;
   const actionEvents = req.body.action_events || null;
   const manualMarkers = req.body.manual_markers || null;
+  const trimStart = req.body.trim_start ? parseFloat(req.body.trim_start) : null;
+  const trimEnd = req.body.trim_end ? parseFloat(req.body.trim_end) : null;
+  const segments = req.body.segments || null; // JSON string: [{start, end}, ...]
 
-  if (urlEvents || metadata || consoleEvents || actionEvents || manualMarkers) {
-    db.prepare(`UPDATE recordings SET url_events_json = ?, metadata_json = ?, console_events_json = ?, action_events_json = ?, manual_markers_json = ? WHERE id = ?`)
-      .run(urlEvents, metadata, consoleEvents, actionEvents, manualMarkers, id);
+  if (urlEvents || metadata || consoleEvents || actionEvents || manualMarkers || trimStart !== null || trimEnd !== null || segments) {
+    db.prepare(`UPDATE recordings SET url_events_json = ?, metadata_json = ?, console_events_json = ?, action_events_json = ?, manual_markers_json = ?, trim_start = ?, trim_end = ?, segments_json = ? WHERE id = ?`)
+      .run(urlEvents, metadata, consoleEvents, actionEvents, manualMarkers, trimStart, trimEnd, segments, id);
   }
 
   // Enqueue pipeline (max 2 concurrent), catch errors

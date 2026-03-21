@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Guide - BugReel</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/i18n-dashboard.js"></script>
   <style>
     .guide-layout { display: grid; grid-template-columns: 220px 1fr; gap: 40px; max-width: 1060px; margin: 0 auto; align-items: start; }
     @media (max-width: 860px) { .guide-layout { grid-template-columns: 1fr; } .guide-sidebar { display: none; } }
@@ -77,15 +78,15 @@
       <!-- SIDEBAR -->
       <aside class="guide-sidebar">
         <nav class="guide-nav" id="guideNav">
-          <div class="guide-nav-title">Contents</div>
-          <a href="#install"><span class="nav-num">1</span>Installation<span class="nav-tag tag-req">start</span></a>
-          <a href="#record"><span class="nav-num">2</span>Recording</a>
-          <a href="#link"><span class="nav-num">3</span>Link to issue</a>
-          <a href="#review"><span class="nav-num">4</span>Review & send</a>
+          <div class="guide-nav-title" data-i18n="guide_contents">Contents</div>
+          <a href="#install"><span class="nav-num">1</span><span data-i18n="guide_install">Installation</span><span class="nav-tag tag-req">start</span></a>
+          <a href="#record"><span class="nav-num">2</span><span data-i18n="guide_recording">Recording</span></a>
+          <a href="#link"><span class="nav-num">3</span><span data-i18n="guide_link">Link to issue</span></a>
+          <a href="#review"><span class="nav-num">4</span><span data-i18n="guide_review">Review & send</span></a>
           <div class="nav-divider"></div>
-          <a href="#batch">Batch testing<span class="nav-tag tag-opt">opt.</span></a>
-          <a href="#tips">Tips</a>
-          <a href="#faq">FAQ</a>
+          <a href="#batch"><span data-i18n="guide_batch">Batch testing</span><span class="nav-tag tag-opt">opt.</span></a>
+          <a href="#tips"><span data-i18n="guide_tips">Tips</span></a>
+          <a href="#faq"><span data-i18n="guide_faq">FAQ</span></a>
         </nav>
       </aside>
 
@@ -117,7 +118,7 @@
 
         <!-- Chrome instructions -->
         <div class="browser-content" id="chrome-install">
-          <p><a href="/static/bugreel-extension.zip" class="dl-btn" download>Download for Chrome (ZIP)</a></p>
+          <p><a href="static/bugreel-extension.zip" class="dl-btn" download>Download for Chrome (ZIP)</a></p>
 
           <ol>
             <li><strong>Extract the archive</strong> to any folder</li>
@@ -140,7 +141,7 @@
 
         <!-- Firefox instructions -->
         <div class="browser-content hidden" id="firefox-install">
-          <p><a href="/static/bugreel-firefox.zip" class="dl-btn" download>Download for Firefox (ZIP)</a></p>
+          <p><a href="static/bugreel-firefox.zip" class="dl-btn" download>Download for Firefox (ZIP)</a></p>
 
           <ol>
             <li><strong>Extract the archive</strong> to any folder</li>
@@ -161,17 +162,17 @@
 
           <h3 style="margin-top:16px;">Step 1. Microphone</h3>
           <p>Click <strong>"Allow microphone"</strong> &rarr; grant permission in the browser dialog. After that, a level indicator will appear &mdash; say something, the bar should respond.</p>
-          <img src="/static/guide/firefox-setup-mic.png" alt="Microphone setup in Firefox" class="guide-screenshot guide-screenshot-sm">
+          <img src="static/guide/firefox-setup-mic.png" alt="Microphone setup in Firefox" class="guide-screenshot guide-screenshot-sm">
 
           <h3>Step 2. Screen recording (macOS)</h3>
           <p>macOS requires a separate permission for Firefox to record the screen.</p>
-          <img src="/static/guide/firefox-setup-step2.png" alt="Step 2: screen recording" class="guide-screenshot guide-screenshot-sm">
+          <img src="static/guide/firefox-setup-step2.png" alt="Step 2: screen recording" class="guide-screenshot guide-screenshot-sm">
 
           <p>Open <strong>System Settings &rarr; Privacy & Security &rarr; Screen Recording</strong> and enable the toggle for Firefox:</p>
-          <img src="/static/guide/firefox-macos-screen-recording.png" alt="macOS: Screen Recording — enable Firefox" class="guide-screenshot guide-screenshot-sm">
+          <img src="static/guide/firefox-macos-screen-recording.png" alt="macOS: Screen Recording — enable Firefox" class="guide-screenshot guide-screenshot-sm">
 
           <p>macOS will ask to restart Firefox &mdash; click <strong>"Restart"</strong>:</p>
-          <img src="/static/guide/firefox-macos-restart.png" alt="macOS: Restart Firefox" class="guide-screenshot guide-screenshot-sm">
+          <img src="static/guide/firefox-macos-restart.png" alt="macOS: Restart Firefox" class="guide-screenshot guide-screenshot-sm">
 
           <div class="note note-green">
             <strong>This is a one-time setup</strong>
@@ -298,7 +299,7 @@
   </main>
 
   <script type="module">
-    import { renderHeader } from '/js/shared.js';
+    import { renderHeader } from './js/shared.js';
     document.getElementById('header').innerHTML = renderHeader('guide');
 
     // Browser tab switching

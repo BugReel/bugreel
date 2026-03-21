@@ -2,11 +2,10 @@ import Database from 'better-sqlite3';
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { config } from './config.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbDir = path.join(__dirname, '..', 'data');
+// DB lives inside dataDir (same directory as recordings)
+const dbDir = config.dataDir;
 const dbPath = path.join(dbDir, 'tracker.db');
 
 let db;
@@ -134,6 +133,35 @@ export function initDB() {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS views (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recording_id TEXT NOT NULL,
+      viewer_hash TEXT NOT NULL,
+      user_agent TEXT,
+      referrer TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      duration_seconds INTEGER DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_views_recording
+      ON views (recording_id);
+
+    CREATE INDEX IF NOT EXISTS idx_views_rate_limit
+      ON views (recording_id, viewer_hash, created_at);
+
+    CREATE TABLE IF NOT EXISTS video_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recording_id TEXT NOT NULL,
+      author_name TEXT NOT NULL,
+      author_email TEXT,
+      text TEXT NOT NULL,
+      timecode_seconds REAL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_video_comments_recording
+      ON video_comments (recording_id);
   `);
 
   // Migrations for existing tables
@@ -146,6 +174,10 @@ export function initDB() {
   try { db.exec('ALTER TABLE frames ADD COLUMN is_manual INTEGER DEFAULT 0'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN pending_youtrack_issue_id TEXT'); } catch {}
   try { db.exec('ALTER TABLE frames ADD COLUMN detail TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN trim_start REAL'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN trim_end REAL'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN segments_json TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN password_hash TEXT'); } catch {}
 
   // Migration: add password_hash to users if missing (for existing DBs)
   try { db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT'); } catch {}

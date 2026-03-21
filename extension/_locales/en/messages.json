@@ -1,0 +1,589 @@
+{
+  "extName": {
+    "message": "BugReel — Bug Reporter"
+  },
+  "extDescription": {
+    "message": "Record browser tab, window or screen with microphone and upload bug reports"
+  },
+
+  "brandName": {
+    "message": "BugReel"
+  },
+  "brand_name": {
+    "message": "BugReel"
+  },
+
+  "popup_subtitle": {
+    "message": "Screen Recorder"
+  },
+  "popup_notConnected": {
+    "message": "Not connected"
+  },
+  "popup_setupAccount": {
+    "message": "Set up account"
+  },
+  "popup_labelAuthor": {
+    "message": "Author"
+  },
+  "popup_loading": {
+    "message": "Loading..."
+  },
+  "popup_labelSource": {
+    "message": "Source"
+  },
+  "popup_sourceTab": {
+    "message": "Tab"
+  },
+  "popup_sourceScreen": {
+    "message": "Screen"
+  },
+  "popup_toggleMicrophone": {
+    "message": "Microphone"
+  },
+  "popup_toggleSystemAudio": {
+    "message": "System audio"
+  },
+  "popup_toggleWebcam": {
+    "message": "Webcam"
+  },
+  "popup_labelWebcamDevice": {
+    "message": "Camera"
+  },
+  "popup_defaultCamera": {
+    "message": "Default camera"
+  },
+  "popup_noWebcam": {
+    "message": "No camera found"
+  },
+  "popup_badgeCam": {
+    "message": "Cam"
+  },
+  "popup_micNotAllowed": {
+    "message": "Microphone not allowed."
+  },
+  "popup_grantAccess": {
+    "message": "Grant access"
+  },
+  "popup_startRecording": {
+    "message": "Start Recording"
+  },
+  "popup_hintSay": {
+    "message": "Say:"
+  },
+  "popup_hintDoing": {
+    "message": "you're doing"
+  },
+  "popup_hintSee": {
+    "message": "you see"
+  },
+  "popup_hintExpected": {
+    "message": "you expected"
+  },
+  "popup_hintMatters": {
+    "message": "it matters"
+  },
+  "popup_pause": {
+    "message": "Pause"
+  },
+  "popup_stop": {
+    "message": "Stop"
+  },
+  "popup_resume": {
+    "message": "Resume"
+  },
+  "popup_finish": {
+    "message": "Finish"
+  },
+  "popup_discardRecording": {
+    "message": "Discard recording"
+  },
+  "popup_reviewUpload": {
+    "message": "Review & Upload"
+  },
+  "popup_newRecording": {
+    "message": "New recording (discards current)"
+  },
+  "popup_statusReady": {
+    "message": "Ready"
+  },
+  "popup_recent": {
+    "message": "Recent"
+  },
+  "popup_openDashboard": {
+    "message": "Open Dashboard"
+  },
+  "popup_badgeMic": {
+    "message": "Mic"
+  },
+  "popup_badgeSystem": {
+    "message": "System"
+  },
+
+  "setup_subtitle": {
+    "message": "Extension Setup"
+  },
+  "setup_subtitle_firefox": {
+    "message": "Firefox Setup"
+  },
+  "step_microphone_title": {
+    "message": "Microphone Access"
+  },
+  "step_microphone_desc": {
+    "message": "Microphone access is needed for voice recording. Click the button and allow access in the browser dialog."
+  },
+  "button_allow_microphone": {
+    "message": "Allow Microphone"
+  },
+  "hint_mic_live": {
+    "message": "Say something \u2014 the bar should respond to your voice"
+  },
+  "step_screen_title": {
+    "message": "Screen Recording"
+  },
+  "step_screen_title_macos": {
+    "message": "Screen Recording (macOS)"
+  },
+  "step_screen_desc": {
+    "message": "macOS requires screen recording permission for Firefox."
+  },
+  "step_screen_open": {
+    "message": "Open:"
+  },
+  "step_screen_path": {
+    "message": "System Settings \u2192 Privacy & Security \u2192 Screen Recording"
+  },
+  "step_screen_enable": {
+    "message": "Enable the toggle for Firefox."
+  },
+  "step_screen_restart_warning": {
+    "message": "After enabling, macOS will ask to restart Firefox \u2014 click \"Restart\"."
+  },
+  "button_open_settings": {
+    "message": "Open System Settings"
+  },
+  "button_check_screen": {
+    "message": "Check Screen Access"
+  },
+  "step_connect_title": {
+    "message": "Connect Your Account"
+  },
+  "step_connect_desc": {
+    "message": "Link your BugReel account so recordings are associated with you."
+  },
+  "step_connect_instruction_1": {
+    "message": "1. Open your BugReel dashboard and log in"
+  },
+  "step_connect_instruction_2": {
+    "message": "2. Go to Settings and click Generate Extension Token"
+  },
+  "step_connect_instruction_3": {
+    "message": "3. Copy the token and paste it below"
+  },
+  "placeholder_extension_token": {
+    "message": "Paste extension token here..."
+  },
+  "button_connect": {
+    "message": "Connect"
+  },
+  "label_connected_as": {
+    "message": "Connected as:"
+  },
+  "step_done_title": {
+    "message": "Done"
+  },
+  "step_done_desc": {
+    "message": "All permissions configured. Click the extension icon to start recording!"
+  },
+  "button_close_and_start": {
+    "message": "Close and Start"
+  },
+  "note_skip_steps": {
+    "message": "You can skip any step \u2014 the extension will request permissions when recording."
+  },
+  "note_skip_steps_firefox": {
+    "message": "You can skip any step \u2014 the extension will request permissions on first recording."
+  },
+  "note_reopen_setup": {
+    "message": "You can reopen this page from the popup \u2192 \"Setup\""
+  },
+
+  "recorder_title": {
+    "message": "BugReel \u2014 Recorder"
+  },
+  "recorder_preparing": {
+    "message": "Preparing..."
+  },
+  "recorder_loading": {
+    "message": "Loading recording module..."
+  },
+
+  "review_title": {
+    "message": "Review Recording - BugReel"
+  },
+  "review_subtitle": {
+    "message": "Review Recording"
+  },
+  "review_loading": {
+    "message": "Loading recording..."
+  },
+  "review_notFound": {
+    "message": "Recording not found."
+  },
+  "review_notFoundHint": {
+    "message": "Record a video and try again."
+  },
+  "review_size": {
+    "message": "Size:"
+  },
+  "review_author": {
+    "message": "Author:"
+  },
+  "review_btnUpload": {
+    "message": "Upload to Server"
+  },
+  "review_btnDiscard": {
+    "message": "Discard"
+  },
+  "review_confirmDiscard": {
+    "message": "Discard this recording? It will be permanently deleted."
+  },
+  "review_uploading": {
+    "message": "Uploading... Link will be copied to clipboard when done."
+  },
+  "review_uploadDone": {
+    "message": "Video uploaded \u2014 link copied to clipboard"
+  },
+  "review_copyLink": {
+    "message": "Copy link"
+  },
+  "review_copied": {
+    "message": "Copied!"
+  },
+  "review_discarded": {
+    "message": "Recording discarded."
+  },
+
+  "mic_title": {
+    "message": "BugReel \u2014 Microphone Access"
+  },
+  "mic_description": {
+    "message": "Microphone access is needed for voice recording. Click the button and allow access in the browser dialog."
+  },
+  "mic_allowButton": {
+    "message": "Allow Microphone"
+  },
+  "mic_hint": {
+    "message": "This tab can be closed after granting access."
+  },
+
+  "widget_titleMark": {
+    "message": "Mark screenshot"
+  },
+  "widget_titlePause": {
+    "message": "Pause"
+  },
+  "widget_titleStop": {
+    "message": "Stop"
+  },
+  "widget_titleResume": {
+    "message": "Resume"
+  },
+
+  "popup_setup": {
+    "message": "Setup"
+  },
+  "popup_micReady": {
+    "message": "Ready"
+  },
+  "popup_micNotFound": {
+    "message": "Not found"
+  },
+  "popup_selectAuthor": {
+    "message": "-- Select --"
+  },
+  "popup_hintWhat": {
+    "message": "WHAT"
+  },
+  "popup_hintWhy": {
+    "message": "WHY"
+  },
+
+  "status_recording": {
+    "message": "Recording"
+  },
+  "status_paused": {
+    "message": "Paused"
+  },
+  "status_uploading": {
+    "message": "Uploading..."
+  },
+  "status_uploadingToServer": {
+    "message": "Uploading to server..."
+  },
+  "status_uploadingPercent": {
+    "message": "Uploading $PERCENT$%",
+    "placeholders": {
+      "PERCENT": { "content": "$1", "example": "42" }
+    }
+  },
+  "status_saving": {
+    "message": "Saving recording..."
+  },
+  "status_starting": {
+    "message": "Starting..."
+  },
+  "status_chooseSource": {
+    "message": "Choose source..."
+  },
+  "status_selectScreen": {
+    "message": "Select screen for recording..."
+  },
+  "status_maxDuration": {
+    "message": "Max duration reached. Saving..."
+  },
+  "status_linkCopied": {
+    "message": "Link copied!"
+  },
+  "status_recordingFailed": {
+    "message": "Recording failed"
+  },
+
+  "error_selectAuthor": {
+    "message": "Select an author"
+  },
+  "error_noActiveTab": {
+    "message": "No active tab"
+  },
+  "error_serverNotConfigured": {
+    "message": "Server URL not configured. Open Setup."
+  },
+  "error_failed": {
+    "message": "Failed"
+  },
+
+  "setup_chromeSetup": {
+    "message": "Chrome Setup"
+  },
+  "setup_requesting": {
+    "message": "Requesting..."
+  },
+  "setup_done": {
+    "message": "Done"
+  },
+  "setup_tryAgain": {
+    "message": "Try Again"
+  },
+  "setup_micAllowed": {
+    "message": "Microphone allowed!"
+  },
+  "setup_micAlreadyGranted": {
+    "message": "Already granted"
+  },
+  "setup_micDenied": {
+    "message": "Denied: $MESSAGE$",
+    "placeholders": {
+      "MESSAGE": { "content": "$1", "example": "Permission denied" }
+    }
+  },
+  "setup_checking": {
+    "message": "Checking..."
+  },
+  "setup_screenWorks": {
+    "message": "Screen recording works!"
+  },
+  "setup_checkAgain": {
+    "message": "Check Again"
+  },
+  "setup_noScreenAccess": {
+    "message": "No screen recording access. Enable the toggle in System Settings and restart Firefox."
+  },
+  "setup_noScreenAccessFirefox": {
+    "message": "Firefox does not have screen recording access. Enable the toggle in System Settings and restart Firefox."
+  },
+  "setup_cancelledScreen": {
+    "message": "You cancelled screen selection. Click again and select a screen."
+  },
+  "setup_cancelledScreenTab": {
+    "message": "You cancelled screen selection. Click again and select a screen or tab."
+  },
+  "setup_openManually": {
+    "message": "Open manually: System Settings → Privacy & Security → Screen Recording"
+  },
+  "setup_couldNotOpenSettings": {
+    "message": "Could not open automatically. Open manually: System Settings → Privacy & Security → Screen Recording"
+  },
+  "setup_verifying": {
+    "message": "Verifying..."
+  },
+  "setup_pasteToken": {
+    "message": "Please paste your extension token"
+  },
+  "setup_serverUrlNotConfigured": {
+    "message": "Server URL not configured. Set it in the extension popup first, then return here."
+  },
+  "setup_invalidToken": {
+    "message": "Invalid or expired token"
+  },
+  "setup_serverError": {
+    "message": "Server error $CODE$",
+    "placeholders": {
+      "CODE": { "content": "$1", "example": "500" }
+    }
+  },
+  "setup_invalidResponse": {
+    "message": "Invalid server response"
+  },
+  "setup_connected": {
+    "message": "Connected!"
+  },
+  "setup_alreadyConnected": {
+    "message": "Already connected"
+  },
+  "setup_connectionFailed": {
+    "message": "Connection failed"
+  },
+  "setup_complete": {
+    "message": "Setup complete. Click the extension icon to start recording!"
+  },
+  "setup_permissionsConfigured": {
+    "message": "Permissions configured. You can connect your account above, or start recording now."
+  },
+  "setup_noAdditionalSettings": {
+    "message": "No additional settings required for your OS."
+  },
+  "setup_automaticallySkipped": {
+    "message": "Automatically skipped."
+  },
+
+  "mic_granted": {
+    "message": "Microphone access granted!"
+  },
+  "mic_youCanClose": {
+    "message": "You can close this tab and use the extension."
+  },
+  "mic_tryAgain": {
+    "message": "Try again"
+  },
+
+  "recorder_recording": {
+    "message": "Recording"
+  },
+  "recorder_paused": {
+    "message": "Paused"
+  },
+  "recorder_saving": {
+    "message": "Saving..."
+  },
+  "recorder_uploadingPercent": {
+    "message": "Uploading $PERCENT$%",
+    "placeholders": {
+      "PERCENT": { "content": "$1", "example": "42" }
+    }
+  },
+  "recorder_uploading": {
+    "message": "Uploading..."
+  },
+  "recorder_requestingScreen": {
+    "message": "Requesting screen access..."
+  },
+  "recorder_selectSource": {
+    "message": "Select what you want to record in the browser dialog."
+  },
+  "recorder_inProgress": {
+    "message": "Recording in progress. Do not close this tab!"
+  },
+  "recorder_inProgressSwitch": {
+    "message": "Recording in progress. Switch to another tab.\nDo not close this tab!"
+  },
+  "recorder_screenNeeded": {
+    "message": "Screen access needed"
+  },
+  "recorder_startButton": {
+    "message": "Start Screen Recording"
+  },
+  "recorder_titleRec": {
+    "message": "REC - BugReel"
+  },
+
+  "notification_uploaded": {
+    "message": "Video uploaded"
+  },
+  "notification_linkCopied": {
+    "message": "$ID$ — link copied to clipboard",
+    "placeholders": {
+      "ID": { "content": "$1", "example": "rec-abc123" }
+    }
+  },
+
+  "review_duration": {
+    "message": "Duration"
+  },
+  "review_trimAndCut": {
+    "message": "Trim & Cut"
+  },
+  "review_preview": {
+    "message": "Preview"
+  },
+  "review_previewing": {
+    "message": "Previewing..."
+  },
+  "review_reset": {
+    "message": "Reset"
+  },
+  "review_cut": {
+    "message": "Cut"
+  },
+  "review_fullVideo": {
+    "message": "Full video"
+  },
+  "review_result": {
+    "message": "Result"
+  },
+  "review_unknown": {
+    "message": "unknown"
+  },
+  "error_generic": {
+    "message": "Error"
+  },
+  "error_upload_failed": {
+    "message": "Upload failed"
+  },
+
+  "popup_settingMax": {
+    "message": "Max"
+  },
+  "popup_settingQuality": {
+    "message": "Quality"
+  },
+  "popup_settingAfterRec": {
+    "message": "After rec"
+  },
+  "popup_setting5min": {
+    "message": "5 min"
+  },
+  "popup_setting10min": {
+    "message": "10 min"
+  },
+  "popup_setting15min": {
+    "message": "15 min"
+  },
+  "popup_settingReview": {
+    "message": "Review"
+  },
+  "popup_settingAuto": {
+    "message": "Auto"
+  },
+
+  "status_connected": {
+    "message": "Connected"
+  },
+  "status_err": {
+    "message": "err"
+  },
+  "status_review": {
+    "message": "review"
+  },
+  "status_done": {
+    "message": "done"
+  }
+}

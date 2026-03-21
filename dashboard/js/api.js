@@ -168,6 +168,44 @@ export async function exportCard(cardId) {
   });
 }
 
+// --- Video Comments ---
+
+export async function getVideoComments(recordingId) {
+  return request(`/api/recordings/${encodeURIComponent(recordingId)}/comments`);
+}
+
+export async function addVideoComment(recordingId, author_name, text, timecode_seconds) {
+  const body = { author_name, text };
+  if (timecode_seconds !== undefined && timecode_seconds !== null) {
+    body.timecode_seconds = timecode_seconds;
+  }
+  return request(`/api/recordings/${encodeURIComponent(recordingId)}/comments`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteVideoComment(recordingId, commentId) {
+  return request(`/api/recordings/${encodeURIComponent(recordingId)}/comments/${encodeURIComponent(commentId)}`, {
+    method: 'DELETE',
+  });
+}
+
+// --- Password Protection ---
+
+export async function setRecordingPassword(recordingId, password) {
+  return request(`/api/recordings/${encodeURIComponent(recordingId)}/password`, {
+    method: 'PUT',
+    body: JSON.stringify({ password }),
+  });
+}
+
+export async function removeRecordingPassword(recordingId) {
+  return request(`/api/recordings/${encodeURIComponent(recordingId)}/password`, {
+    method: 'DELETE',
+  });
+}
+
 // --- Helpers ---
 
 /**

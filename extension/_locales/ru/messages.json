@@ -1,0 +1,574 @@
+{
+  "extName": {
+    "message": "BugReel — Баг-репортер"
+  },
+  "extDescription": {
+    "message": "Записывайте вкладку, окно или экран с микрофоном и отправляйте баг-репорты"
+  },
+
+  "brandName": {
+    "message": "BugReel"
+  },
+  "brand_name": {
+    "message": "BugReel"
+  },
+
+  "popup_subtitle": {
+    "message": "Запись экрана"
+  },
+  "popup_notConnected": {
+    "message": "Не подключено"
+  },
+  "popup_setupAccount": {
+    "message": "Подключите аккаунт"
+  },
+  "popup_labelAuthor": {
+    "message": "Автор"
+  },
+  "popup_loading": {
+    "message": "Загрузка..."
+  },
+  "popup_labelSource": {
+    "message": "Источник"
+  },
+  "popup_sourceTab": {
+    "message": "Вкладка"
+  },
+  "popup_sourceScreen": {
+    "message": "Экран"
+  },
+  "popup_toggleMicrophone": {
+    "message": "Микрофон"
+  },
+  "popup_toggleSystemAudio": {
+    "message": "Звук системы"
+  },
+  "popup_micNotAllowed": {
+    "message": "Микрофон не разрешён."
+  },
+  "popup_grantAccess": {
+    "message": "Разрешить доступ"
+  },
+  "popup_startRecording": {
+    "message": "Начать запись"
+  },
+  "popup_hintSay": {
+    "message": "Скажите:"
+  },
+  "popup_hintDoing": {
+    "message": "вы делаете"
+  },
+  "popup_hintSee": {
+    "message": "вы видите"
+  },
+  "popup_hintExpected": {
+    "message": "вы ожидали"
+  },
+  "popup_hintMatters": {
+    "message": "это важно"
+  },
+  "popup_pause": {
+    "message": "Пауза"
+  },
+  "popup_stop": {
+    "message": "Стоп"
+  },
+  "popup_resume": {
+    "message": "Продолжить"
+  },
+  "popup_finish": {
+    "message": "Завершить"
+  },
+  "popup_discardRecording": {
+    "message": "Удалить запись"
+  },
+  "popup_reviewUpload": {
+    "message": "Просмотр и загрузка"
+  },
+  "popup_newRecording": {
+    "message": "Новая запись (текущая будет удалена)"
+  },
+  "popup_statusReady": {
+    "message": "Готово"
+  },
+  "popup_recent": {
+    "message": "Недавние"
+  },
+  "popup_openDashboard": {
+    "message": "Открыть панель"
+  },
+  "popup_badgeMic": {
+    "message": "Микр."
+  },
+  "popup_badgeSystem": {
+    "message": "Система"
+  },
+
+  "setup_subtitle": {
+    "message": "Настройка расширения"
+  },
+  "setup_subtitle_firefox": {
+    "message": "Настройка Firefox"
+  },
+  "step_microphone_title": {
+    "message": "Доступ к микрофону"
+  },
+  "step_microphone_desc": {
+    "message": "Доступ к микрофону нужен для записи голоса. Нажмите кнопку и разрешите доступ в диалоге браузера."
+  },
+  "button_allow_microphone": {
+    "message": "Разрешить микрофон"
+  },
+  "hint_mic_live": {
+    "message": "Скажите что-нибудь — полоска должна реагировать"
+  },
+  "step_screen_title": {
+    "message": "Запись экрана"
+  },
+  "step_screen_title_macos": {
+    "message": "Запись экрана (macOS)"
+  },
+  "step_screen_desc": {
+    "message": "macOS требует разрешение на запись экрана для Firefox."
+  },
+  "step_screen_open": {
+    "message": "Откройте:"
+  },
+  "step_screen_path": {
+    "message": "Системные настройки → Конфиденциальность и безопасность → Запись экрана"
+  },
+  "step_screen_enable": {
+    "message": "Включите переключатель для Firefox."
+  },
+  "step_screen_restart_warning": {
+    "message": "После включения macOS попросит перезапустить Firefox — нажмите «Перезапустить»."
+  },
+  "button_open_settings": {
+    "message": "Открыть настройки системы"
+  },
+  "button_check_screen": {
+    "message": "Проверить доступ к экрану"
+  },
+  "step_connect_title": {
+    "message": "Подключите аккаунт"
+  },
+  "step_connect_desc": {
+    "message": "Привяжите аккаунт BugReel, чтобы записи были связаны с вами."
+  },
+  "step_connect_instruction_1": {
+    "message": "1. Откройте панель BugReel и войдите в аккаунт"
+  },
+  "step_connect_instruction_2": {
+    "message": "2. Перейдите в Настройки и нажмите Создать токен расширения"
+  },
+  "step_connect_instruction_3": {
+    "message": "3. Скопируйте токен и вставьте ниже"
+  },
+  "placeholder_extension_token": {
+    "message": "Вставьте токен расширения..."
+  },
+  "button_connect": {
+    "message": "Подключить"
+  },
+  "label_connected_as": {
+    "message": "Подключено как:"
+  },
+  "step_done_title": {
+    "message": "Готово"
+  },
+  "step_done_desc": {
+    "message": "Все разрешения настроены. Нажмите на иконку расширения, чтобы начать запись!"
+  },
+  "button_close_and_start": {
+    "message": "Закрыть и начать"
+  },
+  "note_skip_steps": {
+    "message": "Можно пропустить любой шаг — расширение запросит разрешения при записи."
+  },
+  "note_skip_steps_firefox": {
+    "message": "Можно пропустить любой шаг — расширение запросит разрешения при первой записи."
+  },
+  "note_reopen_setup": {
+    "message": "Вы можете открыть эту страницу из попапа → «Настройка»"
+  },
+
+  "recorder_title": {
+    "message": "BugReel — Запись"
+  },
+  "recorder_preparing": {
+    "message": "Подготовка..."
+  },
+  "recorder_loading": {
+    "message": "Загрузка модуля записи..."
+  },
+
+  "review_title": {
+    "message": "Просмотр записи - BugReel"
+  },
+  "review_subtitle": {
+    "message": "Просмотр записи"
+  },
+  "review_loading": {
+    "message": "Загрузка записи..."
+  },
+  "review_notFound": {
+    "message": "Запись не найдена."
+  },
+  "review_notFoundHint": {
+    "message": "Запишите видео и попробуйте снова."
+  },
+  "review_size": {
+    "message": "Размер:"
+  },
+  "review_author": {
+    "message": "Автор:"
+  },
+  "review_btnUpload": {
+    "message": "Загрузить на сервер"
+  },
+  "review_btnDiscard": {
+    "message": "Удалить"
+  },
+  "review_confirmDiscard": {
+    "message": "Удалить эту запись? Она будет удалена безвозвратно."
+  },
+  "review_uploading": {
+    "message": "Загрузка... Ссылка будет скопирована по завершении."
+  },
+  "review_uploadDone": {
+    "message": "Видео загружено — ссылка скопирована"
+  },
+  "review_copyLink": {
+    "message": "Скопировать ссылку"
+  },
+  "review_copied": {
+    "message": "Скопировано!"
+  },
+  "review_discarded": {
+    "message": "Запись удалена."
+  },
+
+  "mic_title": {
+    "message": "BugReel — Доступ к микрофону"
+  },
+  "mic_description": {
+    "message": "Доступ к микрофону нужен для записи голоса. Нажмите кнопку и разрешите доступ в диалоге браузера."
+  },
+  "mic_allowButton": {
+    "message": "Разрешить микрофон"
+  },
+  "mic_hint": {
+    "message": "Эту вкладку можно закрыть после предоставления доступа."
+  },
+
+  "widget_titleMark": {
+    "message": "Отметить скриншот"
+  },
+  "widget_titlePause": {
+    "message": "Пауза"
+  },
+  "widget_titleStop": {
+    "message": "Стоп"
+  },
+  "widget_titleResume": {
+    "message": "Продолжить"
+  },
+
+  "popup_setup": {
+    "message": "Настройка"
+  },
+  "popup_micReady": {
+    "message": "Готово"
+  },
+  "popup_micNotFound": {
+    "message": "Не найден"
+  },
+  "popup_selectAuthor": {
+    "message": "-- Выберите --"
+  },
+  "popup_hintWhat": {
+    "message": "ЧТО"
+  },
+  "popup_hintWhy": {
+    "message": "ПОЧЕМУ"
+  },
+
+  "status_recording": {
+    "message": "Запись"
+  },
+  "status_paused": {
+    "message": "Пауза"
+  },
+  "status_uploading": {
+    "message": "Загрузка..."
+  },
+  "status_uploadingToServer": {
+    "message": "Загрузка на сервер..."
+  },
+  "status_uploadingPercent": {
+    "message": "Загрузка $PERCENT$%",
+    "placeholders": {
+      "PERCENT": { "content": "$1", "example": "42" }
+    }
+  },
+  "status_saving": {
+    "message": "Сохранение записи..."
+  },
+  "status_starting": {
+    "message": "Запуск..."
+  },
+  "status_chooseSource": {
+    "message": "Выберите источник..."
+  },
+  "status_selectScreen": {
+    "message": "Выберите экран для записи..."
+  },
+  "status_maxDuration": {
+    "message": "Достигнут максимум. Сохранение..."
+  },
+  "status_linkCopied": {
+    "message": "Ссылка скопирована!"
+  },
+  "status_recordingFailed": {
+    "message": "Запись не удалась"
+  },
+
+  "error_selectAuthor": {
+    "message": "Выберите автора"
+  },
+  "error_noActiveTab": {
+    "message": "Нет активной вкладки"
+  },
+  "error_serverNotConfigured": {
+    "message": "URL сервера не настроен. Откройте настройки."
+  },
+  "error_failed": {
+    "message": "Ошибка"
+  },
+
+  "setup_chromeSetup": {
+    "message": "Настройка Chrome"
+  },
+  "setup_requesting": {
+    "message": "Запрос..."
+  },
+  "setup_done": {
+    "message": "Готово"
+  },
+  "setup_tryAgain": {
+    "message": "Попробовать снова"
+  },
+  "setup_micAllowed": {
+    "message": "Микрофон разрешён!"
+  },
+  "setup_micAlreadyGranted": {
+    "message": "Уже разрешено"
+  },
+  "setup_micDenied": {
+    "message": "Отказано: $MESSAGE$",
+    "placeholders": {
+      "MESSAGE": { "content": "$1", "example": "Доступ запрещён" }
+    }
+  },
+  "setup_checking": {
+    "message": "Проверка..."
+  },
+  "setup_screenWorks": {
+    "message": "Запись экрана работает!"
+  },
+  "setup_checkAgain": {
+    "message": "Проверить снова"
+  },
+  "setup_noScreenAccess": {
+    "message": "Нет доступа к записи экрана. Включите переключатель в настройках системы и перезапустите Firefox."
+  },
+  "setup_noScreenAccessFirefox": {
+    "message": "Firefox не имеет доступа к записи экрана. Включите переключатель в настройках системы и перезапустите Firefox."
+  },
+  "setup_cancelledScreen": {
+    "message": "Вы отменили выбор экрана. Нажмите снова и выберите экран."
+  },
+  "setup_cancelledScreenTab": {
+    "message": "Вы отменили выбор экрана. Нажмите снова и выберите экран или вкладку."
+  },
+  "setup_openManually": {
+    "message": "Откройте вручную: Системные настройки → Конфиденциальность и безопасность → Запись экрана"
+  },
+  "setup_couldNotOpenSettings": {
+    "message": "Не удалось открыть автоматически. Откройте вручную: Системные настройки → Конфиденциальность и безопасность → Запись экрана"
+  },
+  "setup_verifying": {
+    "message": "Проверка токена..."
+  },
+  "setup_pasteToken": {
+    "message": "Вставьте токен расширения"
+  },
+  "setup_serverUrlNotConfigured": {
+    "message": "URL сервера не настроен. Сначала укажите его в попапе расширения."
+  },
+  "setup_invalidToken": {
+    "message": "Недействительный или просроченный токен"
+  },
+  "setup_serverError": {
+    "message": "Ошибка сервера $CODE$",
+    "placeholders": {
+      "CODE": { "content": "$1", "example": "500" }
+    }
+  },
+  "setup_invalidResponse": {
+    "message": "Некорректный ответ сервера"
+  },
+  "setup_connected": {
+    "message": "Подключено!"
+  },
+  "setup_alreadyConnected": {
+    "message": "Уже подключено"
+  },
+  "setup_connectionFailed": {
+    "message": "Не удалось подключиться"
+  },
+  "setup_complete": {
+    "message": "Настройка завершена. Нажмите на иконку расширения, чтобы начать запись!"
+  },
+  "setup_permissionsConfigured": {
+    "message": "Разрешения настроены. Подключите аккаунт выше или начните запись."
+  },
+  "setup_noAdditionalSettings": {
+    "message": "Дополнительные настройки для вашей ОС не нужны."
+  },
+  "setup_automaticallySkipped": {
+    "message": "Автоматически пропущено."
+  },
+
+  "mic_granted": {
+    "message": "Доступ к микрофону получен!"
+  },
+  "mic_youCanClose": {
+    "message": "Можете закрыть эту вкладку и использовать расширение."
+  },
+  "mic_tryAgain": {
+    "message": "Попробовать снова"
+  },
+
+  "recorder_recording": {
+    "message": "Запись"
+  },
+  "recorder_paused": {
+    "message": "Пауза"
+  },
+  "recorder_saving": {
+    "message": "Сохранение..."
+  },
+  "recorder_uploadingPercent": {
+    "message": "Загрузка $PERCENT$%",
+    "placeholders": {
+      "PERCENT": { "content": "$1", "example": "42" }
+    }
+  },
+  "recorder_uploading": {
+    "message": "Загрузка..."
+  },
+  "recorder_requestingScreen": {
+    "message": "Запрос доступа к экрану..."
+  },
+  "recorder_selectSource": {
+    "message": "Выберите, что записывать, в диалоге браузера."
+  },
+  "recorder_inProgress": {
+    "message": "Идёт запись. Не закрывайте эту вкладку!"
+  },
+  "recorder_inProgressSwitch": {
+    "message": "Идёт запись. Перейдите на другую вкладку.\nНе закрывайте эту вкладку!"
+  },
+  "recorder_screenNeeded": {
+    "message": "Нужен доступ к экрану"
+  },
+  "recorder_startButton": {
+    "message": "Начать запись экрана"
+  },
+  "recorder_titleRec": {
+    "message": "REC - BugReel"
+  },
+
+  "notification_uploaded": {
+    "message": "Видео загружено"
+  },
+  "notification_linkCopied": {
+    "message": "$ID$ — ссылка скопирована",
+    "placeholders": {
+      "ID": { "content": "$1", "example": "rec-abc123" }
+    }
+  },
+
+  "review_duration": {
+    "message": "Длительность"
+  },
+  "review_trimAndCut": {
+    "message": "Обрезка"
+  },
+  "review_preview": {
+    "message": "Предпросмотр"
+  },
+  "review_previewing": {
+    "message": "Предпросмотр..."
+  },
+  "review_reset": {
+    "message": "Сброс"
+  },
+  "review_cut": {
+    "message": "Вырезать"
+  },
+  "review_fullVideo": {
+    "message": "Полное видео"
+  },
+  "review_result": {
+    "message": "Результат"
+  },
+  "review_unknown": {
+    "message": "неизвестно"
+  },
+  "error_generic": {
+    "message": "Ошибка"
+  },
+  "error_upload_failed": {
+    "message": "Загрузка не удалась"
+  },
+
+  "popup_settingMax": {
+    "message": "Макс."
+  },
+  "popup_settingQuality": {
+    "message": "Качество"
+  },
+  "popup_settingAfterRec": {
+    "message": "После зап."
+  },
+  "popup_setting5min": {
+    "message": "5 мин"
+  },
+  "popup_setting10min": {
+    "message": "10 мин"
+  },
+  "popup_setting15min": {
+    "message": "15 мин"
+  },
+  "popup_settingReview": {
+    "message": "Просмотр"
+  },
+  "popup_settingAuto": {
+    "message": "Авто"
+  },
+
+  "status_connected": {
+    "message": "Подключено"
+  },
+  "status_err": {
+    "message": "ош."
+  },
+  "status_review": {
+    "message": "ревью"
+  },
+  "status_done": {
+    "message": "готово"
+  }
+}

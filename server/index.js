@@ -7,9 +7,14 @@ import uploadRouter from './routes/upload.js';
 import recordingsRouter from './routes/recordings.js';
 import cardsRouter from './routes/cards.js';
 import keyframesRouter from './routes/keyframes.js';
+import analyticsRouter from './routes/analytics.js';
+import videoCommentsRouter from './routes/video-comments.js';
+import embedRouter from './routes/embed.js';
 import { retryStuckRecordings } from './services/pipeline.js';
 import { authGuard, authRouter, handleLegacyLogin, handleLogout } from './auth.js';
 import { handleGetLicense } from './license.js';
+import passwordRouter from './routes/password.js';
+import { passwordCheckPage, passwordCheckAPI, passwordCheckData } from './middleware/password-check.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dashboardDir = path.join(__dirname, '..', 'dashboard');
@@ -27,6 +32,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Embed routes (public, no auth required, allow iframe embedding)
+app.use(embedRouter);
+
 // Auth: legacy login/logout routes (before guard middleware)
 app.post('/login', handleLegacyLogin);
 app.post('/logout', handleLogout);
@@ -40,11 +48,17 @@ app.use('/api', authRouter);
 // License route
 app.get('/api/license', handleGetLicense);
 
+// Password protection: API-level check (before recording data routes)
+app.use(passwordCheckAPI);
+
 // API routes
 app.use('/api', uploadRouter);
 app.use('/api', recordingsRouter);
 app.use('/api', cardsRouter);
 app.use('/api', keyframesRouter);
+app.use('/api', analyticsRouter);
+app.use('/api', videoCommentsRouter);
+app.use('/api', passwordRouter);
 
 // Serve extension files for download
 app.use('/extension', express.static(path.join(__dirname, '..', 'extension')));
@@ -52,13 +66,16 @@ app.use('/extension', express.static(path.join(__dirname, '..', 'extension')));
 // Static: dashboard assets (css, js)
 app.use(express.static(dashboardDir));
 
-// Static: recordings data (video, frames)
-app.use('/data', express.static(config.dataDir));
+// Static: recordings data (video, frames) — with password protection
+app.use('/data', passwordCheckData, express.static(config.dataDir));
 
 // SPA routing: serve HTML pages for dashboard routes
 app.get('/login', (req, res) => {
   return res.sendFile(path.join(dashboardDir, 'login.html'));
 });
+
+// Password protection: page-level check for /report/:id
+app.use(passwordCheckPage);
 
 app.get('*', (req, res) => {
   if (req.path.startsWith('/recording/')) {

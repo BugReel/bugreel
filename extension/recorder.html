@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BugReel — Recorder</title>
+  <title data-i18n="recorder_title">BugReel — Recorder</title>
+  <script src="i18n.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -51,10 +52,10 @@
     </div>
     <div class="status-row">
       <span class="dot waiting" id="dot"></span>
-      <span class="label" id="label">Preparing...</span>
+      <span class="label" id="label" data-i18n="recorder_preparing">Preparing...</span>
     </div>
     <div class="timer" id="timer" style="display:none;">00:00</div>
-    <div class="hint" id="hint">Loading recording module...</div>
+    <div class="hint" id="hint" data-i18n="recorder_loading">Loading recording module...</div>
   </div>
   <script src="idb-helper.js"></script>
   <script src="recorder.js"></script>

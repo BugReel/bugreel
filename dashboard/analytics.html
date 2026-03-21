@@ -4,15 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analytics - BugReel</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/i18n-dashboard.js"></script>
 </head>
 <body>
   <div id="header"></div>
 
   <main class="container page">
     <div class="page-header">
-      <h1>Analytics</h1>
-      <p class="page-desc">Overview of recordings and processing</p>
+      <h1 data-i18n="analytics_title">Analytics</h1>
+      <p class="page-desc" data-i18n="analytics_desc">Overview of recordings and processing</p>
     </div>
 
     <div id="analytics">
@@ -21,12 +22,13 @@
   </main>
 
   <script type="module">
-    import { getRecordings, getCards } from '/js/api.js';
+    import { getRecordings, getCards } from './js/api.js';
     import {
       renderHeader, formatDate, statusLabel,
       escapeHTML, icons, timeAgo
-    } from '/js/shared.js';
+    } from './js/shared.js';
 
+    const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('analytics');
 
     const container = document.getElementById('analytics');
@@ -43,7 +45,7 @@
         container.innerHTML = `
           <div class="empty-state">
             ${icons.alertTriangle}
-            <p>Failed to load analytics: ${escapeHTML(err.message)}</p>
+            <p>${t('failed_load_analytics', 'Failed to load analytics')}: ${escapeHTML(err.message)}</p>
           </div>
         `;
       }
@@ -85,7 +87,7 @@
       const activities = [];
       recordings.slice(0, 15).forEach(r => {
         activities.push({
-          text: `<strong>${escapeHTML(r.author || 'Unknown')}</strong> recorded <strong>${escapeHTML(r.card_title || r.id)}</strong>`,
+          text: `<strong>${escapeHTML(r.author || 'Unknown')}</strong> ${t('analytics_recorded', 'recorded')} <strong>${escapeHTML(r.card_title || r.id)}</strong>`,
           date: r.created_at,
           dotColor: r.status === 'error' ? 'red' : r.status === 'complete' ? 'green' : 'blue',
           link: `/recording/${encodeURIComponent(r.id)}`,
@@ -99,7 +101,7 @@
           <div class="card">
             <div class="flex justify-between items-center">
               <div>
-                <div class="card-title">Recordings</div>
+                <div class="card-title">${t('analytics_recordings', 'Recordings')}</div>
                 <div class="card-value">${totalRec}</div>
               </div>
               <div class="stat-icon blue">${icons.video}</div>
@@ -108,9 +110,9 @@
           <div class="card">
             <div class="flex justify-between items-center">
               <div>
-                <div class="card-title">Exported to YT</div>
+                <div class="card-title">${t('analytics_exported', 'Exported to YT')}</div>
                 <div class="card-value">${exported}</div>
-                <div class="card-subtitle">of ${cards.length} processed</div>
+                <div class="card-subtitle">${t('of', 'of')} ${cards.length} ${t('analytics_processed', 'processed')}</div>
               </div>
               <div class="stat-icon green">${icons.checkCircle}</div>
             </div>
@@ -118,7 +120,7 @@
           <div class="card">
             <div class="flex justify-between items-center">
               <div>
-                <div class="card-title">Pending Export</div>
+                <div class="card-title">${t('analytics_pending', 'Pending Export')}</div>
                 <div class="card-value">${notExported}</div>
               </div>
               <div class="stat-icon amber">${icons.clock}</div>
@@ -127,9 +129,9 @@
           <div class="card">
             <div class="flex justify-between items-center">
               <div>
-                <div class="card-title">Error Rate</div>
+                <div class="card-title">${t('analytics_error_rate', 'Error Rate')}</div>
                 <div class="card-value">${totalRec > 0 ? (((recByStatus.error || 0) / totalRec) * 100).toFixed(0) : 0}%</div>
-                <div class="card-subtitle">${recByStatus.error || 0} errors</div>
+                <div class="card-subtitle">${recByStatus.error || 0} ${t('analytics_errors', 'errors')}</div>
               </div>
               <div class="stat-icon red">${icons.alertTriangle}</div>
             </div>
@@ -139,9 +141,9 @@
         <div class="grid-2 mb-24">
           <!-- Type Distribution -->
           <div class="card">
-            <h3 class="mb-16">By Type</h3>
+            <h3 class="mb-16">${t('analytics_by_type', 'By Type')}</h3>
             <div class="dist-bar-container">
-              ${[['bug', 'Bugs', 'var(--red)'], ['feature', 'Features', 'var(--blue)'], ['enhancement', 'Enhancements', 'var(--violet)']].map(([key, label, color]) => `
+              ${[['bug', t('analytics_bugs', 'Bugs'), 'var(--red)'], ['feature', t('analytics_features', 'Features'), 'var(--blue)'], ['enhancement', t('analytics_enhancements', 'Enhancements'), 'var(--violet)']].map(([key, label, color]) => `
                 <div class="dist-bar-row">
                   <span class="dist-bar-label">${label}</span>
                   <div class="dist-bar-track">
@@ -159,7 +161,7 @@
 
           <!-- By Author -->
           <div class="card">
-            <h3 class="mb-16">By Author</h3>
+            <h3 class="mb-16">${t('analytics_by_author', 'By Author')}</h3>
             ${authorsSorted.length > 0 ? `
               <div class="dist-bar-container">
                 ${authorsSorted.map(([author, count]) => `
@@ -174,13 +176,13 @@
                   </div>
                 `).join('')}
               </div>
-            ` : '<div class="text-dim text-sm">No recordings yet</div>'}
+            ` : `<div class="text-dim text-sm">${t('analytics_no_recordings', 'No recordings yet')}</div>`}
           </div>
         </div>
 
         <!-- Recent Activity -->
         <div class="card">
-          <h3 class="mb-16">Recent Activity</h3>
+          <h3 class="mb-16">${t('analytics_recent', 'Recent Activity')}</h3>
           ${activities.length > 0 ? `
             <div class="activity-list">
               ${activities.slice(0, 15).map(a => `
@@ -193,7 +195,7 @@
                 </a>
               `).join('')}
             </div>
-          ` : '<div class="text-dim text-sm">No activity yet</div>'}
+          ` : `<div class="text-dim text-sm">${t('analytics_no_activity', 'No activity yet')}</div>`}
         </div>
       `;
     }

@@ -243,6 +243,26 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   flex-shrink: 0;
 }
 
+.lang-btn {
+  background: var(--surface2);
+  color: var(--text3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+  margin-left: 8px;
+}
+.lang-btn:hover {
+  color: var(--text);
+  border-color: var(--blue);
+  background: var(--blue-dim);
+}
+
 /* --- Card Component --- */
 .card {
   background: var(--surface);
@@ -3225,4 +3245,116 @@ select.edit-field {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
+}
+
+/* ============================================
+   View Analytics Panel
+   ============================================ */
+
+.analytics-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+
+.analytics-header {
+  margin-bottom: 16px;
+}
+
+.analytics-header .column-panel-label svg {
+  width: 16px;
+  height: 16px;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+.analytics-empty {
+  padding: 8px 0;
+}
+
+.analytics-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.analytics-stat {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.analytics-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.analytics-stat-label {
+  font-size: 0.7rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+
+/* Bar chart */
+.analytics-chart-section {
+  margin-top: 4px;
+}
+
+.analytics-chart-title {
+  margin-bottom: 8px;
+}
+
+.analytics-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 60px;
+  padding: 0 2px;
+}
+
+.analytics-bar-col {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.analytics-bar {
+  width: 100%;
+  background: var(--blue);
+  border-radius: 2px 2px 0 0;
+  min-width: 2px;
+  transition: height 0.3s ease;
+  opacity: 0.85;
+}
+
+.analytics-bar-col:hover .analytics-bar {
+  opacity: 1;
+  background: var(--cyan);
+}
+
+.analytics-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 0.65rem;
+  color: var(--text3);
+}
+
+@media (max-width: 640px) {
+  .analytics-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .analytics-stat {
+    padding: 10px 12px;
+  }
 }

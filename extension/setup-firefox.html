@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BugReel — Firefox Setup</title>
+  <script src="i18n.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -98,19 +99,19 @@
       <div class="brand-logo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
       </div>
-      <h1>BugReel</h1>
-      <div class="subtitle">Firefox Setup</div>
+      <h1 data-i18n="brand_name">BugReel</h1>
+      <div class="subtitle" data-i18n="setup_subtitle_firefox">Firefox Setup</div>
     </div>
 
     <!-- Step 1: Microphone -->
     <div class="step active" id="step-1">
       <div class="step-header">
         <div class="step-num">1</div>
-        <div class="step-title">Microphone Access</div>
+        <div class="step-title" data-i18n="step_microphone_title">Microphone Access</div>
       </div>
       <div class="step-body">
-        <p>Microphone access is needed for voice recording. Click the button and allow access in the browser dialog.</p>
-        <button class="btn btn-blue" id="btn-mic">
+        <p data-i18n="step_microphone_desc">Microphone access is needed for voice recording. Click the button and allow access in the browser dialog.</p>
+        <button class="btn btn-blue" id="btn-mic" data-i18n="button_allow_microphone">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
           Allow Microphone
         </button>
@@ -122,7 +123,7 @@
             <div class="mic-level-track"><div class="mic-level-fill" id="mic-level-fill"></div></div>
             <span class="mic-level-label" id="mic-level-val">0%</span>
           </div>
-          <p class="mic-live-hint">Say something — the bar should respond to your voice</p>
+          <p class="mic-live-hint" data-i18n="hint_mic_live">Say something — the bar should respond to your voice</p>
         </div>
       </div>
     </div>
@@ -131,17 +132,17 @@
     <div class="step" id="step-2">
       <div class="step-header">
         <div class="step-num">2</div>
-        <div class="step-title">Screen Recording (macOS)</div>
+        <div class="step-title" data-i18n="step_screen_title_macos">Screen Recording (macOS)</div>
       </div>
       <div class="step-body" id="step-2-body">
-        <p>macOS requires screen recording permission for Firefox.</p>
-        <p>Open:</p>
-        <div class="path">System Settings → Privacy & Security → Screen Recording</div>
-        <p>Enable the toggle for <strong>Firefox</strong>.</p>
-        <p style="color:#f59e0b;">After enabling, macOS will ask to restart Firefox — click "Restart".</p>
+        <p data-i18n="step_screen_desc">macOS requires screen recording permission for Firefox.</p>
+        <p data-i18n="step_screen_open">Open:</p>
+        <div class="path" data-i18n="step_screen_path">System Settings → Privacy & Security → Screen Recording</div>
+        <p data-i18n="step_screen_enable">Enable the toggle for <strong>Firefox</strong>.</p>
+        <p style="color:#f59e0b;" data-i18n="step_screen_restart_warning">After enabling, macOS will ask to restart Firefox — click "Restart".</p>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-          <button class="btn btn-outline" id="btn-open-settings">Open System Settings</button>
-          <button class="btn btn-blue" id="btn-screen">Check Screen Access</button>
+          <button class="btn btn-outline" id="btn-open-settings" data-i18n="button_open_settings">Open System Settings</button>
+          <button class="btn btn-blue" id="btn-screen" data-i18n="button_check_screen">Check Screen Access</button>
         </div>
         <div class="result" id="screen-result"></div>
       </div>
@@ -151,16 +152,16 @@
     <div class="step" id="step-3">
       <div class="step-header">
         <div class="step-num">3</div>
-        <div class="step-title">Done</div>
+        <div class="step-title" data-i18n="step_done_title">Done</div>
       </div>
       <div class="step-body">
-        <p>All permissions configured. Click the extension icon to start recording!</p>
-        <button class="btn btn-green hidden" id="btn-done" style="margin-top:8px;">Close and Start</button>
+        <p data-i18n="step_done_desc">All permissions configured. Click the extension icon to start recording!</p>
+        <button class="btn btn-green hidden" id="btn-done" style="margin-top:8px;" data-i18n="button_close_and_start">Close and Start</button>
       </div>
     </div>
 
-    <p class="note">You can skip any step — the extension will request permissions on first recording.</p>
-    <p class="note">You can reopen this page from the popup → "Setup"</p>
+    <p class="note" data-i18n="note_skip_steps_firefox">You can skip any step — the extension will request permissions on first recording.</p>
+    <p class="note" data-i18n="note_reopen_setup">You can reopen this page from the popup → "Setup"</p>
   </div>
 
   <script src="setup-firefox.js"></script>

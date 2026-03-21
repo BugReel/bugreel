@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { getDB } from '../db.js';
 import { config } from '../config.js';
-import { extractAudio, extractFrame, compressVideo } from './ffmpeg.js';
+import { extractAudio, extractFrame, compressVideo, trimVideo, segmentVideo } from './ffmpeg.js';
 import { transcribe } from './whisper.js';
 import { analyzeTranscript } from './gpt.js';
 // --- Concurrency queue: max 2 pipelines at once to avoid overloading CPU/RAM ---
@@ -90,6 +90,24 @@ async function processPipeline(recordingId) {
   const recDir = path.join(config.dataDir, recordingId);
   const videoPath = path.join(recDir, 'video.webm');
   const audioPath = path.join(recDir, 'audio.mp3');
+
+  // 0. Process video segments (trim + cuts)
+  const segmentsJson = recording.segments_json;
+  const trimStart = recording.trim_start;
+  const trimEnd = recording.trim_end;
+  if (segmentsJson) {
+    const segments = JSON.parse(segmentsJson);
+    if (segments.length > 0) {
+      console.log(`[${recordingId}] Processing ${segments.length} segment(s): ${segments.map(s => `${s.start}→${s.end}`).join(', ')}`);
+      await segmentVideo(videoPath, segments);
+      console.log(`[${recordingId}] Segments processed`);
+    }
+  } else if (trimStart !== null && trimStart !== undefined && trimEnd !== null && trimEnd !== undefined) {
+    // Backward compat: old trim_start/trim_end
+    console.log(`[${recordingId}] Trimming video: ${trimStart}s → ${trimEnd}s`);
+    await trimVideo(videoPath, trimStart, trimEnd);
+    console.log(`[${recordingId}] Video trimmed`);
+  }
 
   // 1. Extract audio first (fast — seconds, needed for transcription)
   console.log(`[${recordingId}] Extracting audio...`);
@@ -223,8 +241,26 @@ export function formatDescription(analysis) {
     if (analysis.proposal) desc += `## Proposal\n${analysis.proposal}\n\n`;
     if (analysis.use_case) desc += `## Use Case\n${analysis.use_case}\n\n`;
   } else if (type === 'enhancement') {
-    if (analysis.current_behavior) desc += `## Current Behavior\n${analysis.current_behavior}\n\n`;
-    if (analysis.proposed_change) desc += `## Proposed Change\n${analysis.proposed_change}\n\n`;
+    // New format: arrays
+    if (analysis.observations?.length) {
+      desc += '## Observations\n';
+      for (let i = 0; i < analysis.observations.length; i++) {
+        desc += `${i + 1}. ${analysis.observations[i]}\n`;
+      }
+      desc += '\n';
+    } else if (analysis.current_behavior) {
+      // Legacy fallback: string
+      desc += `## Current Behavior\n${analysis.current_behavior}\n\n`;
+    }
+    if (analysis.suggestions?.length) {
+      desc += '## Suggestions\n';
+      for (let i = 0; i < analysis.suggestions.length; i++) {
+        desc += `${i + 1}. ${analysis.suggestions[i]}\n`;
+      }
+      desc += '\n';
+    } else if (analysis.proposed_change) {
+      desc += `## Proposed Change\n${analysis.proposed_change}\n\n`;
+    }
   } else if (type === 'demo') {
     if (analysis.key_points?.length) {
       desc += '## Key Points\n';

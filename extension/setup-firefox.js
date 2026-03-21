@@ -39,6 +39,7 @@ document.getElementById('btn-mic')?.addEventListener('click', async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     micDone = true;
+    chrome.storage.local.set({ micPermissionGranted: true });
     setResult('mic-result', 'ok', 'Microphone allowed!');
     btn.textContent = 'Done';
     activateStep(2);
