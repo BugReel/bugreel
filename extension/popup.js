@@ -430,21 +430,6 @@ if (selectWebcamDevice) {
   });
 }
 
-// PiP corner position selector
-document.querySelectorAll('.pip-corner').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.pip-corner').forEach(b => b.style.background = '#1e293b');
-    btn.style.background = '#3b82f6';
-    chrome.storage.local.set({ webcamCorner: btn.dataset.corner });
-  });
-});
-// Restore saved corner on load
-chrome.storage.local.get('webcamCorner', (r) => {
-  const corner = r.webcamCorner || 'bottom-left';
-  document.querySelectorAll('.pip-corner').forEach(b => {
-    b.style.background = b.dataset.corner === corner ? '#3b82f6' : '#1e293b';
-  });
-});
 
 async function populateWebcamDevices(savedDeviceId) {
   try {

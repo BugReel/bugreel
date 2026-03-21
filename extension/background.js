@@ -269,6 +269,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return;
   }
 
+  // --- Webcam position update from widget ---
+  if (message.type === 'webcam-position-update') {
+    // Store for future recordings and forward to active recorder
+    chrome.storage.local.set({ webcamPosition: { xPercent: message.xPercent, yPercent: message.yPercent } });
+    chrome.runtime.sendMessage({ ...message, target: 'offscreen' }).catch(() => {});
+    return;
+  }
+
   // --- CRM profile from content script ---
   if (message.type === 'crm-profile' && message.profile) {
     crmProfile = message.profile;
@@ -574,7 +582,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
   }
 
   const serverUrl = await getServerUrl();
-  const storage = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'userEmail', 'maxDuration', 'videoQuality', 'webcamCorner']);
+  const storage = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'userEmail', 'maxDuration', 'videoQuality', 'webcamPosition']);
   const author = storage.extensionToken ? (storage.userName || storage.userEmail || 'unknown') : (storage.author || 'unknown');
 
   console.log('[BugReel] Sending offscreen-start to recorder...');
@@ -589,7 +597,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
     systemAudioEnabled,
     webcamEnabled,
     webcamDeviceId,
-    webcamCorner: storage.webcamCorner || 'bottom-left',
+    webcamPosition: storage.webcamPosition || null,
     extensionToken: storage.extensionToken || '',
     maxDuration: storage.maxDuration || 10,
     videoQuality: storage.videoQuality || '720p',

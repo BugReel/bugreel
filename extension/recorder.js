@@ -38,7 +38,7 @@ let micLevelInterval = null;
 let pendingServerUrl = '';
 let pendingAuthor = '';
 let pendingExtensionToken = '';
-let pendingWebcamCorner = 'bottom-left';
+let pendingWebcamPosition = null; // { xPercent, yPercent } — from widget drag position
 let pendingAutoUpload = null;
 
 // Firefox recorder window timer
@@ -53,7 +53,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   switch (message.type) {
     case 'offscreen-start':
-      startRecording(message.streamId, message.serverUrl, message.author, message.mode, message.micEnabled, message.systemAudioEnabled, message.extensionToken, message.maxDuration, message.videoQuality, message.webcamEnabled, message.webcamDeviceId, message.webcamCorner)
+      startRecording(message.streamId, message.serverUrl, message.author, message.mode, message.micEnabled, message.systemAudioEnabled, message.extensionToken, message.maxDuration, message.videoQuality, message.webcamEnabled, message.webcamDeviceId, message.webcamPosition)
         .then(() => sendResponse({ success: true }))
         .catch((err) => sendResponse({ success: false, error: err.message }));
       return true;
@@ -147,11 +147,11 @@ function stopMicPreview() {
 
 /* --- Recording --- */
 
-async function startRecording(streamId, serverUrl, author, mode, micEnabled, systemAudioEnabled, extensionToken, maxDuration, videoQuality, webcamEnabled, webcamDeviceId, webcamCorner) {
+async function startRecording(streamId, serverUrl, author, mode, micEnabled, systemAudioEnabled, extensionToken, maxDuration, videoQuality, webcamEnabled, webcamDeviceId, webcamPosition) {
   pendingServerUrl = serverUrl;
   pendingAuthor = author;
   pendingExtensionToken = extensionToken || '';
-  pendingWebcamCorner = webcamCorner || 'bottom-left';
+  pendingWebcamPosition = webcamPosition || null;
 
   // Apply user settings (passed via message from background.js — chrome.storage is not available in offscreen)
   const maxDurationMin = maxDuration || 10;
@@ -336,28 +336,32 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
 /* --- Webcam PiP compositing via Canvas --- */
 
 async function setupWebcamPiP(screenTrack) {
-  // Get screen video dimensions
-  const screenSettings = screenTrack.getSettings();
-  const canvasWidth = screenSettings.width || 1280;
-  const canvasHeight = screenSettings.height || 720;
-  const fps = screenSettings.frameRate || 30;
-
-  // PiP size: ~12% of screen width, min 120px, max 300px
-  const PIP_DIAMETER = Math.max(120, Math.min(300, Math.round(canvasWidth * 0.12)));
-  const PIP_MARGIN = Math.round(canvasWidth * 0.02);
-
-  // Create canvas for compositing
-  pipCanvas = document.createElement('canvas');
-  pipCanvas.width = canvasWidth;
-  pipCanvas.height = canvasHeight;
-  pipCtx = pipCanvas.getContext('2d');
-
-  // Create hidden video element for screen capture
+  // Create hidden video element for screen capture — play FIRST to get real dimensions
   screenVideo = document.createElement('video');
   screenVideo.srcObject = new MediaStream([screenTrack]);
   screenVideo.muted = true;
   screenVideo.playsInline = true;
   await screenVideo.play();
+
+  // Wait for video to have actual dimensions
+  await new Promise(r => {
+    if (screenVideo.videoWidth > 0) return r();
+    screenVideo.onloadedmetadata = r;
+  });
+
+  const canvasWidth = screenVideo.videoWidth || 1280;
+  const canvasHeight = screenVideo.videoHeight || 720;
+  const fps = screenTrack.getSettings().frameRate || 30;
+
+  // PiP size: 200px fixed — clear and consistent
+  const PIP_DIAMETER = 200;
+  const PIP_MARGIN = 24;
+
+  // Create canvas for compositing — match exact video dimensions
+  pipCanvas = document.createElement('canvas');
+  pipCanvas.width = canvasWidth;
+  pipCanvas.height = canvasHeight;
+  pipCtx = pipCanvas.getContext('2d');
 
   // Create hidden video element for webcam
   webcamVideo = document.createElement('video');
@@ -366,28 +370,23 @@ async function setupWebcamPiP(screenTrack) {
   webcamVideo.playsInline = true;
   await webcamVideo.play();
 
-  // PiP position: configurable corner (bottom-left default)
-  // Reads from chrome.storage via message since storage isn't available in offscreen
-  const pipCorner = pendingWebcamCorner || 'bottom-left';
-  let pipX, pipY;
-  switch (pipCorner) {
-    case 'top-left':
-      pipX = PIP_MARGIN + PIP_DIAMETER / 2;
-      pipY = PIP_MARGIN + PIP_DIAMETER / 2;
-      break;
-    case 'top-right':
-      pipX = canvasWidth - PIP_MARGIN - PIP_DIAMETER / 2;
-      pipY = PIP_MARGIN + PIP_DIAMETER / 2;
-      break;
-    case 'bottom-right':
-      pipX = canvasWidth - PIP_MARGIN - PIP_DIAMETER / 2;
-      pipY = canvasHeight - PIP_MARGIN - PIP_DIAMETER / 2;
-      break;
-    default: // bottom-left
-      pipX = PIP_MARGIN + PIP_DIAMETER / 2;
-      pipY = canvasHeight - PIP_MARGIN - PIP_DIAMETER / 2;
-  }
+  // PiP position: use percentage from widget position (synced via message)
+  // Default: bottom-left (5%, 85%)
+  let pipXPercent = pendingWebcamPosition?.xPercent ?? 0.05;
+  let pipYPercent = pendingWebcamPosition?.yPercent ?? 0.85;
+  let pipX = PIP_MARGIN + PIP_DIAMETER / 2 + pipXPercent * (canvasWidth - PIP_DIAMETER - PIP_MARGIN * 2);
+  let pipY = PIP_MARGIN + PIP_DIAMETER / 2 + pipYPercent * (canvasHeight - PIP_DIAMETER - PIP_MARGIN * 2);
   const pipRadius = PIP_DIAMETER / 2;
+
+  // Listen for position updates during recording
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'webcam-position-update' && msg.target === 'offscreen') {
+      pipXPercent = msg.xPercent;
+      pipYPercent = msg.yPercent;
+      pipX = PIP_MARGIN + PIP_DIAMETER / 2 + pipXPercent * (canvasWidth - PIP_DIAMETER - PIP_MARGIN * 2);
+      pipY = PIP_MARGIN + PIP_DIAMETER / 2 + pipYPercent * (canvasHeight - PIP_DIAMETER - PIP_MARGIN * 2);
+    }
+  });
 
   // Compositing render loop
   function drawFrame() {
@@ -840,7 +839,8 @@ chrome.runtime.sendMessage({ type: 'recorder-ready' }).catch(() => {});
       undefined, // maxDuration — use default
       undefined, // videoQuality — use default
       params.webcamEnabled,
-      params.webcamDeviceId
+      params.webcamDeviceId,
+      params.webcamPosition
     );
     console.log('[BugReel] Firefox recording started successfully');
     chrome.runtime.sendMessage({ type: 'firefox-recording-started' }).catch(() => {});
@@ -888,7 +888,8 @@ function showFallbackButton(params, label, hint) {
         undefined, // maxDuration
         undefined, // videoQuality
         params.webcamEnabled,
-        params.webcamDeviceId
+        params.webcamDeviceId,
+        params.webcamPosition
       );
       chrome.runtime.sendMessage({ type: 'firefox-recording-started' }).catch(() => {});
       if (label) label.textContent = 'Recording';

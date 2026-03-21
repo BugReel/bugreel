@@ -303,7 +303,17 @@
     dragState = null;
     document.removeEventListener('mousemove', onDragMove, true);
     document.removeEventListener('mouseup', onDragEnd, true);
-    try { chrome.storage.local.set({ widgetPosition: { x: rect.left, y: rect.top } }); } catch {}
+    try {
+      chrome.storage.local.set({ widgetPosition: { x: rect.left, y: rect.top } });
+      // Send position as screen percentage to recorder for PiP placement
+      const xPercent = Math.max(0, Math.min(1, rect.left / window.innerWidth));
+      const yPercent = Math.max(0, Math.min(1, rect.top / window.innerHeight));
+      chrome.runtime.sendMessage({
+        type: 'webcam-position-update',
+        xPercent,
+        yPercent,
+      }).catch(() => {});
+    } catch {}
   }
 
   function restorePosition() {
