@@ -30,7 +30,8 @@ router.post('/upload', (req, res, next) => {
   next();
 }, upload.single('video'), (req, res) => {
   const id = req.recordingId;
-  const author = req.body.author || 'Unknown';
+  // Prefer user identity from Cloud Layer proxy headers, fall back to form body
+  const author = req.headers['x-user-name'] || req.headers['x-user-email'] || req.body.author || 'Unknown';
 
   const db = getDB();
   db.prepare(`

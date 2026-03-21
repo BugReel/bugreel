@@ -1,6 +1,12 @@
 /* popup.js — BugReel popup UI */
 
+const t = (key, fallback) => {
+  try { return chrome.i18n?.getMessage(key) || fallback || key; }
+  catch { return fallback || key; }
+};
+
 let SERVER_URL = '';
+let DASHBOARD_PATH = '/'; // Can be overridden by branded builds (e.g. '/app/')
 let hasExtensionToken = false;
 let currentUserName = '';
 
@@ -71,7 +77,7 @@ let timerPausedElapsed = 0;
   // Check for token-based auth vs legacy author dropdown
   if (stored.extensionToken) {
     hasExtensionToken = true;
-    currentUserName = stored.userName || stored.userEmail || 'Connected';
+    currentUserName = stored.userName || stored.userEmail || t('status_connected', 'Connected');
     showUserInfo(currentUserName);
     // Hide legacy author dropdown
     const authorField = $('author-field');
@@ -99,7 +105,7 @@ let timerPausedElapsed = 0;
     setupLink.href = '#';
     setupLink.className = 'dashboard-link';
     setupLink.style.marginTop = '4px';
-    setupLink.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Setup';
+    setupLink.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ' + t('popup_setup', 'Setup');
     setupLink.addEventListener('click', (e) => { e.preventDefault(); chrome.tabs.create({ url: chrome.runtime.getURL('setup.html') }); });
     dashLink.parentNode.insertBefore(setupLink, dashLink.nextSibling);
   }
@@ -122,7 +128,7 @@ let timerPausedElapsed = 0;
   } else if (st === 'uploading') {
     showState('idle');
     $('status-bar-wrap').classList.remove('hidden');
-    setStatus('working', 'Uploading to server...');
+    setStatus('working', t('status_uploadingToServer', 'Uploading to server...'));
   } else if (st === 'ready') {
     showState('ready');
   } else {
@@ -176,7 +182,7 @@ async function loadAuthors(savedAuthor) {
     for (const u of (data.users || [])) {
       if (!seen.has(u.youtrack_login)) { seen.add(u.youtrack_login); users.push(u); }
     }
-    inputAuthor.innerHTML = '<option value="">-- Select --</option>';
+    inputAuthor.innerHTML = `<option value="">${t('popup_selectAuthor', '-- Select --')}</option>`;
     for (const u of users) {
       const o = document.createElement('option');
       o.value = u.youtrack_login; o.textContent = u.youtrack_name || u.author;
@@ -185,7 +191,7 @@ async function loadAuthors(savedAuthor) {
     }
   } catch {
     // Fallback: allow free-text author entry if server is unavailable
-    inputAuthor.innerHTML = '<option value="">-- Select --</option>';
+    inputAuthor.innerHTML = `<option value="">${t('popup_selectAuthor', '-- Select --')}</option>`;
     if (savedAuthor) {
       const o = document.createElement('option');
       o.value = savedAuthor; o.textContent = savedAuthor;
@@ -217,7 +223,7 @@ function showState(st) {
     timerEl.classList.remove('hidden');
     timerEl.className = 'timer';
     $('status-bar-wrap').classList.remove('hidden');
-    setStatus('recording', 'Recording');
+    setStatus('recording', t('status_recording', 'Recording'));
     // Show recording hint, auto-hide after 8s
     const hint = $('rec-hint');
     if (hint) { hint.style.opacity = '1'; hint.style.display = ''; setTimeout(() => { hint.style.opacity = '0'; setTimeout(() => hint.style.display = 'none', 300); }, 8000); }
@@ -228,7 +234,7 @@ function showState(st) {
     timerEl.classList.remove('hidden');
     timerEl.className = 'timer paused';
     $('status-bar-wrap').classList.remove('hidden');
-    setStatus('working', 'Paused');
+    setStatus('working', t('status_paused', 'Paused'));
   } else if (st === 'ready') {
     stateReady.classList.remove('hidden');
     controls.classList.remove('hidden');
@@ -318,7 +324,7 @@ function updateMicStatus() {
   if (!toggleMic.checked) {
     if (!micHardwareAvailable) {
       micStatusDot.className = 'mic-status-dot denied';
-      micStatusText.textContent = 'Not found';
+      micStatusText.textContent = t('popup_micNotFound', 'Not found');
       micStatus.classList.remove('hidden');
     } else {
       micStatus.classList.add('hidden');
@@ -330,12 +336,12 @@ function updateMicStatus() {
   // Mic toggle is ON — show permission status
   if (!micHardwareAvailable) {
     micStatusDot.className = 'mic-status-dot denied';
-    micStatusText.textContent = 'Not found';
+    micStatusText.textContent = t('popup_micNotFound', 'Not found');
     micStatus.classList.remove('hidden');
     if (warn) warn.classList.add('hidden');
   } else if (micPermissionGranted) {
     micStatusDot.className = 'mic-status-dot ready';
-    micStatusText.textContent = 'Ready';
+    micStatusText.textContent = t('popup_micReady', 'Ready');
     micStatus.classList.remove('hidden');
     if (warn) warn.classList.add('hidden');
   } else {
@@ -408,7 +414,7 @@ btnStart.addEventListener('click', () => startNewRecording());
 async function startNewRecording() {
   // Determine author: from token (userName) or legacy dropdown
   const author = hasExtensionToken ? currentUserName : inputAuthor.value;
-  if (!author && !hasExtensionToken) { setStatus('error', 'Select an author'); return; }
+  if (!author && !hasExtensionToken) { setStatus('error', t('error_selectAuthor', 'Select an author')); return; }
 
   // Mic not granted: record without mic instead of blocking
   let micEnabled = toggleMic.checked;
@@ -424,10 +430,10 @@ async function startNewRecording() {
   await chrome.storage.local.set({ author: author || 'unknown', captureMode, serverUrl: SERVER_URL });
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab && captureMode === 'tab') { setStatus('error', 'No active tab'); return; }
+  if (!tab && captureMode === 'tab') { setStatus('error', t('error_noActiveTab', 'No active tab')); return; }
 
-  if (!SERVER_URL) { setStatus('error', 'Server URL not configured. Open Setup.'); return; }
-  setStatus('working', captureMode === 'desktop' ? 'Choose source...' : 'Starting...');
+  if (!SERVER_URL) { setStatus('error', t('error_serverNotConfigured', 'Server URL not configured. Open Setup.')); return; }
+  setStatus('working', captureMode === 'desktop' ? t('status_chooseSource', 'Choose source...') : t('status_starting', 'Starting...'));
   btnStart.disabled = true;
   stopMicPreview();
 
@@ -447,7 +453,7 @@ async function startNewRecording() {
       if (isFirefox) {
         // Firefox: don't show recording yet — wait for recorder tab to confirm
         $('status-bar-wrap').classList.remove('hidden');
-        setStatus('working', 'Select screen for recording...');
+        setStatus('working', t('status_selectScreen', 'Select screen for recording...'));
         // Popup will likely close when recorder tab opens — state updates via storage
       } else {
         const s = await chrome.storage.local.get(['recordingStartedAt', 'pausedElapsed']);
@@ -458,7 +464,7 @@ async function startNewRecording() {
       }
     } else {
       btnStart.disabled = false;
-      setStatus('error', result?.error || 'Failed');
+      setStatus('error', result?.error || t('error_failed', 'Failed'));
     }
   } catch (err) {
     btnStart.disabled = false;
@@ -480,7 +486,7 @@ btnStop.addEventListener('click', async () => {
   stopTimer();
   showState('idle');
   $('status-bar-wrap').classList.remove('hidden');
-  setStatus('working', 'Uploading to server...');
+  setStatus('working', t('status_uploadingToServer', 'Uploading to server...'));
 });
 
 btnResume.addEventListener('click', async () => {
@@ -498,7 +504,7 @@ btnFinish.addEventListener('click', async () => {
   statePaused.classList.add('hidden');
   timerEl.className = 'timer';
   $('status-bar-wrap').classList.remove('hidden');
-  setStatus('working', 'Saving recording...');
+  setStatus('working', t('status_saving', 'Saving recording...'));
 });
 
 $('btn-discard').addEventListener('click', async () => {
@@ -523,7 +529,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   // Firefox: recording failed
   if (msg.type === 'recording-failed') {
     showState('idle');
-    setStatus('error', 'Recording failed');
+    setStatus('error', t('status_recordingFailed', 'Recording failed'));
   }
 
   if (msg.type === 'audio-status') {
@@ -542,23 +548,23 @@ chrome.runtime.onMessage.addListener((msg) => {
     }
   }
   if (msg.type === 'blob-saved') {
-    setStatus('working', 'Uploading to server...');
+    setStatus('working', t('status_uploadingToServer', 'Uploading to server...'));
   }
-  if (msg.type === 'upload-started') setStatus('working', 'Uploading...');
-  if (msg.type === 'upload-progress') setStatus('working', `Uploading ${msg.percent}%`);
+  if (msg.type === 'upload-started') setStatus('working', t('status_uploading', 'Uploading...'));
+  if (msg.type === 'upload-progress') setStatus('working', t('status_uploadingPercent', 'Uploading') + ` ${msg.percent}%`);
   if (msg.type === 'upload-done') {
     showState('idle');
     $('status-bar-wrap').classList.remove('hidden');
     const recUrl = `${SERVER_URL}/recording/${encodeURIComponent(msg.recordingId)}`;
     navigator.clipboard.writeText(recUrl).catch(() => {});
-    setStatusWithLink('done', 'Link copied!', msg.recordingId);
+    setStatusWithLink('done', t('status_linkCopied', 'Link copied!'), msg.recordingId);
     loadRecentRecordings();
   }
   if (msg.type === 'upload-error') setStatus('error', msg.error);
   if (msg.type === 'recording-stopped-max') {
     stopTimer();
     showState('ready');
-    setStatus('working', 'Max duration reached. Saving...');
+    setStatus('working', t('status_maxDuration', 'Max duration reached. Saving...'));
   }
 });
 
@@ -604,7 +610,8 @@ function setStatusWithLink(type, text, recordingId) {
 /* --- Recent Recordings --- */
 async function loadRecentRecordings() {
   try {
-    const author = hasExtensionToken ? currentUserName : inputAuthor.value;
+    // With token auth, don't filter by author — the token scopes to the user
+    const author = hasExtensionToken ? '' : inputAuthor.value;
     const authorParam = author ? `&author=${encodeURIComponent(author)}` : '';
     const headers = {};
     const stored = await chrome.storage.local.get('extensionToken');
@@ -631,13 +638,13 @@ async function loadRecentRecordings() {
       if (r.status !== 'complete' && r.status !== 'error') {
         statusClass = 'processing'; statusLabel = '...';
       } else if (r.status === 'error') {
-        statusClass = 'error'; statusLabel = 'err';
+        statusClass = 'error'; statusLabel = t('status_err', 'err');
       } else if (r.card_youtrack_id) {
         statusClass = 'complete'; statusLabel = r.card_youtrack_id;
       } else if (r.pending_youtrack_issue_id) {
-        statusClass = 'processing'; statusLabel = '\u{1F4CB} review';
+        statusClass = 'processing'; statusLabel = '\u{1F4CB} ' + t('status_review', 'review');
       } else {
-        statusClass = 'complete'; statusLabel = 'done';
+        statusClass = 'complete'; statusLabel = t('status_done', 'done');
       }
       const url = `${SERVER_URL}/recording/${encodeURIComponent(r.id)}`;
       return `<a href="${url}" class="recent-item" data-url="${url}">
@@ -672,5 +679,5 @@ window.addEventListener('pagehide', () => {
 /* --- Dashboard link --- */
 document.getElementById('dashboard-link')?.addEventListener('click', (e) => {
   e.preventDefault();
-  chrome.tabs.create({ url: SERVER_URL });
+  chrome.tabs.create({ url: SERVER_URL + DASHBOARD_PATH });
 });

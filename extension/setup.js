@@ -1,5 +1,10 @@
 /* setup.js — Universal first-run setup wizard (Chrome + Firefox) */
 
+const t = (key, fallback) => {
+  try { return chrome.i18n?.getMessage(key) || fallback || key; }
+  catch { return fallback || key; }
+};
+
 const isMac = navigator.platform?.includes('Mac') || navigator.userAgent?.includes('Macintosh');
 const isFirefox = navigator.userAgent?.includes('Firefox');
 const isChrome = !isFirefox;
@@ -12,7 +17,7 @@ let authDone = false;
 // --- Adapt UI for browser ---
 (function adaptUI() {
   const subtitle = document.getElementById('subtitle');
-  if (subtitle) subtitle.textContent = isFirefox ? 'Firefox Setup' : 'Chrome Setup';
+  if (subtitle) subtitle.textContent = isFirefox ? t('setup_subtitle_firefox', 'Firefox Setup') : t('setup_chromeSetup', 'Chrome Setup');
 
   // Hide step 2 entirely for Chrome (screen recording works out of the box)
   if (!needsScreenStep) {
@@ -32,7 +37,7 @@ let authDone = false;
   // On Chrome: customize done text
   if (isChrome) {
     const doneText = document.getElementById('done-text');
-    if (doneText) doneText.textContent = 'Setup complete. Click the extension icon to start recording!';
+    if (doneText) doneText.textContent = t('setup_complete', 'Setup complete. Click the extension icon to start recording!');
   }
 })();
 
@@ -66,7 +71,7 @@ function checkAllDone() {
     if (stepDone) { stepDone.classList.add('active', 'done'); }
     document.getElementById('btn-done')?.classList.remove('hidden');
     const doneText = document.getElementById('done-text');
-    if (doneText) doneText.textContent = 'Setup complete. Click the extension icon to start recording!';
+    if (doneText) doneText.textContent = t('setup_complete', 'Setup complete. Click the extension icon to start recording!');
     chrome.storage.local.set({ setupComplete: true });
   } else {
     // Mic/screen done, auth still pending — show auth step as active, allow finishing
@@ -79,7 +84,7 @@ function checkAllDone() {
     document.getElementById('btn-done')?.classList.remove('hidden');
     const doneText = document.getElementById('done-text');
     if (doneText) {
-      doneText.textContent = 'Permissions configured. You can connect your account above, or start recording now.';
+      doneText.textContent = t('setup_permissions_configured', 'Permissions configured. You can connect your account above, or start recording now.');
     }
     chrome.storage.local.set({ setupComplete: true });
   }
@@ -90,13 +95,14 @@ function checkAllDone() {
 document.getElementById('btn-mic')?.addEventListener('click', async () => {
   const btn = document.getElementById('btn-mic');
   btn.disabled = true;
-  btn.textContent = 'Requesting...';
+  btn.textContent = t('setup_requesting', 'Requesting...');
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     micDone = true;
-    setResult('mic-result', 'ok', 'Microphone allowed!');
-    btn.textContent = 'Done';
+    chrome.storage.local.set({ micPermissionGranted: true });
+    setResult('mic-result', 'ok', t('setup_micAllowed', 'Microphone allowed!'));
+    btn.textContent = t('setup_done', 'Done');
     markDone('step-1');
     if (needsScreenStep) {
       activateStep('step-2');
@@ -105,8 +111,8 @@ document.getElementById('btn-mic')?.addEventListener('click', async () => {
     startMicLevel(stream);
   } catch (e) {
     btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Try Again';
-    setResult('mic-result', 'err', 'Denied: ' + (e.message || 'Permission denied'));
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> ' + t('setup_tryAgain', 'Try Again');
+    setResult('mic-result', 'err', (e.message || t('error_failed', 'Failed')));
   }
 });
 
@@ -143,8 +149,8 @@ function startMicLevel(stream) {
     const perm = await navigator.permissions.query({ name: 'microphone' });
     if (perm.state === 'granted') {
       micDone = true;
-      setResult('mic-result', 'ok', 'Already granted');
-      document.getElementById('btn-mic').textContent = 'Done';
+      setResult('mic-result', 'ok', t('setup_micAlreadyGranted', 'Already granted'));
+      document.getElementById('btn-mic').textContent = t('setup_done', 'Done');
       document.getElementById('btn-mic').disabled = true;
       markDone('step-1');
       if (needsScreenStep) activateStep('step-2');
@@ -166,7 +172,7 @@ document.getElementById('btn-open-settings')?.addEventListener('click', () => {
     try {
       window.open('x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_ScreenCapture');
     } catch {
-      setResult('screen-result', 'info', 'Open manually: System Settings → Privacy & Security → Screen Recording');
+      setResult('screen-result', 'info', t('setup_openManually', 'Open manually: System Settings → Privacy & Security → Screen Recording'));
     }
   }
 });
@@ -174,26 +180,26 @@ document.getElementById('btn-open-settings')?.addEventListener('click', () => {
 document.getElementById('btn-screen')?.addEventListener('click', async () => {
   const btn = document.getElementById('btn-screen');
   btn.disabled = true;
-  btn.textContent = 'Checking...';
+  btn.textContent = t('setup_checking', 'Checking...');
 
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
     stream.getTracks().forEach(t => t.stop());
     screenDone = true;
-    setResult('screen-result', 'ok', 'Screen recording works!');
-    btn.textContent = 'Done';
+    setResult('screen-result', 'ok', t('setup_screenWorks', 'Screen recording works!'));
+    btn.textContent = t('setup_done', 'Done');
     markDone('step-2');
     checkAllDone();
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = 'Check Again';
+    btn.textContent = t('setup_checkAgain', 'Check Again');
     const msg = e.message || '';
     if (msg.includes('not found') || e.name === 'NotFoundError') {
-      setResult('screen-result', 'err', 'No screen recording access. Enable the toggle in System Settings and restart Firefox.');
+      setResult('screen-result', 'err', t('setup_noScreenAccess', 'No screen recording access. Enable the toggle in System Settings and restart Firefox.'));
     } else if (e.name === 'NotAllowedError' || msg.includes('transient')) {
-      setResult('screen-result', 'info', 'You cancelled screen selection. Click again and select a screen.');
+      setResult('screen-result', 'info', t('setup_cancelledScreen', 'You cancelled screen selection. Click again and select a screen.'));
     } else {
-      setResult('screen-result', 'err', 'Error: ' + msg);
+      setResult('screen-result', 'err', t('error_failed', 'Error') + ': ' + msg);
     }
   }
 });
@@ -204,13 +210,13 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
   const tokenInput = document.getElementById('input-token');
   const token = (tokenInput?.value || '').trim();
   if (!token) {
-    setResult('token-result', 'err', 'Please paste your extension token');
+    setResult('token-result', 'err', t('setup_pasteToken', 'Please paste your extension token'));
     return;
   }
 
   const btn = document.getElementById('btn-connect-token');
   btn.disabled = true;
-  btn.textContent = 'Verifying...';
+  btn.textContent = t('setup_verifying', 'Verifying...');
   setResult('token-result', '', '');
 
   // We need a server URL to verify the token. Try to get it from storage.
@@ -219,8 +225,8 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
 
   if (!serverUrl) {
     btn.disabled = false;
-    btn.textContent = 'Connect';
-    setResult('token-result', 'err', 'Server URL not configured. Set it in the extension popup first, then return here.');
+    btn.textContent = t('button_connect', 'Connect');
+    setResult('token-result', 'err', t('setup_serverUrlNotConfigured', 'Server URL not configured. Set it in the extension popup first, then return here.'));
     return;
   }
 
@@ -229,11 +235,11 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) {
-      throw new Error(res.status === 401 ? 'Invalid or expired token' : `Server error ${res.status}`);
+      throw new Error(res.status === 401 ? t('setup_invalidToken', 'Invalid or expired token') : (t('setup_serverError', 'Server error') || 'Server error') + ` ${res.status}`);
     }
     const data = await res.json();
     if (!data.ok || !data.user) {
-      throw new Error('Invalid server response');
+      throw new Error(t('setup_invalidResponse', 'Invalid server response'));
     }
 
     // Save token and user info
@@ -244,14 +250,15 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
     });
 
     authDone = true;
-    setResult('token-result', 'ok', 'Connected!');
-    btn.textContent = 'Done';
+    setResult('token-result', 'ok', t('setup_connected', 'Connected!'));
+    btn.textContent = t('setup_done', 'Done');
 
     // Show user info
     const userInfo = document.getElementById('auth-user-info');
     const userName = document.getElementById('auth-user-name');
     if (userInfo && userName) {
-      userName.textContent = `${data.user.name} (${data.user.email})`;
+      const displayName = data.user.name || data.user.email.split('@')[0];
+      userName.textContent = `${displayName} (${data.user.email})`;
       userInfo.classList.remove('hidden');
     }
     tokenInput.disabled = true;
@@ -260,8 +267,8 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
     checkAllDone();
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = 'Connect';
-    setResult('token-result', 'err', e.message || 'Connection failed');
+    btn.textContent = t('button_connect', 'Connect');
+    setResult('token-result', 'err', e.message || t('setup_connectionFailed', 'Connection failed'));
   }
 });
 
@@ -278,15 +285,16 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
         const data = await res.json();
         if (data.ok && data.user) {
           authDone = true;
-          setResult('token-result', 'ok', 'Already connected');
+          setResult('token-result', 'ok', t('setup_alreadyConnected', 'Already connected'));
           const btn = document.getElementById('btn-connect-token');
-          if (btn) { btn.textContent = 'Done'; btn.disabled = true; }
+          if (btn) { btn.textContent = t('setup_done', 'Done'); btn.disabled = true; }
           const tokenInput = document.getElementById('input-token');
           if (tokenInput) { tokenInput.value = stored.extensionToken.slice(0, 8) + '...'; tokenInput.disabled = true; }
           const userInfo = document.getElementById('auth-user-info');
           const userName = document.getElementById('auth-user-name');
           if (userInfo && userName) {
-            userName.textContent = `${data.user.name} (${data.user.email})`;
+            const displayName = data.user.name || data.user.email.split('@')[0];
+            userName.textContent = `${displayName} (${data.user.email})`;
             userInfo.classList.remove('hidden');
           }
           markDone('step-auth');
