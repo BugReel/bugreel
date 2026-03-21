@@ -3,7 +3,10 @@
  * All functions call fetch against same-origin /api endpoints
  */
 
-const API_BASE = '';  // same origin
+// Auto-detect API base: if dashboard runs under a path prefix (e.g. /app/),
+// API calls still go to /api/ at the origin root.
+// This works for both standalone (localhost:3500) and reverse-proxy (/app/) deployments.
+const API_BASE = '';
 
 /**
  * Generic fetch wrapper with error handling

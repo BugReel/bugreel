@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDB } from '../db.js';
 import { config } from '../config.js';
+import { getBrandingConfig } from './settings.js';
 
 const router = Router();
 
@@ -38,7 +39,8 @@ router.get('/embed/:id', (req, res) => {
   res.removeHeader('X-Frame-Options');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
-  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id }));
+  const branding = getBrandingConfig();
+  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id, branding }));
 });
 
 /**
@@ -74,7 +76,7 @@ router.get('/embed/:id/code', (req, res) => {
 /**
  * Generate the full embed HTML page with inline CSS and JS.
  */
-function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId }) {
+function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId, branding = {} }) {
   const escapedTitle = escapeHTML(title);
 
   return `<!DOCTYPE html>
@@ -134,10 +136,17 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
 <body>
 <div class="embed-wrap${autoplay ? '' : ' paused'}" id="wrap">
 
-  ${showBranding ? `<a class="branding" href="https://bugreel.io" target="_blank" rel="noopener">
+  ${showBranding ? (() => {
+    const logoUrl = branding.logo_url;
+    const logoLink = branding.logo_link || 'https://bugreel.io';
+    if (logoUrl) {
+      return `<a class="branding" href="${escapeHTML(logoLink)}" target="_blank" rel="noopener"><img src="${escapeHTML(logoUrl)}" alt="" style="height:18px;max-width:120px;object-fit:contain;vertical-align:middle;"></a>`;
+    }
+    return `<a class="branding" href="${escapeHTML(logoLink)}" target="_blank" rel="noopener">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
     BugReel
-  </a>` : ''}
+  </a>`;
+  })() : ''}
 
   <video id="video" preload="metadata" playsinline${autoplay ? ' autoplay muted' : ''}>
     <source src="${videoSrc}" type="video/webm">

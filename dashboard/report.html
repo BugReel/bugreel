@@ -359,7 +359,7 @@
         <div class="container page">
           <!-- Header -->
           <div class="report-header">
-            <div class="logo">
+            <div class="logo" id="report-logo">
               <div class="logo-icon">${icons.target}</div>
               <span>BugReel</span>
             </div>
@@ -459,6 +459,7 @@
       setupLightbox();
       loadComments();
       setupCommentForm();
+      loadBranding();
     }
 
     function renderReportAnalysis(a, card) {
@@ -585,6 +586,20 @@
     }
 
     // --- Video Comments ---
+
+    async function loadBranding() {
+      try {
+        const res = await fetch('/api/settings');
+        if (!res.ok) return;
+        const settings = await res.json();
+        const logoEl = document.getElementById('report-logo');
+        if (!logoEl) return;
+        if (settings.branding_logo_url) {
+          const link = settings.branding_logo_link || '#';
+          logoEl.innerHTML = `<a href="${escapeHTML(link)}" target="_blank" rel="noopener" style="display:flex;align-items:center;text-decoration:none;"><img src="${escapeHTML(settings.branding_logo_url)}" alt="" style="height:28px;max-width:160px;object-fit:contain;"></a>`;
+        }
+      } catch { /* branding is optional */ }
+    }
 
     async function loadComments() {
       const list = document.getElementById('commentList');

@@ -34,16 +34,37 @@ function getTrackerConfig() {
 }
 
 /**
+ * Resolve branding config from DB settings.
+ */
+function getBrandingConfig() {
+  return {
+    logo_url: getSetting('branding_logo_url', ''),
+    logo_link: getSetting('branding_logo_link', ''),
+  };
+}
+
+/**
  * GET /api/settings
  * Returns current settings (no token for security).
  */
 router.get('/settings', (req, res) => {
   const tracker = getTrackerConfig();
+  const branding = getBrandingConfig();
+  // Mask token: show first 5 + last 2 chars, rest as dots
+  let tokenMask = '';
+  if (tracker.token && tracker.token.length > 10) {
+    tokenMask = tracker.token.slice(0, 5) + '•'.repeat(Math.min(tracker.token.length - 7, 20)) + tracker.token.slice(-2);
+  } else if (tracker.token) {
+    tokenMask = '••••••••';
+  }
   res.json({
     tracker_type: tracker.type,
     tracker_url: tracker.url,
     tracker_project: tracker.project,
+    tracker_token_mask: tokenMask,
     tracker_connected: tracker.connected,
+    branding_logo_url: branding.logo_url,
+    branding_logo_link: branding.logo_link,
   });
 });
 
@@ -59,6 +80,11 @@ router.put('/settings', (req, res) => {
   if (tracker_token !== undefined) setSetting('tracker_token', tracker_token || '');
   if (tracker_project !== undefined) setSetting('tracker_project', tracker_project || '');
 
+  // Branding settings
+  const { branding_logo_url, branding_logo_link } = req.body;
+  if (branding_logo_url !== undefined) setSetting('branding_logo_url', branding_logo_url || '');
+  if (branding_logo_link !== undefined) setSetting('branding_logo_link', branding_logo_link || '');
+
   // Update in-memory config so youtrack.js picks up changes immediately
   if (tracker_url) config.youtrack.url = tracker_url;
   if (tracker_token) config.youtrack.token = tracker_token;
@@ -72,7 +98,12 @@ router.put('/settings', (req, res) => {
  * Tests connection to the configured tracker.
  */
 router.post('/settings/test-connection', async (req, res) => {
-  const { tracker_type, tracker_url, tracker_token, tracker_project } = req.body;
+  let { tracker_type, tracker_url, tracker_token, tracker_project } = req.body;
+
+  // Fall back to saved settings if not provided
+  if (!tracker_type) tracker_type = getSetting('tracker_type');
+  if (!tracker_url) tracker_url = getSetting('tracker_url');
+  if (!tracker_token) tracker_token = getSetting('tracker_token');
 
   if (!tracker_type || tracker_type === 'none') {
     return res.status(400).json({ ok: false, message: 'No tracker type selected' });
@@ -80,6 +111,10 @@ router.post('/settings/test-connection', async (req, res) => {
 
   if (!tracker_url && tracker_type !== 'linear') {
     return res.status(400).json({ ok: false, message: 'Server URL is required' });
+  }
+
+  if (!tracker_token) {
+    return res.status(400).json({ ok: false, message: 'API token is required' });
   }
 
   try {
@@ -188,4 +223,4 @@ router.post('/settings/test-connection', async (req, res) => {
 });
 
 export default router;
-export { getTrackerConfig };
+export { getTrackerConfig, getBrandingConfig, getSetting, setSetting };
