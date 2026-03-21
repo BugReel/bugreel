@@ -357,18 +357,20 @@
           <p class="settings-desc" data-i18n="settings_branding_desc">Custom logo on public report and embed pages. Leave empty for default BugReel branding.</p>
 
           <div class="settings-field">
-            <label for="brandingLogoUrl" data-i18n="settings_branding_logo_url">Logo URL</label>
-            <input type="url" id="brandingLogoUrl" placeholder="https://example.com/logo.svg" autocomplete="off">
+            <label class="settings-label" for="brandingLogoUrl" data-i18n="settings_branding_logo_url">Logo URL</label>
+            <input type="url" id="brandingLogoUrl" class="edit-field" placeholder="https://example.com/logo.svg" autocomplete="off">
+            <span class="settings-hint" data-i18n="settings_branding_logo_hint">PNG, SVG or JPG. Recommended height: 28–40px</span>
           </div>
 
           <div class="settings-field">
-            <label for="brandingLogoLink" data-i18n="settings_branding_logo_link">Logo Link URL</label>
-            <input type="url" id="brandingLogoLink" placeholder="https://example.com" autocomplete="off">
+            <label class="settings-label" for="brandingLogoLink" data-i18n="settings_branding_logo_link">Logo Link URL</label>
+            <input type="url" id="brandingLogoLink" class="edit-field" placeholder="https://example.com" autocomplete="off">
+            <span class="settings-hint" data-i18n="settings_branding_link_hint">Where clicking the logo navigates to</span>
           </div>
 
-          <div id="brandingPreview" style="margin-top:12px;display:none;">
-            <span style="font-size:0.8rem;color:var(--text-dim);margin-bottom:4px;display:block;">Preview:</span>
-            <div style="background:var(--bg-darker);border:1px solid var(--border);border-radius:8px;padding:12px;display:inline-block;">
+          <div id="brandingPreview" class="settings-field" style="display:none;">
+            <label class="settings-label">Preview</label>
+            <div style="background:var(--bg-darker, #111);border:1px solid var(--border, #333);border-radius:8px;padding:16px 20px;display:inline-block;">
               <img id="brandingPreviewImg" src="" alt="Logo preview" style="height:28px;max-width:160px;object-fit:contain;">
             </div>
           </div>
