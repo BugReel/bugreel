@@ -1,15 +1,18 @@
 (() => {
   const WIDGET_ID = 'bugreel-widget';
-  let host = null;
-  let shadow = null;
+  const WEBCAM_ID = 'bugreel-webcam';
+  let controlHost = null;
+  let controlShadow = null;
+  let webcamHost = null;
+  let webcamShadow = null;
+  let webcamStream = null;
   let timerEl = null;
   let timerInterval = null;
   let state = { extensionState: 'idle', recordingStartedAt: 0, pausedElapsed: 0, pausedAt: 0 };
-  let dragState = null;
-  let webcamStream = null;
-  let webcamVisible = true;
+  let controlDragState = null;
+  let webcamDragState = null;
+  let collapsed = false;
 
-  /** i18n helper — returns translated string or fallback */
   const t = (key, fallback) => {
     try { return chrome.i18n?.getMessage(key) || fallback || key; }
     catch { return fallback || key; }
@@ -21,218 +24,214 @@
   }
 
   function send(msg) {
-    try { chrome.runtime.sendMessage(msg).catch(() => removeWidget()); }
-    catch { removeWidget(); }
+    try { chrome.runtime.sendMessage(msg).catch(() => removeAll()); }
+    catch { removeAll(); }
   }
 
-  function startTimer() {
-    stopTimer();
-    timerInterval = setInterval(updateTimer, 1000);
-    updateTimer();
-  }
-
-  function stopTimer() {
-    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-  }
-
+  function startTimer() { stopTimer(); timerInterval = setInterval(updateTimer, 1000); updateTimer(); }
+  function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
   function updateTimer() {
     if (!timerEl) return;
-    const elapsed = state.pausedElapsed + (Date.now() - state.recordingStartedAt);
-    timerEl.textContent = formatTime(elapsed);
+    timerEl.textContent = formatTime(state.pausedElapsed + (Date.now() - state.recordingStartedAt));
   }
 
-  function showFrozenTimer() {
-    if (timerEl) timerEl.textContent = formatTime(state.pausedElapsed);
+  // ==================== CONTROL PANEL ====================
+
+  function createControlPanel() {
+    if (controlHost) return;
+    controlHost = document.createElement('div');
+    controlHost.id = WIDGET_ID;
+    controlHost.style.cssText = 'position:fixed;z-index:2147483647;bottom:16px;left:0;transition:transform 0.3s ease;';
+    controlShadow = controlHost.attachShadow({ mode: 'closed' });
+
+    controlShadow.innerHTML = `
+<style>
+  :host { all: initial; }
+  .panel {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px 5px 14px;
+    background: rgba(14,21,37,0.92); border: 1px solid #1e2d48;
+    border-radius: 0 10px 10px 0; /* attached to left edge */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    backdrop-filter: blur(12px);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    user-select: none; transition: opacity 0.2s;
+  }
+  .panel:hover { opacity: 1 !important; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot.rec { background: #dc2626; animation: pulse 1.2s ease-in-out infinite; }
+  .dot.paused { background: #f59e0b; animation: blink 1s step-end infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+  .time { font-size: 13px; font-weight: 600; color: #f1f5f9; font-variant-numeric: tabular-nums; font-family: ui-monospace,monospace; min-width: 30px; }
+  .btn { width: 26px; height: 26px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; flex-shrink: 0; padding: 0; }
+  .btn:hover { transform: scale(1.1); }
+  .btn svg { width: 11px; height: 11px; }
+  .btn-pause { background: #f59e0b; } .btn-pause svg { fill: #000; }
+  .btn-resume { background: #dc2626; } .btn-resume svg { fill: #fff; }
+  .btn-stop { background: #1e2d48; } .btn-stop svg { fill: #94a3b8; }
+  .btn-mark { background: #1e2d48; position: relative; } .btn-mark svg { fill: #94a3b8; }
+  .btn-mark.flash { background: #22c55e; } .btn-mark.flash svg { fill: #fff; }
+  .btn-collapse { background: none; border: none; width: 20px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .btn-collapse svg { width: 10px; height: 10px; fill: #475569; transition: transform 0.3s; }
+  .btn-collapse.collapsed svg { transform: rotate(180deg); }
+  .mark-count { position: absolute; top: -3px; right: -3px; background: #22c55e; color: #000; font-size: 8px; font-weight: 700; min-width: 12px; height: 12px; border-radius: 6px; display: none; align-items: center; justify-content: center; padding: 0 2px; font-family: monospace; }
+  .mark-count.visible { display: flex; }
+</style>
+<div class="panel">
+  <span class="dot"></span>
+  <span class="time">0:00</span>
+  <button class="btn btn-mark" title="${t('widget_titleMark', 'Screenshot')} (⌘⇧S)">
+    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <span class="mark-count"></span>
+  </button>
+  <button class="btn btn-toggle" title="${t('widget_titlePause', 'Pause')}"></button>
+  <button class="btn btn-stop" title="${t('widget_titleStop', 'Stop')}">
+    <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+  </button>
+  <button class="btn-collapse" title="Hide controls">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+</div>`;
+
+    timerEl = controlShadow.querySelector('.time');
+    const btnToggle = controlShadow.querySelector('.btn-toggle');
+    const btnStop = controlShadow.querySelector('.btn-stop');
+    const btnMark = controlShadow.querySelector('.btn-mark');
+    const btnCollapse = controlShadow.querySelector('.btn-collapse');
+
+    [btnToggle, btnStop, btnMark, btnCollapse].forEach(b => b.addEventListener('mousedown', e => e.stopPropagation()));
+    btnToggle.addEventListener('click', e => { e.stopPropagation(); onToggle(); });
+    btnStop.addEventListener('click', e => { e.stopPropagation(); send({ type: 'stop-and-upload' }); });
+    btnMark.addEventListener('click', e => { e.stopPropagation(); onMarkScreenshot(btnMark); });
+    btnCollapse.addEventListener('click', e => {
+      e.stopPropagation();
+      collapsed = !collapsed;
+      controlHost.style.transform = collapsed ? 'translateX(-85%)' : 'translateX(0)';
+      btnCollapse.classList.toggle('collapsed', collapsed);
+    });
+
+    try { chrome.storage.local.get('manualMarkersCount', (r) => updateMarkCount(r?.manualMarkersCount || 0)); } catch {}
+    document.body.appendChild(controlHost);
   }
 
-  async function startWebcamPreview() {
-    if (!shadow || webcamStream) return;
+  // ==================== WEBCAM CIRCLE ====================
+
+  async function createWebcam() {
+    if (webcamHost) return;
     try {
-      const stored = await new Promise(r => chrome.storage.local.get(['webcamEnabled', 'webcamDeviceId'], r));
+      const stored = await new Promise(r => chrome.storage.local.get(['webcamEnabled', 'webcamDeviceId', 'webcamPipSize', 'webcamCirclePosition'], r));
       if (!stored.webcamEnabled) return;
+
+      const size = stored.webcamPipSize || 180;
       const constraints = {
         video: stored.webcamDeviceId ? { deviceId: { exact: stored.webcamDeviceId } } : true,
         audio: false,
       };
       webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
-      const videoEl = shadow.querySelector('.webcam-video');
-      const wrap = shadow.querySelector('.webcam-wrap');
-      if (videoEl && wrap) {
-        videoEl.srcObject = webcamStream;
-        wrap.classList.remove('hidden');
-        webcamVisible = true;
-        const btnCam = shadow.querySelector('.btn-cam');
-        if (btnCam) btnCam.classList.add('active');
-      }
-    } catch (e) {
-      console.warn('[BugReel] Widget webcam preview failed:', e.message);
-    }
-  }
 
-  function stopWebcamPreview() {
-    if (webcamStream) {
-      webcamStream.getTracks().forEach(t => t.stop());
-      webcamStream = null;
-    }
-    if (shadow) {
-      const videoEl = shadow.querySelector('.webcam-video');
-      if (videoEl) videoEl.srcObject = null;
-      const wrap = shadow.querySelector('.webcam-wrap');
-      if (wrap) wrap.classList.add('hidden');
-    }
-  }
+      webcamHost = document.createElement('div');
+      webcamHost.id = WEBCAM_ID;
+      const pos = stored.webcamCirclePosition || { x: null, y: null };
+      const startX = pos.x ?? (window.innerWidth - size - 24);
+      const startY = pos.y ?? (window.innerHeight - size - 80);
+      webcamHost.style.cssText = `position:fixed;z-index:2147483646;left:${startX}px;top:${startY}px;width:${size}px;height:${size}px;`;
 
-  function toggleWebcamPreview() {
-    if (!shadow) return;
-    const wrap = shadow.querySelector('.webcam-wrap');
-    const btnCam = shadow.querySelector('.btn-cam');
-    if (!wrap) return;
-
-    if (webcamVisible && webcamStream) {
-      // Hide preview (stream keeps running for compositing in recorder)
-      wrap.classList.add('hidden');
-      webcamVisible = false;
-      if (btnCam) btnCam.classList.remove('active');
-    } else if (!webcamStream) {
-      // Start preview for the first time
-      startWebcamPreview();
-    } else {
-      // Show preview again
-      wrap.classList.remove('hidden');
-      webcamVisible = true;
-      if (btnCam) btnCam.classList.add('active');
-    }
-  }
-
-  function removeWidget() {
-    stopTimer();
-    stopWebcamPreview();
-    if (host && host.parentNode) host.parentNode.removeChild(host);
-    host = null; shadow = null; timerEl = null;
-  }
-
-  function createWidget() {
-    if (host) return;
-    host = document.createElement('div');
-    host.id = WIDGET_ID;
-    host.style.cssText = 'position:fixed;z-index:2147483647;bottom:24px;left:24px;';
-    shadow = host.attachShadow({ mode: 'closed' });
-
-    shadow.innerHTML = `
+      webcamShadow = webcamHost.attachShadow({ mode: 'closed' });
+      webcamShadow.innerHTML = `
 <style>
   :host { all: initial; }
-  .widget {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 10px;
-    background: #0e1525; border: 1px solid #1e2d48; border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    opacity: 0.9; transition: opacity 0.15s;
-    cursor: grab; user-select: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  .cam-wrap {
+    width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+    border: 3px solid rgba(255,255,255,0.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    cursor: grab; user-select: none; position: relative;
   }
-  .widget:hover { opacity: 1; }
-  .widget.dragging { cursor: grabbing; opacity: 1; }
-
-  .dot {
-    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  .cam-wrap:hover { border-color: rgba(255,255,255,0.5); }
+  .cam-wrap.dragging { cursor: grabbing; }
+  video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .resize-handle {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 16px; height: 16px; cursor: se-resize;
+    background: rgba(255,255,255,0.3); border-radius: 50%;
+    display: none;
   }
-  .dot.rec { background: #dc2626; animation: pulse 1.2s ease-in-out infinite; }
-  .dot.paused { background: #f59e0b; animation: blink 1s step-end infinite; }
-  @keyframes pulse { 0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(220,38,38,0.5); } 50% { opacity:0.6; box-shadow:0 0 0 4px rgba(220,38,38,0); } }
-  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
-
-  .time {
-    font-size: 14px; font-weight: 600; color: #f1f5f9;
-    font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    min-width: 32px;
-  }
-
-  .btn {
-    width: 28px; height: 28px; border-radius: 50%; border: none;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: transform 0.1s, opacity 0.1s; flex-shrink: 0; padding: 0;
-  }
-  .btn:hover { transform: scale(1.1); }
-  .btn:active { transform: scale(0.95); }
-  .btn svg { width: 12px; height: 12px; }
-
-  .btn-pause { background: #f59e0b; }
-  .btn-pause svg { fill: #000; }
-  .btn-resume { background: #dc2626; }
-  .btn-resume svg { fill: #fff; }
-  .btn-stop { background: #1e2d48; }
-  .btn-stop svg { fill: #94a3b8; }
-  .btn-mark { background: #1e2d48; position: relative; }
-  .btn-mark svg { fill: #94a3b8; }
-  .btn-mark.flash { background: #22c55e; animation: markflash 0.6s ease-out forwards; }
-  .btn-mark.flash svg { fill: #fff; }
-  @keyframes markflash { 0% { background:#22c55e; transform:scale(1.2); } 100% { background:#1e2d48; transform:scale(1); } }
-  .mark-count {
-    position: absolute; top: -4px; right: -4px;
-    background: #22c55e; color: #000; font-size: 9px; font-weight: 700;
-    min-width: 14px; height: 14px; border-radius: 7px;
-    display: none; align-items: center; justify-content: center; padding: 0 2px;
-    font-family: ui-monospace, monospace; line-height: 1;
-  }
-  .mark-count.visible { display: flex; }
-
-  .webcam-wrap {
-    display: flex; justify-content: center; margin-bottom: 8px;
-  }
-  .webcam-video {
-    width: 120px; height: 120px; border-radius: 50%;
-    object-fit: cover; border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.6); background: #000;
-  }
-  .webcam-wrap.hidden { display: none; }
-
-  .btn-cam { background: #1e2d48; }
-  .btn-cam svg { fill: #94a3b8; }
-  .btn-cam.active svg { fill: #22c55e; }
+  .cam-wrap:hover .resize-handle { display: block; }
 </style>
-<div class="webcam-wrap hidden"><video class="webcam-video" autoplay playsinline muted></video></div>
-<div class="widget">
-  <span class="dot"></span>
-  <span class="time">0:00</span>
-  <button class="btn btn-mark" title="${t('widget_titleMark', 'Mark screenshot')} (⌘⇧S)">
-    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-    <span class="mark-count"></span>
-  </button>
-  <button class="btn btn-toggle" title="${t('widget_titlePause', 'Pause')}"></button>
-  <button class="btn btn-cam" title="${t('widget_titleWebcam', 'Show/hide webcam')}">
-    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-  </button>
-  <button class="btn btn-stop" title="${t('widget_titleStop', 'Stop')}">
-    <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-  </button>
+<div class="cam-wrap">
+  <video autoplay playsinline muted></video>
+  <div class="resize-handle"></div>
 </div>`;
 
-    timerEl = shadow.querySelector('.time');
-    const widget = shadow.querySelector('.widget');
-    const btnToggle = shadow.querySelector('.btn-toggle');
-    const btnStop = shadow.querySelector('.btn-stop');
-    const btnMark = shadow.querySelector('.btn-mark');
-    const btnCam = shadow.querySelector('.btn-cam');
+      const videoEl = webcamShadow.querySelector('video');
+      videoEl.srcObject = webcamStream;
 
-    btnToggle.addEventListener('mousedown', e => e.stopPropagation());
-    btnStop.addEventListener('mousedown', e => e.stopPropagation());
-    btnMark.addEventListener('mousedown', e => e.stopPropagation());
-    btnCam.addEventListener('mousedown', e => e.stopPropagation());
-    btnToggle.addEventListener('click', e => { e.stopPropagation(); onToggle(); });
-    btnStop.addEventListener('click', e => { e.stopPropagation(); send({ type: 'stop-and-upload' }); });
-    btnMark.addEventListener('click', e => { e.stopPropagation(); onMarkScreenshot(btnMark); });
-    btnCam.addEventListener('click', e => { e.stopPropagation(); toggleWebcamPreview(); });
-    // Restore count if widget recreated mid-recording
-    try {
-      chrome.storage.local.get('manualMarkersCount', (r) => updateMarkCount(r?.manualMarkersCount || 0));
-    } catch {}
+      const camWrap = webcamShadow.querySelector('.cam-wrap');
+      const resizeHandle = webcamShadow.querySelector('.resize-handle');
 
-    // Dragging
-    widget.addEventListener('mousedown', onDragStart);
+      // Drag webcam circle
+      camWrap.addEventListener('mousedown', (e) => {
+        if (e.target === resizeHandle) return;
+        e.preventDefault();
+        const rect = webcamHost.getBoundingClientRect();
+        webcamDragState = { startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
+        camWrap.classList.add('dragging');
+        document.addEventListener('mousemove', onWebcamDrag, true);
+        document.addEventListener('mouseup', onWebcamDragEnd, true);
+      });
 
-    document.body.appendChild(host);
-    restorePosition();
+      // Resize webcam circle
+      resizeHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const startX = e.clientX;
+        const startSize = webcamHost.offsetWidth;
+        function onResize(ev) {
+          const delta = ev.clientX - startX;
+          const newSize = Math.max(80, Math.min(400, startSize + delta));
+          webcamHost.style.width = newSize + 'px';
+          webcamHost.style.height = newSize + 'px';
+        }
+        function onResizeEnd() {
+          document.removeEventListener('mousemove', onResize, true);
+          document.removeEventListener('mouseup', onResizeEnd, true);
+          try { chrome.storage.local.set({ webcamPipSize: webcamHost.offsetWidth }); } catch {}
+        }
+        document.addEventListener('mousemove', onResize, true);
+        document.addEventListener('mouseup', onResizeEnd, true);
+      });
+
+      document.body.appendChild(webcamHost);
+    } catch (e) {
+      console.warn('[BugReel] Webcam overlay failed:', e.message);
+    }
   }
+
+  function onWebcamDrag(e) {
+    if (!webcamDragState) return;
+    webcamHost.style.left = (webcamDragState.origLeft + e.clientX - webcamDragState.startX) + 'px';
+    webcamHost.style.top = (webcamDragState.origTop + e.clientY - webcamDragState.startY) + 'px';
+  }
+
+  function onWebcamDragEnd() {
+    if (!webcamDragState) return;
+    webcamDragState = null;
+    webcamShadow?.querySelector('.cam-wrap')?.classList.remove('dragging');
+    document.removeEventListener('mousemove', onWebcamDrag, true);
+    document.removeEventListener('mouseup', onWebcamDragEnd, true);
+    if (webcamHost) {
+      const rect = webcamHost.getBoundingClientRect();
+      try { chrome.storage.local.set({ webcamCirclePosition: { x: rect.left, y: rect.top } }); } catch {}
+    }
+  }
+
+  function removeWebcam() {
+    if (webcamStream) { webcamStream.getTracks().forEach(t => t.stop()); webcamStream = null; }
+    if (webcamHost?.parentNode) webcamHost.parentNode.removeChild(webcamHost);
+    webcamHost = null; webcamShadow = null;
+  }
+
+  // ==================== COMMON ====================
 
   function onToggle() {
     if (state.extensionState === 'recording') send({ type: 'pause-recording' });
@@ -247,21 +246,20 @@
   }
 
   function updateMarkCount(n) {
-    if (!shadow) return;
-    const badge = shadow.querySelector('.mark-count');
+    if (!controlShadow) return;
+    const badge = controlShadow.querySelector('.mark-count');
     if (!badge) return;
     badge.textContent = n;
     badge.classList.toggle('visible', n > 0);
   }
 
   function renderState() {
-    if (!shadow) return;
-    const dot = shadow.querySelector('.dot');
-    const btnToggle = shadow.querySelector('.btn-toggle');
+    if (!controlShadow) return;
+    const dot = controlShadow.querySelector('.dot');
+    const btnToggle = controlShadow.querySelector('.btn-toggle');
     const isRec = state.extensionState === 'recording';
 
     dot.className = isRec ? 'dot rec' : 'dot paused';
-
     if (isRec) {
       btnToggle.className = 'btn btn-toggle btn-pause';
       btnToggle.title = t('widget_titlePause', 'Pause');
@@ -272,69 +270,19 @@
       btnToggle.title = t('widget_titleResume', 'Resume');
       btnToggle.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg>';
       stopTimer();
-      showFrozenTimer();
+      if (timerEl) timerEl.textContent = formatTime(state.pausedElapsed);
     }
   }
 
-  // --- Drag ---
-  function onDragStart(e) {
-    if (e.target.closest('.btn')) return;
-    e.preventDefault();
-    const rect = host.getBoundingClientRect();
-    dragState = { startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
-    shadow.querySelector('.widget').classList.add('dragging');
-    document.addEventListener('mousemove', onDragMove, true);
-    document.addEventListener('mouseup', onDragEnd, true);
+  function removeAll() {
+    stopTimer();
+    if (controlHost?.parentNode) controlHost.parentNode.removeChild(controlHost);
+    controlHost = null; controlShadow = null; timerEl = null;
+    collapsed = false;
+    removeWebcam();
   }
 
-  function onDragMove(e) {
-    if (!dragState) return;
-    const dx = e.clientX - dragState.startX;
-    const dy = e.clientY - dragState.startY;
-    host.style.left = (dragState.origLeft + dx) + 'px';
-    host.style.top = (dragState.origTop + dy) + 'px';
-    host.style.bottom = 'auto';
-  }
-
-  function onDragEnd() {
-    if (!dragState) return;
-    shadow.querySelector('.widget').classList.remove('dragging');
-    const rect = host.getBoundingClientRect();
-    dragState = null;
-    document.removeEventListener('mousemove', onDragMove, true);
-    document.removeEventListener('mouseup', onDragEnd, true);
-    try {
-      chrome.storage.local.set({ widgetPosition: { x: rect.left, y: rect.top } });
-      // Send position as screen percentage to recorder for PiP placement
-      const xPercent = Math.max(0, Math.min(1, rect.left / window.innerWidth));
-      const yPercent = Math.max(0, Math.min(1, rect.top / window.innerHeight));
-      chrome.runtime.sendMessage({
-        type: 'webcam-position-update',
-        xPercent,
-        yPercent,
-      }).catch(() => {});
-    } catch {}
-  }
-
-  function restorePosition() {
-    try {
-      chrome.storage.local.get('widgetPosition', (r) => {
-        if (r?.widgetPosition && host) {
-          const { x, y } = r.widgetPosition;
-          const maxX = window.innerWidth - 40, maxY = window.innerHeight - 40;
-          if (x >= 0 && x < maxX && y >= 0 && y < maxY) {
-            host.style.left = x + 'px';
-            host.style.top = y + 'px';
-            host.style.bottom = 'auto';
-          }
-        }
-      });
-    } catch {}
-  }
-
-  // --- State sync ---
   function applyState(s) {
-    const prev = state.extensionState;
     if (s.extensionState !== undefined) state.extensionState = s.extensionState;
     if (s.recordingStartedAt !== undefined) state.recordingStartedAt = s.recordingStartedAt;
     if (s.pausedElapsed !== undefined) state.pausedElapsed = s.pausedElapsed;
@@ -342,20 +290,17 @@
 
     const visible = state.extensionState === 'recording' || state.extensionState === 'paused';
     if (visible) {
-      if (!host) {
-        createWidget();
-        startWebcamPreview(); // Start webcam preview when widget appears
-      }
+      if (!controlHost) { createControlPanel(); createWebcam(); }
       renderState();
     } else {
-      removeWidget();
+      removeAll();
     }
   }
 
   // --- Init ---
   try {
     chrome.storage.local.get(
-      ['extensionState', 'recordingStartedAt', 'pausedElapsed', 'pausedAt', 'widgetPosition'],
+      ['extensionState', 'recordingStartedAt', 'pausedElapsed', 'pausedAt'],
       (r) => applyState(r || {})
     );
 
@@ -368,17 +313,13 @@
       if (changes.manualMarkersCount) updateMarkCount(changes.manualMarkersCount.newValue || 0);
     });
 
-    // Fallback keyboard shortcut for screenshot mark (in case chrome.commands didn't register)
-    // ⌘⇧S (Mac) / Ctrl+Shift+S (Win/Linux)
     document.addEventListener('keydown', (e) => {
       if (!e.shiftKey || state.extensionState !== 'recording') return;
-      const isMarkS = (e.ctrlKey || e.metaKey) && e.code === 'KeyS';
-      if (isMarkS) {
-        e.preventDefault();
-        e.stopPropagation();
-        const btn = shadow?.querySelector('.btn-mark');
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
+        e.preventDefault(); e.stopPropagation();
+        const btn = controlShadow?.querySelector('.btn-mark');
         if (btn) onMarkScreenshot(btn);
       }
     }, true);
-  } catch { /* extension context invalidated */ }
+  } catch {}
 })();
