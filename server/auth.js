@@ -219,6 +219,18 @@ function isPublicRoute(req) {
  * If no password is configured AND no users exist — skip auth (dev mode).
  */
 export function authGuard(req, res, next) {
+  // Proxy mode: when running behind a trusted proxy (e.g. SaaS Cloud Layer)
+  // that handles authentication, skip Core's own auth entirely.
+  // Set TRUST_PROXY_AUTH=true in .env when Core is a backend behind an auth proxy.
+  if (process.env.TRUST_PROXY_AUTH === 'true') {
+    return authenticateRequest(req, res, () => {
+      if (!req.user) {
+        req.user = { id: 'proxy-user', name: req.headers['x-user-name'] || 'User', email: req.headers['x-user-email'] || '', role: 'admin' };
+      }
+      next();
+    });
+  }
+
   // Dev mode: no password AND no users — authenticate but don't require
   if (!config.dashboardPassword) {
     const db = getDB();
