@@ -301,7 +301,7 @@
   </div>
 
   <script type="module">
-    import { getRecording, videoUrl, frameUrl, getVideoComments, addVideoComment } from '../js/api.js';
+    import { getRecording, getRecordingByToken, videoUrl, frameUrl, getVideoComments, addVideoComment } from '../js/api.js';
     import {
       extractParam, formatDate, formatDuration, formatTimecode,
       renderDescription, escapeHTML, icons, timeAgo
@@ -317,17 +317,29 @@
     }
 
     const content = document.getElementById('content');
-    const recordingId = extractParam('/report/');
+    // URL param is now a share_token (UUID) — server redirects ID-based URLs to share_token
+    const shareToken = extractParam('/report/');
+    // Will be set after loading the recording (real recording ID for API calls)
+    let recordingId = null;
     let lightboxFrames = [];
     let lightboxIndex = 0;
 
-    if (!recordingId) {
+    if (!shareToken) {
       content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>No recording ID in URL</p></div>`;
     }
 
     async function load() {
       try {
-        const data = await getRecording(recordingId);
+        // Try loading by share_token first, fall back to direct ID for backwards compat
+        let data;
+        try {
+          data = await getRecordingByToken(shareToken);
+        } catch (e) {
+          // Fallback: maybe the URL still has a recording ID (before migration)
+          data = await getRecording(shareToken);
+        }
+        // Use the real recording ID for all subsequent API calls
+        recordingId = data.recording.id;
         render(data);
         document.title = data.card
           ? `${data.card.title} — BugReel`
@@ -716,35 +728,51 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      if (recordingId) load();
+      if (shareToken) load();
     });
   </script>
 
   <!-- View analytics tracking -->
   <script>
     (function() {
-      var rid = location.pathname.split('/report/')[1];
-      if (!rid) return;
-      rid = decodeURIComponent(rid.replace(/\/$/, ''));
+      var urlParam = location.pathname.split('/report/')[1];
+      if (!urlParam) return;
+      urlParam = decodeURIComponent(urlParam.replace(/\/$/, ''));
 
       var viewId = null;
       var heartbeatInterval = null;
 
-      // Log the view
-      fetch('/api/analytics/view', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recording_id: rid })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.ok && data.view_id) {
-          viewId = data.view_id;
-          // Start heartbeat every 30 seconds
-          heartbeatInterval = setInterval(sendHeartbeat, 30000);
-        }
-      })
-      .catch(function() { /* analytics is non-critical */ });
+      // Resolve share_token to recording ID, then log the view
+      function logView(rid) {
+        fetch('/api/analytics/view', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recording_id: rid })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.ok && data.view_id) {
+            viewId = data.view_id;
+            heartbeatInterval = setInterval(sendHeartbeat, 30000);
+          }
+        })
+        .catch(function() {});
+      }
+
+      // Try to resolve share_token to real recording ID
+      fetch('/api/recordings/by-token/' + encodeURIComponent(urlParam))
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          if (data && data.recording) {
+            logView(data.recording.id);
+          } else {
+            // Fallback: urlParam might be a recording ID directly
+            logView(urlParam);
+          }
+        })
+        .catch(function() {
+          logView(urlParam);
+        });
 
       function sendHeartbeat() {
         if (!viewId) return;

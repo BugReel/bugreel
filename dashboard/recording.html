@@ -43,6 +43,7 @@
     const config_youtrackUrl = window.__BUGREEL_CONFIG__?.youtrackUrl || '';
     let timeline = null;
     let currentData = null;
+    let trackerConfigured = false; // loaded from /api/settings
 
     if (!recordingId) {
       content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>${t('no_recording_id', 'No recording ID in URL')}</p></div>`;
@@ -50,7 +51,14 @@
 
     async function load() {
       try {
-        const data = await getRecording(recordingId);
+        // Load tracker settings and recording data in parallel
+        const [data, settingsRes] = await Promise.all([
+          getRecording(recordingId),
+          fetch('/api/settings').then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        if (settingsRes) {
+          trackerConfigured = settingsRes.tracker_type && settingsRes.tracker_type !== 'none';
+        }
         currentData = data;
         render(data);
         document.title = data.card
@@ -370,12 +378,16 @@
     }
 
     // --- Share link button (copy to clipboard) ---
+    // Uses share_token for public URLs to prevent ID enumeration
     function setupShareButton() {
       const btn = document.getElementById('btnShareLink');
-      if (!btn) return;
+      if (!btn || !currentData) return;
 
       btn.addEventListener('click', () => {
-        const url = `${location.origin}/recording/${encodeURIComponent(recordingId)}`;
+        // Use share_token for public report URL, fall back to recording ID
+        const token = currentData.recording.share_token;
+        const publicId = token || recordingId;
+        const url = `${location.origin}/report/${encodeURIComponent(publicId)}`;
         navigator.clipboard.writeText(url).then(() => {
           const orig = btn.innerHTML;
           btn.innerHTML = `${icons.checkCircle} ${t('copied', 'Copied')}`;
@@ -387,11 +399,15 @@
     }
 
     // --- Embed button ---
+    // Uses share_token for public embed URLs
     function setupEmbedButton() {
       const btn = document.getElementById('btnEmbed');
-      if (!btn) return;
+      if (!btn || !currentData) return;
       btn.addEventListener('click', () => {
-        showEmbedModal(recordingId);
+        // Pass share_token for public embed URLs
+        const token = currentData.recording.share_token;
+        const publicId = token || recordingId;
+        showEmbedModal(publicId);
       });
     }
 

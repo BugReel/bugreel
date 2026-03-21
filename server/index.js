@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initDB } from './db.js';
+import { initDB, getDB } from './db.js';
 import { config } from './config.js';
 import uploadRouter from './routes/upload.js';
 import recordingsRouter from './routes/recordings.js';
@@ -9,6 +9,7 @@ import cardsRouter from './routes/cards.js';
 import keyframesRouter from './routes/keyframes.js';
 import analyticsRouter from './routes/analytics.js';
 import videoCommentsRouter from './routes/video-comments.js';
+import settingsRouter from './routes/settings.js';
 import embedRouter from './routes/embed.js';
 import { retryStuckRecordings } from './services/pipeline.js';
 import { authGuard, authRouter, handleLegacyLogin, handleLogout } from './auth.js';
@@ -58,6 +59,7 @@ app.use('/api', cardsRouter);
 app.use('/api', keyframesRouter);
 app.use('/api', analyticsRouter);
 app.use('/api', videoCommentsRouter);
+app.use('/api', settingsRouter);
 app.use('/api', passwordRouter);
 
 // Serve extension files for download
@@ -85,6 +87,21 @@ app.get('*', (req, res) => {
     return res.sendFile(path.join(dashboardDir, 'card.html'));
   }
   if (req.path.startsWith('/report/')) {
+    // Public report page: if accessed by recording ID, redirect to share_token URL.
+    // If accessed by share_token (UUID) or unknown value, serve the page normally.
+    const rawId = req.path.replace('/report/', '').replace(/\/$/, '');
+    if (rawId) {
+      const paramId = decodeURIComponent(rawId);
+      const db = getDB();
+      // Check if this looks like a recording ID (not a UUID share_token)
+      const recording = db.prepare('SELECT id, share_token FROM recordings WHERE id = ?').get(paramId);
+      if (recording && recording.share_token) {
+        // Redirect from enumerable ID to non-guessable share_token
+        return res.redirect(301, `/report/${encodeURIComponent(recording.share_token)}`);
+      }
+      // If looked up by share_token, or recording not found — serve page normally
+      // (report.html JS will handle the 404 display)
+    }
     return res.sendFile(path.join(dashboardDir, 'report.html'));
   }
   if (req.path === '/cards') {
@@ -95,6 +112,9 @@ app.get('*', (req, res) => {
   }
   if (req.path === '/guide') {
     return res.sendFile(path.join(dashboardDir, 'guide.html'));
+  }
+  if (req.path === '/settings-page') {
+    return res.sendFile(path.join(dashboardDir, 'settings-page.html'));
   }
   res.sendFile(path.join(dashboardDir, 'index.html'));
 });

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import { getDB } from '../db.js';
-import { requireAuth } from '../auth.js';
 
 const router = Router();
 
@@ -23,7 +22,7 @@ function verifyPassword(password, stored) {
  * PUT /api/recordings/:id/password — set password protection (authenticated, owner only)
  * Body: { password: string }
  */
-router.put('/recordings/:id/password', requireAuth, (req, res) => {
+router.put('/recordings/:id/password', (req, res) => {
   const { password } = req.body;
 
   if (!password || typeof password !== 'string') {
@@ -49,7 +48,7 @@ router.put('/recordings/:id/password', requireAuth, (req, res) => {
 /**
  * DELETE /api/recordings/:id/password — remove password protection (authenticated, owner only)
  */
-router.delete('/recordings/:id/password', requireAuth, (req, res) => {
+router.delete('/recordings/:id/password', (req, res) => {
   const db = getDB();
   const recording = db.prepare('SELECT id, author FROM recordings WHERE id = ?').get(req.params.id);
   if (!recording) {

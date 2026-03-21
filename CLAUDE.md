@@ -2,6 +2,9 @@
 
 > AI-powered bug reporting tool: screen recording → transcription → AI analysis → bug card → tracker export.
 > Commercial product based on internal-tool codebase.
+>
+> Core features: AI analysis, smart screenshots, one-click export (Jira/Linear/GitHub/YouTrack/webhook),
+> webcam PiP, password-protected recordings, embeddable player, video comments, view analytics.
 
 ## Project Status: Deployed
 
@@ -82,6 +85,16 @@ Original code: `../internal/internal-tool/` (~10K lines JS, 6 npm deps, 5 SQLite
 
 Extension auth: User generates extension token in dashboard (Settings → "Generate Extension Token"), pastes in extension setup.
 All uploads include Bearer token → server identifies user automatically. No author dropdown.
+
+### Proxy auth (reverse proxy mode)
+
+When behind a reverse proxy, BugReel trusts `X-User-Id`, `X-User-Email`, `X-User-Name` headers set by the proxy. Users are auto-created on first request. The proxy must strip these headers from external requests to prevent spoofing. See `server/auth.js` → `authenticateRequest()`.
+
+### Security notes
+
+- **share_token** (UUID) — public report links use `/report/{share_token}` instead of sequential IDs to prevent enumeration. Auto-generated for every recording in `server/db.js`.
+- **Password protection** — individual recordings can be locked with a password (scrypt-hashed). See `server/middleware/password-check.js` and `server/routes/password.js`.
+- **DASHBOARD_PASSWORD** — must be set in production. Without it and with no users in the DB, the dashboard is fully open (dev mode).
 
 ## Integration Plugin Interface
 

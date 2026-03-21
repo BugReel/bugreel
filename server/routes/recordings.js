@@ -4,6 +4,7 @@ import fs from 'fs';
 import { config } from '../config.js';
 import { getDB } from '../db.js';
 import { getQueueStatus } from '../services/pipeline.js';
+import { getTrackerConfig } from './settings.js';
 
 /**
  * Recursively calculate total size of a directory in bytes.
@@ -32,10 +33,15 @@ router.get('/status', (req, res) => {
   const total = db.prepare('SELECT COUNT(*) as c FROM recordings').get().c;
   const processing = db.prepare("SELECT COUNT(*) as c FROM recordings WHERE status NOT IN ('complete', 'error')").get().c;
   const diskUsageBytes = getDirSize(config.dataDir);
+  const tracker = getTrackerConfig();
   res.json({
     queue: getQueueStatus(),
     recordings: { total, processing },
-    storage: { diskUsageBytes, diskUsageMB: Math.round(diskUsageBytes / 1048576 * 10) / 10 }
+    storage: { diskUsageBytes, diskUsageMB: Math.round(diskUsageBytes / 1048576 * 10) / 10 },
+    tracker: {
+      type: tracker.type,
+      connected: tracker.connected,
+    },
   });
 });
 
@@ -116,10 +122,10 @@ router.get('/recordings', (req, res) => {
   res.json({ recordings: rows, total: countRow.total });
 });
 
-// Single recording with frames and card, JSON fields parsed
-router.get('/recordings/:id', (req, res) => {
+// Public lookup by share_token (no auth required — used by report/embed pages)
+router.get('/recordings/by-token/:token', (req, res) => {
   const db = getDB();
-  const recording = db.prepare('SELECT * FROM recordings WHERE id = ?').get(req.params.id);
+  const recording = db.prepare('SELECT * FROM recordings WHERE share_token = ?').get(req.params.token);
   if (!recording) return res.status(404).json({ error: 'Not found' });
 
   // Add has_password flag, remove password_hash from response
@@ -148,11 +154,11 @@ router.get('/recordings/:id', (req, res) => {
 
   const frames = db.prepare(
     'SELECT * FROM frames WHERE recording_id = ? ORDER BY time_seconds'
-  ).all(req.params.id);
+  ).all(recording.id);
 
   const card = db.prepare(
     'SELECT * FROM cards WHERE recording_id = ?'
-  ).get(req.params.id);
+  ).get(recording.id);
 
   const comments = card
     ? db.prepare('SELECT * FROM comments WHERE card_id = ? ORDER BY created_at').all(card.id)
@@ -160,7 +166,60 @@ router.get('/recordings/:id', (req, res) => {
 
   const video_comments = db.prepare(
     'SELECT id, recording_id, author_name, text, timecode_seconds, created_at FROM video_comments WHERE recording_id = ? ORDER BY created_at ASC'
-  ).all(req.params.id);
+  ).all(recording.id);
+
+  res.json({ recording, frames, card, comments, video_comments });
+});
+
+// Single recording with frames and card, JSON fields parsed
+router.get('/recordings/:id', (req, res) => {
+  const db = getDB();
+  // Try by ID first, then by share_token as fallback
+  let recording = db.prepare('SELECT * FROM recordings WHERE id = ?').get(req.params.id);
+  if (!recording) {
+    recording = db.prepare('SELECT * FROM recordings WHERE share_token = ?').get(req.params.id);
+  }
+  if (!recording) return res.status(404).json({ error: 'Not found' });
+
+  // Add has_password flag, remove password_hash from response
+  recording.has_password = !!recording.password_hash;
+  delete recording.password_hash;
+
+  // Parse JSON fields
+  if (recording.transcript_json) {
+    try { recording.transcript = JSON.parse(recording.transcript_json); } catch { recording.transcript = null; }
+  }
+  if (recording.analysis_json) {
+    try { recording.analysis = JSON.parse(recording.analysis_json); } catch { recording.analysis = null; }
+  }
+  if (recording.url_events_json) {
+    try { recording.url_events = JSON.parse(recording.url_events_json); } catch { recording.url_events = null; }
+  }
+  if (recording.metadata_json) {
+    try { recording.metadata = JSON.parse(recording.metadata_json); } catch { recording.metadata = null; }
+  }
+  if (recording.console_events_json) {
+    try { recording.console_events = JSON.parse(recording.console_events_json); } catch { recording.console_events = null; }
+  }
+  if (recording.action_events_json) {
+    try { recording.action_events = JSON.parse(recording.action_events_json); } catch { recording.action_events = null; }
+  }
+
+  const frames = db.prepare(
+    'SELECT * FROM frames WHERE recording_id = ? ORDER BY time_seconds'
+  ).all(recording.id);
+
+  const card = db.prepare(
+    'SELECT * FROM cards WHERE recording_id = ?'
+  ).get(recording.id);
+
+  const comments = card
+    ? db.prepare('SELECT * FROM comments WHERE card_id = ? ORDER BY created_at').all(card.id)
+    : [];
+
+  const video_comments = db.prepare(
+    'SELECT id, recording_id, author_name, text, timecode_seconds, created_at FROM video_comments WHERE recording_id = ? ORDER BY created_at ASC'
+  ).all(recording.id);
 
   res.json({ recording, frames, card, comments, video_comments });
 });
@@ -207,9 +266,18 @@ router.put('/recordings/:id/context', (req, res) => {
   res.json({ ok: true });
 });
 
-// Serve video file
+// Serve video file (supports both recording ID and share_token)
 router.get('/recordings/:id/video', (req, res) => {
-  const filePath = path.join(config.dataDir, req.params.id, 'video.webm');
+  const db = getDB();
+  // Resolve share_token to recording ID if needed
+  let recId = req.params.id;
+  const byId = db.prepare('SELECT id FROM recordings WHERE id = ?').get(recId);
+  if (!byId) {
+    const byToken = db.prepare('SELECT id FROM recordings WHERE share_token = ?').get(recId);
+    if (byToken) recId = byToken.id;
+  }
+
+  const filePath = path.join(config.dataDir, recId, 'video.webm');
   res.sendFile(filePath, (err) => {
     if (err && !res.headersSent) {
       res.status(404).json({ error: 'Video not found' });
@@ -217,9 +285,18 @@ router.get('/recordings/:id/video', (req, res) => {
   });
 });
 
-// Serve frame image
+// Serve frame image (supports both recording ID and share_token)
 router.get('/recordings/:id/frames/:filename', (req, res) => {
-  const filePath = path.join(config.dataDir, req.params.id, 'frames', req.params.filename);
+  const db = getDB();
+  // Resolve share_token to recording ID if needed
+  let recId = req.params.id;
+  const byId = db.prepare('SELECT id FROM recordings WHERE id = ?').get(recId);
+  if (!byId) {
+    const byToken = db.prepare('SELECT id FROM recordings WHERE share_token = ?').get(recId);
+    if (byToken) recId = byToken.id;
+  }
+
+  const filePath = path.join(config.dataDir, recId, 'frames', req.params.filename);
   res.sendFile(filePath, (err) => {
     if (err && !res.headersSent) {
       res.status(404).json({ error: 'Frame not found' });

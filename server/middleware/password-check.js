@@ -19,7 +19,11 @@ export function passwordCheckPage(req, res, next) {
   const recordingId = decodeURIComponent(rawId);
 
   const db = getDB();
-  const recording = db.prepare('SELECT id, password_hash FROM recordings WHERE id = ?').get(recordingId);
+  // Support both recording ID and share_token (UUID)
+  let recording = db.prepare('SELECT id, password_hash FROM recordings WHERE id = ?').get(recordingId);
+  if (!recording) {
+    recording = db.prepare('SELECT id, password_hash FROM recordings WHERE share_token = ?').get(recordingId);
+  }
 
   // Recording not found or no password — continue normally
   if (!recording || !recording.password_hash) return next();
@@ -27,15 +31,15 @@ export function passwordCheckPage(req, res, next) {
   // Authenticated dashboard user — bypass password check
   if (req.user) return next();
 
-  // Check for valid access cookie
-  if (hasValidAccess(req, recordingId)) return next();
+  // Check for valid access cookie (always use real recording ID)
+  if (hasValidAccess(req, recording.id)) return next();
 
   // Get recording title for the prompt page (from card if available)
-  const card = db.prepare('SELECT title FROM cards WHERE recording_id = ?').get(recordingId);
-  const title = card?.title || recordingId;
+  const card = db.prepare('SELECT title FROM cards WHERE recording_id = ?').get(recording.id);
+  const title = card?.title || recording.id;
 
-  // Serve password prompt page
-  res.status(200).send(renderPasswordPage(recordingId, title, false));
+  // Serve password prompt page (use real recording ID for the verify API call)
+  res.status(200).send(renderPasswordPage(recording.id, title, false));
 }
 
 /**
@@ -60,10 +64,14 @@ export function passwordCheckAPI(req, res, next) {
   const recordingId = decodeURIComponent(match[1]);
 
   // Skip status/config-type endpoints that don't contain recording data
-  if (recordingId === 'status') return next();
+  if (recordingId === 'status' || recordingId === 'by-token') return next();
 
   const db = getDB();
-  const recording = db.prepare('SELECT id, password_hash FROM recordings WHERE id = ?').get(recordingId);
+  // Support both recording ID and share_token (UUID)
+  let recording = db.prepare('SELECT id, password_hash FROM recordings WHERE id = ?').get(recordingId);
+  if (!recording) {
+    recording = db.prepare('SELECT id, password_hash FROM recordings WHERE share_token = ?').get(recordingId);
+  }
 
   // Recording not found or no password — continue normally
   if (!recording || !recording.password_hash) return next();
@@ -71,14 +79,14 @@ export function passwordCheckAPI(req, res, next) {
   // Authenticated dashboard user — bypass password check
   if (req.user) return next();
 
-  // Check for valid access cookie
-  if (hasValidAccess(req, recordingId)) return next();
+  // Check for valid access cookie (always use real recording ID)
+  if (hasValidAccess(req, recording.id)) return next();
 
   // Block access
   return res.status(403).json({
     error: 'Password required',
     password_protected: true,
-    recording_id: recordingId,
+    recording_id: recording.id,
   });
 }
 

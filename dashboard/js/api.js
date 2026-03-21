@@ -41,6 +41,10 @@ export async function getRecording(id) {
   return request(`/api/recordings/${encodeURIComponent(id)}`);
 }
 
+export async function getRecordingByToken(token) {
+  return request(`/api/recordings/by-token/${encodeURIComponent(token)}`);
+}
+
 // --- Cards ---
 
 export async function getCards(params = {}) {

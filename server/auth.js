@@ -151,9 +151,15 @@ export function requireAuth(req, res, next) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Smart link: /recording/{id} → redirect to /report/{id} for non-authenticated users
+    // Smart link: /recording/{id} → redirect to /report/{share_token} for non-authenticated users
     const recMatch = req.path.match(/^\/recording\/(.+)$/);
     if (recMatch) {
+      const recId = decodeURIComponent(recMatch[1]);
+      const db = getDB();
+      const rec = db.prepare('SELECT share_token FROM recordings WHERE id = ?').get(recId);
+      if (rec && rec.share_token) {
+        return res.redirect(`/report/${encodeURIComponent(rec.share_token)}`);
+      }
       return res.redirect(`/report/${recMatch[1]}`);
     }
 
@@ -213,11 +219,20 @@ function isPublicRoute(req) {
  * If no password is configured AND no users exist — skip auth (dev mode).
  */
 export function authGuard(req, res, next) {
-  // No password configured and no users — dev mode, skip auth entirely
+  // Dev mode: no password AND no users — authenticate but don't require
   if (!config.dashboardPassword) {
     const db = getDB();
     const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-    if (userCount === 0) return next();
+    if (userCount === 0) {
+      // Still try to authenticate (proxy headers, Bearer token)
+      return authenticateRequest(req, res, () => {
+        // If no auth found, create a virtual dev user so requireAuth passes
+        if (!req.user) {
+          req.user = { id: 'dev-user', name: 'Developer', email: 'dev@bugreel.local', role: 'admin' };
+        }
+        next();
+      });
+    }
   }
 
   // Public routes — no auth needed (but still try to identify user)

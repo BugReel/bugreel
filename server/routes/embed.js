@@ -24,42 +24,50 @@ router.get('/embed/:id', (req, res) => {
     return res.status(404).send(embedErrorPage('Recording not found'));
   }
 
-  const card = db.prepare('SELECT title, summary FROM cards WHERE recording_id = ?').get(req.params.id);
+  const card = db.prepare('SELECT title, summary FROM cards WHERE recording_id = ?').get(recording.id);
 
   const autoplay = req.query.autoplay === '1';
   const startTime = parseFloat(req.query.start) || 0;
   const showBranding = req.query.branding !== '0';
 
   const title = card?.title || recording.id;
-  const videoSrc = `/api/recordings/${encodeURIComponent(req.params.id)}/video`;
+  // Always use recording.id for video src (authenticated API endpoint)
+  const videoSrc = `/api/recordings/${encodeURIComponent(recording.id)}/video`;
 
   // Remove X-Frame-Options to allow embedding
   res.removeHeader('X-Frame-Options');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
-  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: req.params.id }));
+  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id }));
 });
 
 /**
  * GET /embed/:id/code — Return embed HTML snippet for a recording.
+ * Uses share_token in the embed URL to prevent ID enumeration.
  */
 router.get('/embed/:id/code', (req, res) => {
   const db = getDB();
-  const recording = db.prepare('SELECT id FROM recordings WHERE id = ?').get(req.params.id);
+  let recording = db.prepare('SELECT id, share_token FROM recordings WHERE id = ?').get(req.params.id);
+  if (!recording) {
+    recording = db.prepare('SELECT id, share_token FROM recordings WHERE share_token = ?').get(req.params.id);
+  }
 
   if (!recording) {
     return res.status(404).json({ error: 'Recording not found' });
   }
 
   const baseUrl = config.dashboardUrl || `${req.protocol}://${req.get('host')}`;
-  const embedUrl = `${baseUrl}/embed/${encodeURIComponent(req.params.id)}`;
+  // Use share_token in public embed URLs to prevent enumeration
+  const publicId = recording.share_token || recording.id;
+  const embedUrl = `${baseUrl}/embed/${encodeURIComponent(publicId)}`;
 
   const iframe = `<iframe src="${embedUrl}" width="100%" height="400" frameborder="0" allow="autoplay; fullscreen" allowfullscreen style="border-radius:8px;"></iframe>`;
 
   res.json({
     embed_url: embedUrl,
     iframe,
-    recording_id: req.params.id,
+    recording_id: recording.id,
+    share_token: recording.share_token,
   });
 });
 
