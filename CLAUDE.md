@@ -57,6 +57,43 @@ Original code: `../internal/internal-tool/` (~10K lines JS, 6 npm deps, 5 SQLite
 - Remove seed data (team names)
 - Add config-driven architecture (everything via .env)
 
+## Testing
+
+**240 tests**, vitest, runs in <1 second with in-memory SQLite.
+
+```bash
+npm test              # Run all tests once
+npm run test:watch    # Watch mode during development
+```
+
+**Test structure:**
+```
+server/__tests__/
+├── setup.js                      # Creates temp SQLite DB per test suite
+├── auth.test.js                  # Passwords, sessions, public routes (21)
+├── db.test.js                    # Schema, tables, migrations, FK cascades (18)
+├── services/
+│   └── pipeline.test.js          # Queue, state machine, stuck recovery (8)
+├── routes/
+│   ├── recordings.test.js        # CRUD, pagination, filtering, delete (26)
+│   ├── analytics.test.js         # Views, heartbeat, rate limit, aggregation (15)
+│   ├── video-comments.test.js    # CRUD, timecodes, validation (14)
+│   └── settings.test.js          # Get/set, tracker config, bulk (14)
+└── integrations/
+    ├── base.test.js              # Abstract interface checks (16)
+    ├── jira.test.js              # OAuth, ADF, payload, priorities (12)
+    ├── linear.test.js            # OAuth PKCE, GraphQL, priorities (12)
+    ├── github.test.js            # Markdown, labels, API headers (12)
+    ├── youtrack.test.js          # Config, search, project override (12)
+    └── webhook.test.js           # HMAC, payload, error handling (12)
+```
+
+**Rules:**
+- Every new feature or endpoint MUST include tests
+- Tests run automatically on `git push` via pre-push hook
+- Integration tests mock all HTTP — zero real API calls
+- Each test creates its own data and cleans up after
+
 ## Key Documentation
 
 | Document | When to read |
