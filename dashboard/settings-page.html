@@ -260,7 +260,9 @@
               </div>
               <div class="settings-field">
                 <label class="settings-label" data-i18n="settings_tracker_project">Project</label>
-                <input type="text" id="ytProject" class="edit-field" placeholder="BUG" />
+                <select id="ytProject" class="edit-field" style="display:none;"></select>
+                <input type="text" id="ytProjectInput" class="edit-field" placeholder="BUG" />
+                <span class="settings-hint" id="ytProjectHint" data-i18n="settings_project_hint" style="display:none;">Select a project after testing connection</span>
               </div>
             </div>
 
@@ -446,7 +448,10 @@
         data.tracker_url = document.getElementById('ytUrl').value.trim();
         const token = document.getElementById('ytToken').value.trim();
         if (token) data.tracker_token = token; // Only send if user typed a new token
-        data.tracker_project = document.getElementById('ytProject').value.trim();
+        // Use dropdown if visible, otherwise input
+        const ytSelect = document.getElementById('ytProject');
+        const ytInput = document.getElementById('ytProjectInput');
+        data.tracker_project = (ytSelect.style.display !== 'none' ? ytSelect.value : ytInput.value).trim();
       } else if (type === 'jira') {
         data.tracker_url = document.getElementById('jiraUrl').value.trim();
         const token = document.getElementById('jiraToken').value.trim();
@@ -506,7 +511,7 @@
       if (type === 'youtrack') {
         document.getElementById('ytUrl').value = settings.tracker_url || '';
         document.getElementById('ytToken').placeholder = mask || t('settings_tracker_token', 'API Token');
-        document.getElementById('ytProject').value = settings.tracker_project || '';
+        document.getElementById('ytProjectInput').value = settings.tracker_project || '';
       } else if (type === 'jira') {
         document.getElementById('jiraUrl').value = settings.tracker_url || '';
         document.getElementById('jiraToken').placeholder = mask || t('settings_tracker_token', 'API Token');
@@ -559,6 +564,29 @@
           testResult.className = 'test-result test-result-success';
           testResultIcon.innerHTML = icons.checkCircle;
           testResultText.textContent = result.message || t('settings_test_success', 'Connection successful');
+
+          // Populate project dropdown if projects returned
+          if (result.projects && result.projects.length > 0) {
+            const select = document.getElementById('ytProject');
+            const input = document.getElementById('ytProjectInput');
+            const hint = document.getElementById('ytProjectHint');
+            const currentProject = input.value.trim();
+
+            select.innerHTML = '<option value="">' + t('settings_select_project', '— Select project —') + '</option>';
+            result.projects.forEach(p => {
+              const opt = document.createElement('option');
+              opt.value = p.id;
+              opt.textContent = p.id + ' — ' + p.name;
+              if (p.id === currentProject) opt.selected = true;
+              select.appendChild(opt);
+            });
+
+            select.style.display = '';
+            input.style.display = 'none';
+            if (hint) hint.style.display = 'none';
+          }
+
+          updateStatusBadge(true, data.tracker_type);
         } else {
           testResult.className = 'test-result test-result-error';
           testResultIcon.innerHTML = icons.alertTriangle;

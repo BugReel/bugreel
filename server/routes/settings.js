@@ -134,7 +134,11 @@ router.post('/settings/test-connection', async (req, res) => {
       }
 
       const projects = await response.json();
-      return res.json({ ok: true, message: `Connected to YouTrack (${projects.length} projects found)` });
+      return res.json({
+        ok: true,
+        message: `Connected to YouTrack (${projects.length} projects found)`,
+        projects: projects.map(p => ({ id: p.shortName, name: p.name })),
+      });
     }
 
     if (tracker_type === 'jira') {
