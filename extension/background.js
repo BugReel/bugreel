@@ -515,6 +515,13 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
     return { success: false, error: 'Already recording or starting' };
   }
 
+  // Debounce: prevent duplicate starts within 3 seconds (service worker may restart)
+  const now = Date.now();
+  if (now - recordingStartTime < 3000 && recordingStartTime > 0) {
+    console.warn('[BugReel] Duplicate start rejected (debounce)');
+    return { success: false, error: 'Recording just started' };
+  }
+
   state = 'starting'; // Prevent duplicate starts during async setup
 
   console.log('[BugReel] Starting recording: mode=' + mode + ' mic=' + micEnabled + ' sys=' + systemAudioEnabled + ' webcam=' + webcamEnabled);

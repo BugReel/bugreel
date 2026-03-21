@@ -154,14 +154,15 @@
   .cam-outer:hover .cam-circle { border-color: rgba(255,255,255,0.5); }
   video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; display: block; }
   .resize-handle {
-    position: absolute; top: -4px; right: -4px;
-    width: 22px; height: 22px; cursor: nwse-resize;
+    position: absolute; top: -3px; right: -3px;
+    width: 16px; height: 16px; cursor: nwse-resize;
     display: none; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.55); border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.3);
-    z-index: 1;
+    background: rgba(255,255,255,0.15); border-radius: 50%;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    z-index: 1; opacity: 0.7; transition: opacity 0.15s;
   }
-  .resize-handle svg { width: 10px; height: 10px; }
+  .resize-handle:hover { opacity: 1; background: rgba(255,255,255,0.3); }
+  .resize-handle svg { width: 8px; height: 8px; }
   .cam-outer:hover .resize-handle { display: flex; }
 </style>
 <div class="cam-outer">
