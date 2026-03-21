@@ -510,9 +510,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 /* ── Start recording ── */
 
 async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioEnabled = true, webcamEnabled = false, webcamDeviceId = '') {
-  if (state === 'recording' || state === 'paused') {
-    return { success: false, error: 'Already recording' };
+  if (state === 'recording' || state === 'paused' || state === 'starting') {
+    return { success: false, error: 'Already recording or starting' };
   }
+
+  state = 'starting'; // Prevent duplicate starts during async setup
 
   console.log('[BugReel] Starting recording: mode=' + mode + ' mic=' + micEnabled + ' sys=' + systemAudioEnabled + ' webcam=' + webcamEnabled);
 
@@ -606,6 +608,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
   console.log('[BugReel] Recorder response:', offscreenResult);
 
   if (offscreenResult && !offscreenResult.success) {
+    state = 'idle';
     closeRecorderContext();
     return { success: false, error: offscreenResult.error || 'Recorder failed to start' };
   }
