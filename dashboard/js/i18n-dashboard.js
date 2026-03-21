@@ -14,6 +14,9 @@
 
   const translations = {
     en: {
+      // Brand
+      brand_name: 'BugReel',
+
       // Navigation
       nav_recordings: 'Recordings',
       nav_analytics: 'Analytics',
@@ -210,6 +213,9 @@
       card_not_found: 'Card not found',
     },
     ru: {
+      // Brand
+      brand_name: 'BugReel',
+
       // Navigation
       nav_recordings: 'Записи',
       nav_analytics: 'Аналитика',
