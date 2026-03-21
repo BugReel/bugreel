@@ -6,6 +6,8 @@
   let timerInterval = null;
   let state = { extensionState: 'idle', recordingStartedAt: 0, pausedElapsed: 0, pausedAt: 0 };
   let dragState = null;
+  let webcamStream = null;
+  let webcamVisible = true;
 
   /** i18n helper — returns translated string or fallback */
   const t = (key, fallback) => {
@@ -43,8 +45,68 @@
     if (timerEl) timerEl.textContent = formatTime(state.pausedElapsed);
   }
 
+  async function startWebcamPreview() {
+    if (!shadow || webcamStream) return;
+    try {
+      const stored = await new Promise(r => chrome.storage.local.get(['webcamEnabled', 'webcamDeviceId'], r));
+      if (!stored.webcamEnabled) return;
+      const constraints = {
+        video: stored.webcamDeviceId ? { deviceId: { exact: stored.webcamDeviceId } } : true,
+        audio: false,
+      };
+      webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+      const videoEl = shadow.querySelector('.webcam-video');
+      const wrap = shadow.querySelector('.webcam-wrap');
+      if (videoEl && wrap) {
+        videoEl.srcObject = webcamStream;
+        wrap.classList.remove('hidden');
+        webcamVisible = true;
+        const btnCam = shadow.querySelector('.btn-cam');
+        if (btnCam) btnCam.classList.add('active');
+      }
+    } catch (e) {
+      console.warn('[BugReel] Widget webcam preview failed:', e.message);
+    }
+  }
+
+  function stopWebcamPreview() {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach(t => t.stop());
+      webcamStream = null;
+    }
+    if (shadow) {
+      const videoEl = shadow.querySelector('.webcam-video');
+      if (videoEl) videoEl.srcObject = null;
+      const wrap = shadow.querySelector('.webcam-wrap');
+      if (wrap) wrap.classList.add('hidden');
+    }
+  }
+
+  function toggleWebcamPreview() {
+    if (!shadow) return;
+    const wrap = shadow.querySelector('.webcam-wrap');
+    const btnCam = shadow.querySelector('.btn-cam');
+    if (!wrap) return;
+
+    if (webcamVisible && webcamStream) {
+      // Hide preview (stream keeps running for compositing in recorder)
+      wrap.classList.add('hidden');
+      webcamVisible = false;
+      if (btnCam) btnCam.classList.remove('active');
+    } else if (!webcamStream) {
+      // Start preview for the first time
+      startWebcamPreview();
+    } else {
+      // Show preview again
+      wrap.classList.remove('hidden');
+      webcamVisible = true;
+      if (btnCam) btnCam.classList.add('active');
+    }
+  }
+
   function removeWidget() {
     stopTimer();
+    stopWebcamPreview();
     if (host && host.parentNode) host.parentNode.removeChild(host);
     host = null; shadow = null; timerEl = null;
   }
@@ -113,7 +175,22 @@
     font-family: ui-monospace, monospace; line-height: 1;
   }
   .mark-count.visible { display: flex; }
+
+  .webcam-wrap {
+    display: flex; justify-content: center; margin-bottom: 8px;
+  }
+  .webcam-video {
+    width: 120px; height: 120px; border-radius: 50%;
+    object-fit: cover; border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6); background: #000;
+  }
+  .webcam-wrap.hidden { display: none; }
+
+  .btn-cam { background: #1e2d48; }
+  .btn-cam svg { fill: #94a3b8; }
+  .btn-cam.active svg { fill: #22c55e; }
 </style>
+<div class="webcam-wrap hidden"><video class="webcam-video" autoplay playsinline muted></video></div>
 <div class="widget">
   <span class="dot"></span>
   <span class="time">0:00</span>
@@ -122,6 +199,9 @@
     <span class="mark-count"></span>
   </button>
   <button class="btn btn-toggle" title="${t('widget_titlePause', 'Pause')}"></button>
+  <button class="btn btn-cam" title="${t('widget_titleWebcam', 'Show/hide webcam')}">
+    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+  </button>
   <button class="btn btn-stop" title="${t('widget_titleStop', 'Stop')}">
     <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
   </button>
@@ -132,13 +212,16 @@
     const btnToggle = shadow.querySelector('.btn-toggle');
     const btnStop = shadow.querySelector('.btn-stop');
     const btnMark = shadow.querySelector('.btn-mark');
+    const btnCam = shadow.querySelector('.btn-cam');
 
     btnToggle.addEventListener('mousedown', e => e.stopPropagation());
     btnStop.addEventListener('mousedown', e => e.stopPropagation());
     btnMark.addEventListener('mousedown', e => e.stopPropagation());
+    btnCam.addEventListener('mousedown', e => e.stopPropagation());
     btnToggle.addEventListener('click', e => { e.stopPropagation(); onToggle(); });
     btnStop.addEventListener('click', e => { e.stopPropagation(); send({ type: 'stop-and-upload' }); });
     btnMark.addEventListener('click', e => { e.stopPropagation(); onMarkScreenshot(btnMark); });
+    btnCam.addEventListener('click', e => { e.stopPropagation(); toggleWebcamPreview(); });
     // Restore count if widget recreated mid-recording
     try {
       chrome.storage.local.get('manualMarkersCount', (r) => updateMarkCount(r?.manualMarkersCount || 0));
@@ -249,7 +332,10 @@
 
     const visible = state.extensionState === 'recording' || state.extensionState === 'paused';
     if (visible) {
-      if (!host) createWidget();
+      if (!host) {
+        createWidget();
+        startWebcamPreview(); // Start webcam preview when widget appears
+      }
       renderState();
     } else {
       removeWidget();
