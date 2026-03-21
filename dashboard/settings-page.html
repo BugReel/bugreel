@@ -473,8 +473,27 @@
         data.tracker_project = '';
       }
 
+      // Branding
+      data.branding_logo_url = document.getElementById('brandingLogoUrl').value.trim();
+      data.branding_logo_link = document.getElementById('brandingLogoLink').value.trim();
+
       return data;
     }
+
+    // Branding preview
+    function updateBrandingPreview() {
+      const url = document.getElementById('brandingLogoUrl').value.trim();
+      const preview = document.getElementById('brandingPreview');
+      const img = document.getElementById('brandingPreviewImg');
+      if (url) {
+        img.src = url;
+        preview.style.display = 'block';
+        img.onerror = () => { preview.style.display = 'none'; };
+      } else {
+        preview.style.display = 'none';
+      }
+    }
+    document.getElementById('brandingLogoUrl').addEventListener('input', updateBrandingPreview);
 
     // Populate form from loaded settings
     function populateForm(settings) {
@@ -502,6 +521,11 @@
 
       updateTrackerFields();
       updateStatusBadge(settings.tracker_connected, type);
+
+      // Branding
+      document.getElementById('brandingLogoUrl').value = settings.branding_logo_url || '';
+      document.getElementById('brandingLogoLink').value = settings.branding_logo_link || '';
+      updateBrandingPreview();
     }
 
     // Update the status badge in the header

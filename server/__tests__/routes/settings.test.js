@@ -206,3 +206,40 @@ describe('Settings — PUT /api/settings logic', () => {
     expect(getSetting('tracker_project')).toBe('new-owner/new-repo');
   });
 });
+
+describe('Settings — branding config', () => {
+  it('branding defaults to empty strings', () => {
+    expect(getSetting('branding_logo_url')).toBe('');
+    expect(getSetting('branding_logo_link')).toBe('');
+  });
+
+  it('can set branding logo URL', () => {
+    setSetting('branding_logo_url', 'https://example.com/logo.png');
+    expect(getSetting('branding_logo_url')).toBe('https://example.com/logo.png');
+  });
+
+  it('can set branding logo link', () => {
+    setSetting('branding_logo_link', 'https://example.com');
+    expect(getSetting('branding_logo_link')).toBe('https://example.com');
+  });
+
+  it('can clear branding by setting empty string', () => {
+    setSetting('branding_logo_url', 'https://example.com/logo.png');
+    setSetting('branding_logo_url', '');
+    expect(getSetting('branding_logo_url')).toBe('');
+  });
+
+  it('branding included in settings response', () => {
+    setSetting('branding_logo_url', 'https://test.com/logo.svg');
+    setSetting('branding_logo_link', 'https://test.com');
+
+    // Simulate GET /api/settings response construction
+    const response = {
+      branding_logo_url: getSetting('branding_logo_url', ''),
+      branding_logo_link: getSetting('branding_logo_link', ''),
+    };
+
+    expect(response.branding_logo_url).toBe('https://test.com/logo.svg');
+    expect(response.branding_logo_link).toBe('https://test.com');
+  });
+});
