@@ -328,6 +328,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(r => { try { sendResponse(r); } catch {} })
       .catch(e => {
         console.error('[BugReel] handleStartRecording error:', e);
+        state = 'idle'; // Reset state on error
         try { sendResponse({ success: false, error: e.message }); } catch {}
       });
     return true;

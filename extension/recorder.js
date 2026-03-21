@@ -306,11 +306,11 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     combinedStream = new MediaStream([finalVideoTrack]);
   }
 
-  // MediaRecorder
+  // MediaRecorder — higher bitrate when webcam compositing is active (canvas re-encodes)
   recordedChunks = [];
   mediaRecorder = new MediaRecorder(combinedStream, {
     mimeType: getSupportedMimeType(),
-    videoBitsPerSecond: 1_500_000
+    videoBitsPerSecond: hasWebcam ? 4_000_000 : 1_500_000
   });
 
   mediaRecorder.ondataavailable = (e) => {
@@ -369,6 +369,17 @@ async function setupWebcamPiP(screenTrack) {
   webcamVideo.muted = true;
   webcamVideo.playsInline = true;
   await webcamVideo.play();
+
+  // Wait for webcam to actually produce frames
+  await new Promise(r => {
+    if (webcamVideo.videoWidth > 0) return r();
+    webcamVideo.onloadedmetadata = () => r();
+    setTimeout(r, 2000); // Fallback timeout
+  });
+  // Extra delay to ensure first frames are rendered
+  await new Promise(r => setTimeout(r, 300));
+
+  console.log('[BugReel] Webcam ready:', webcamVideo.videoWidth + 'x' + webcamVideo.videoHeight);
 
   // PiP position: use percentage from widget position (synced via message)
   // Default: bottom-left (5%, 85%)
