@@ -304,6 +304,35 @@ router.get('/recordings/:id/frames/:filename', (req, res) => {
   });
 });
 
+// Delete a recording and all associated data
+router.delete('/recordings/:id', (req, res) => {
+  const db = getDB();
+  const recording = db.prepare('SELECT id FROM recordings WHERE id = ?').get(req.params.id);
+  if (!recording) return res.status(404).json({ error: 'Not found' });
+
+  const id = recording.id;
+
+  // Delete related DB rows
+  const card = db.prepare('SELECT id FROM cards WHERE recording_id = ?').get(id);
+  if (card) {
+    db.prepare('DELETE FROM comments WHERE card_id = ?').run(card.id);
+    db.prepare('DELETE FROM cards WHERE id = ?').run(card.id);
+  }
+  db.prepare('DELETE FROM video_comments WHERE recording_id = ?').run(id);
+  db.prepare('DELETE FROM views WHERE recording_id = ?').run(id);
+  db.prepare('DELETE FROM frames WHERE recording_id = ?').run(id);
+  db.prepare('DELETE FROM recordings WHERE id = ?').run(id);
+
+  // Delete data directory
+  const dataPath = path.join(config.dataDir, id);
+  try {
+    fs.rmSync(dataPath, { recursive: true, force: true });
+  } catch {}
+
+  console.log(`[${id}] Recording deleted`);
+  res.json({ ok: true });
+});
+
 // Pre-link recording to YouTrack issue (draft, before card exists)
 router.post('/recordings/:id/pre-link-youtrack', (req, res) => {
   const db = getDB();

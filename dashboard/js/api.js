@@ -48,6 +48,12 @@ export async function getRecordingByToken(token) {
   return request(`/api/recordings/by-token/${encodeURIComponent(token)}`);
 }
 
+export async function deleteRecording(id) {
+  return request(`/api/recordings/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
 // --- Cards ---
 
 export async function getCards(params = {}) {

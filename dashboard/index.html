@@ -47,7 +47,7 @@
   </main>
 
   <script type="module">
-    import { getRecordings } from './js/api.js';
+    import { getRecordings, deleteRecording } from './js/api.js';
     import { renderHeader, formatDate, formatDuration, statusLabel, icons, escapeHTML } from './js/shared.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
@@ -129,6 +129,7 @@
               <th>YT</th>
               <th>${t('th_duration', 'Duration')}</th>
               <th>${icons.eye}</th>
+              <th style="width:40px;"></th>
             </tr>
           </thead>
           <tbody>
@@ -167,6 +168,7 @@
                 })()}</td>
                 <td class="text-muted">${formatDuration(r.duration_seconds)}</td>
                 <td class="text-muted">${r.view_count > 0 ? r.view_count : ''}</td>
+                <td><button class="btn-icon btn-delete-rec" data-id="${escapeHTML(r.id)}" title="${t('delete', 'Delete')}" onclick="event.stopPropagation()">${icons.trash}</button></td>
               </tr>
             `).join('')}
           </tbody>
@@ -198,6 +200,14 @@
         });
       });
 
+      // Delete button handler
+      tableWrapper.querySelectorAll('.btn-delete-rec').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = btn.dataset.id;
+          showDeleteConfirm(id);
+        });
+      });
+
       // Pagination click
       tableWrapper.querySelectorAll('.pagination-buttons .btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -225,6 +235,50 @@
         pages.push(`<button class="btn btn-sm ${i === current ? 'active' : ''}" data-page="${i}">${i}</button>`);
       }
       return pages.join('');
+    }
+
+    // Delete confirmation modal
+    function showDeleteConfirm(id) {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal-dialog" style="max-width:420px;">
+          <div class="modal-header">
+            <h3>${t('delete_recording', 'Delete recording')}</h3>
+            <button class="modal-close" id="delCancel">${icons.x}</button>
+          </div>
+          <div class="modal-body">
+            <p>${t('delete_confirm_text', 'Are you sure you want to delete')} <strong>${escapeHTML(id)}</strong>?</p>
+            <p class="text-muted" style="font-size:0.85rem;">${t('delete_warning', 'Video, frames, and all associated data will be permanently removed.')}</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-sm" id="delCancelBtn">${t('cancel', 'Cancel')}</button>
+            <button class="btn btn-sm btn-danger" id="delConfirmBtn">${t('delete', 'Delete')}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const close = () => overlay.remove();
+      overlay.querySelector('#delCancel').addEventListener('click', close);
+      overlay.querySelector('#delCancelBtn').addEventListener('click', close);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+      document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+
+      overlay.querySelector('#delConfirmBtn').addEventListener('click', async () => {
+        const btn = overlay.querySelector('#delConfirmBtn');
+        btn.disabled = true;
+        btn.textContent = '...';
+        try {
+          await deleteRecording(id);
+          close();
+          loadRecordings();
+        } catch (err) {
+          btn.textContent = t('error', 'Error');
+          btn.disabled = false;
+          console.error('Delete failed:', err);
+        }
+      });
     }
 
     // Event listeners

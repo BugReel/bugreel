@@ -460,6 +460,47 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   font-size: 0.8rem;
 }
 
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all var(--transition);
+  opacity: 0;
+}
+
+.btn-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.table tbody tr:hover .btn-icon {
+  opacity: 1;
+}
+
+.btn-icon:hover {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.btn-danger {
+  background: var(--red-dim);
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: var(--red);
+}
+
 .btn-ghost {
   border-color: transparent;
   background: transparent;
