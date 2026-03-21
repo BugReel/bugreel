@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - BugReel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/i18n-dashboard.js"></script>
+  <style>
+    .settings-content { max-width: 720px; margin: 0 auto; }
+
+    .settings-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .settings-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-section-header svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .settings-section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .settings-section-desc {
+      font-size: 0.82rem;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .settings-section-body {
+      padding: 20px;
+    }
+
+    .settings-field {
+      margin-bottom: 18px;
+    }
+
+    .settings-field:last-child {
+      margin-bottom: 0;
+    }
+
+    .settings-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    .settings-hint {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .settings-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg2);
+    }
+
+    .settings-actions .spacer { flex: 1; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .status-badge svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .status-badge-green {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .status-badge-dim {
+      background: var(--surface2);
+      color: var(--text3);
+    }
+
+    .status-badge-red {
+      background: var(--red-dim);
+      color: var(--red);
+    }
+
+    .test-result {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+    }
+
+    .test-result svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .test-result-success {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .test-result-error {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .save-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: var(--green);
+      color: #fff;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      animation: slideUp 0.3s ease;
+    }
+
+    .save-toast svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Dynamic form sections */
+    .tracker-fields { display: none; }
+    .tracker-fields.active { display: block; }
+
+    /* Token field with show/hide */
+    .token-field-wrap {
+      position: relative;
+    }
+
+    .token-field-wrap input {
+      padding-right: 40px;
+    }
+
+    .token-toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+    }
+
+    .token-toggle:hover {
+      color: var(--text2);
+    }
+
+    .token-toggle svg {
+      width: 16px;
+      height: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container page">
+    <div class="page-header">
+      <h1 data-i18n="settings_title">Settings</h1>
+    </div>
+
+    <div class="settings-content">
+      <div id="settingsLoader" class="loading"><div class="spinner"></div></div>
+      <div id="settingsBody" style="display:none;">
+
+        <!-- Tracker Integration Section -->
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <div>
+              <div class="settings-section-title" id="trackerTitle"></div>
+              <div class="settings-section-desc" data-i18n="settings_tracker_desc">Connect your issue tracker to export bug reports directly</div>
+            </div>
+            <div id="trackerStatus"></div>
+          </div>
+
+          <div class="settings-section-body">
+            <!-- Tracker Type -->
+            <div class="settings-field">
+              <label class="settings-label" data-i18n="settings_tracker_type">Tracker Type</label>
+              <select id="trackerType" class="edit-field">
+                <option value="none" data-i18n="settings_tracker_none">None</option>
+                <option value="youtrack" data-i18n="settings_tracker_youtrack">YouTrack</option>
+                <option value="jira" data-i18n="settings_tracker_jira">Jira</option>
+                <option value="github" data-i18n="settings_tracker_github">GitHub Issues</option>
+                <option value="linear" data-i18n="settings_tracker_linear">Linear</option>
+                <option value="webhook" data-i18n="settings_tracker_webhook">Webhook</option>
+              </select>
+            </div>
+
+            <!-- YouTrack fields -->
+            <div class="tracker-fields" id="fields-youtrack">
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_url">Server URL</label>
+                <input type="url" id="ytUrl" class="edit-field" placeholder="https://your-instance.youtrack.cloud" />
+                <span class="settings-hint" data-i18n="settings_tracker_url_hint_youtrack">e.g. https://your-instance.youtrack.cloud</span>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_token">API Token</label>
+                <div class="token-field-wrap">
+                  <input type="password" id="ytToken" class="edit-field" placeholder="perm:..." autocomplete="off" />
+                  <button type="button" class="token-toggle" id="ytTokenToggle" title="Show/hide"></button>
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_project">Project</label>
+                <input type="text" id="ytProject" class="edit-field" placeholder="BUG" />
+              </div>
+            </div>
+
+            <!-- Jira fields -->
+            <div class="tracker-fields" id="fields-jira">
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_url">Server URL</label>
+                <input type="url" id="jiraUrl" class="edit-field" placeholder="https://your-domain.atlassian.net" />
+                <span class="settings-hint" data-i18n="settings_tracker_url_hint_jira">e.g. https://your-domain.atlassian.net</span>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_token">API Token</label>
+                <div class="token-field-wrap">
+                  <input type="password" id="jiraToken" class="edit-field" placeholder="API token" autocomplete="off" />
+                  <button type="button" class="token-toggle" id="jiraTokenToggle" title="Show/hide"></button>
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_project">Project</label>
+                <input type="text" id="jiraProject" class="edit-field" placeholder="BUG" />
+              </div>
+            </div>
+
+            <!-- GitHub fields -->
+            <div class="tracker-fields" id="fields-github">
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_repo">Repository (owner/repo)</label>
+                <input type="text" id="ghRepo" class="edit-field" placeholder="owner/repo" />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_token">API Token</label>
+                <div class="token-field-wrap">
+                  <input type="password" id="ghToken" class="edit-field" placeholder="ghp_..." autocomplete="off" />
+                  <button type="button" class="token-toggle" id="ghTokenToggle" title="Show/hide"></button>
+                </div>
+                <span class="settings-hint">Personal access token with repo scope (optional for public repos)</span>
+              </div>
+            </div>
+
+            <!-- Linear fields -->
+            <div class="tracker-fields" id="fields-linear">
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_token">API Token</label>
+                <div class="token-field-wrap">
+                  <input type="password" id="linearToken" class="edit-field" placeholder="lin_api_..." autocomplete="off" />
+                  <button type="button" class="token-toggle" id="linearTokenToggle" title="Show/hide"></button>
+                </div>
+                <span class="settings-hint">Generate at Linear > Settings > API</span>
+              </div>
+            </div>
+
+            <!-- Webhook fields -->
+            <div class="tracker-fields" id="fields-webhook">
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_webhook_url">Webhook URL</label>
+                <input type="url" id="webhookUrl" class="edit-field" placeholder="https://your-endpoint.com/webhook" />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" data-i18n="settings_tracker_webhook_secret">Secret (optional)</label>
+                <div class="token-field-wrap">
+                  <input type="password" id="webhookSecret" class="edit-field" placeholder="Optional shared secret" autocomplete="off" />
+                  <button type="button" class="token-toggle" id="webhookSecretToggle" title="Show/hide"></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Test result -->
+            <div class="test-result" id="testResult">
+              <span id="testResultIcon"></span>
+              <span id="testResultText"></span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="settings-actions">
+            <button class="btn" id="btnTest" disabled>
+              <span data-i18n="settings_test">Test Connection</span>
+            </button>
+            <div class="spacer"></div>
+            <button class="btn btn-primary" id="btnSave">
+              <span data-i18n="settings_save">Save</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Save toast -->
+  <div class="save-toast" id="saveToast">
+    <span id="saveToastIcon"></span>
+    <span data-i18n="settings_saved">Settings saved</span>
+  </div>
+
+  <script type="module">
+    import { renderHeader, icons, escapeHTML } from './js/shared.js';
+
+    const t = window.__dashboardI18n?.t || ((k, f) => f || k);
+    document.getElementById('header').innerHTML = renderHeader('settings');
+
+    // Elements
+    const loader = document.getElementById('settingsLoader');
+    const body = document.getElementById('settingsBody');
+    const trackerType = document.getElementById('trackerType');
+    const trackerTitle = document.getElementById('trackerTitle');
+    const trackerStatus = document.getElementById('trackerStatus');
+    const btnTest = document.getElementById('btnTest');
+    const btnSave = document.getElementById('btnSave');
+    const testResult = document.getElementById('testResult');
+    const testResultIcon = document.getElementById('testResultIcon');
+    const testResultText = document.getElementById('testResultText');
+    const saveToast = document.getElementById('saveToast');
+    const saveToastIcon = document.getElementById('saveToastIcon');
+
+    // Set header title + icon
+    trackerTitle.innerHTML = `${icons.externalLink} ${t('settings_tracker', 'Tracker Integration')}`;
+    saveToastIcon.innerHTML = icons.checkCircle;
+
+    // Setup token show/hide toggles
+    document.querySelectorAll('.token-toggle').forEach(btn => {
+      const input = btn.parentElement.querySelector('input');
+      btn.innerHTML = icons.eye;
+      btn.addEventListener('click', () => {
+        if (input.type === 'password') {
+          input.type = 'text';
+          btn.innerHTML = icons.eye; // could swap icon, but eye works for both
+        } else {
+          input.type = 'password';
+          btn.innerHTML = icons.eye;
+        }
+      });
+    });
+
+    // Show/hide tracker field sections based on selected type
+    function updateTrackerFields() {
+      const type = trackerType.value;
+      document.querySelectorAll('.tracker-fields').forEach(el => el.classList.remove('active'));
+      const fields = document.getElementById(`fields-${type}`);
+      if (fields) fields.classList.add('active');
+
+      // Enable test button only when a tracker is selected
+      btnTest.disabled = (type === 'none');
+
+      // Hide test result when type changes
+      testResult.style.display = 'none';
+    }
+
+    trackerType.addEventListener('change', updateTrackerFields);
+
+    // Collect form data based on selected tracker type
+    function collectFormData() {
+      const type = trackerType.value;
+      const data = { tracker_type: type };
+
+      if (type === 'youtrack') {
+        data.tracker_url = document.getElementById('ytUrl').value.trim();
+        data.tracker_token = document.getElementById('ytToken').value.trim();
+        data.tracker_project = document.getElementById('ytProject').value.trim();
+      } else if (type === 'jira') {
+        data.tracker_url = document.getElementById('jiraUrl').value.trim();
+        data.tracker_token = document.getElementById('jiraToken').value.trim();
+        data.tracker_project = document.getElementById('jiraProject').value.trim();
+      } else if (type === 'github') {
+        data.tracker_url = ''; // GitHub uses API directly
+        data.tracker_token = document.getElementById('ghToken').value.trim();
+        data.tracker_project = document.getElementById('ghRepo').value.trim();
+      } else if (type === 'linear') {
+        data.tracker_url = '';
+        data.tracker_token = document.getElementById('linearToken').value.trim();
+        data.tracker_project = '';
+      } else if (type === 'webhook') {
+        data.tracker_url = document.getElementById('webhookUrl').value.trim();
+        data.tracker_token = document.getElementById('webhookSecret').value.trim();
+        data.tracker_project = '';
+      } else {
+        data.tracker_url = '';
+        data.tracker_token = '';
+        data.tracker_project = '';
+      }
+
+      return data;
+    }
+
+    // Populate form from loaded settings
+    function populateForm(settings) {
+      const type = settings.tracker_type || 'none';
+      trackerType.value = type;
+
+      // Populate tracker-specific fields (token is never returned from API for security)
+      if (type === 'youtrack') {
+        document.getElementById('ytUrl').value = settings.tracker_url || '';
+        document.getElementById('ytProject').value = settings.tracker_project || '';
+      } else if (type === 'jira') {
+        document.getElementById('jiraUrl').value = settings.tracker_url || '';
+        document.getElementById('jiraProject').value = settings.tracker_project || '';
+      } else if (type === 'github') {
+        document.getElementById('ghRepo').value = settings.tracker_project || '';
+      } else if (type === 'webhook') {
+        document.getElementById('webhookUrl').value = settings.tracker_url || '';
+      }
+
+      updateTrackerFields();
+      updateStatusBadge(settings.tracker_connected, type);
+    }
+
+    // Update the status badge in the header
+    function updateStatusBadge(connected, type) {
+      if (!type || type === 'none') {
+        trackerStatus.innerHTML = `<span class="status-badge status-badge-dim">${t('settings_not_configured', 'Not configured')}</span>`;
+      } else if (connected) {
+        trackerStatus.innerHTML = `<span class="status-badge status-badge-green">${icons.checkCircle} ${t('settings_connected', 'Connected')}</span>`;
+      } else {
+        trackerStatus.innerHTML = `<span class="status-badge status-badge-dim">${t('settings_not_configured', 'Not configured')}</span>`;
+      }
+    }
+
+    // Test connection
+    btnTest.addEventListener('click', async () => {
+      const data = collectFormData();
+      btnTest.disabled = true;
+      btnTest.querySelector('span').textContent = t('settings_testing', 'Testing...');
+      testResult.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/settings/test-connection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const result = await res.json();
+
+        testResult.style.display = 'flex';
+        if (result.ok) {
+          testResult.className = 'test-result test-result-success';
+          testResultIcon.innerHTML = icons.checkCircle;
+          testResultText.textContent = result.message || t('settings_test_success', 'Connection successful');
+        } else {
+          testResult.className = 'test-result test-result-error';
+          testResultIcon.innerHTML = icons.alertTriangle;
+          testResultText.textContent = result.message || t('settings_test_failed', 'Connection failed');
+        }
+      } catch (err) {
+        testResult.style.display = 'flex';
+        testResult.className = 'test-result test-result-error';
+        testResultIcon.innerHTML = icons.alertTriangle;
+        testResultText.textContent = `Error: ${err.message}`;
+      }
+
+      btnTest.disabled = false;
+      btnTest.querySelector('span').textContent = t('settings_test', 'Test Connection');
+    });
+
+    // Save settings
+    btnSave.addEventListener('click', async () => {
+      const data = collectFormData();
+      btnSave.disabled = true;
+      btnSave.querySelector('span').textContent = t('settings_saving', 'Saving...');
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const result = await res.json();
+
+        if (result.ok) {
+          // Show toast
+          saveToast.style.display = 'flex';
+          setTimeout(() => { saveToast.style.display = 'none'; }, 3000);
+
+          // Update status badge
+          const isConnected = data.tracker_type !== 'none' && (data.tracker_url || data.tracker_type === 'linear' || data.tracker_type === 'github');
+          updateStatusBadge(isConnected, data.tracker_type);
+        }
+      } catch (err) {
+        alert('Error saving settings: ' + err.message);
+      }
+
+      btnSave.disabled = false;
+      btnSave.querySelector('span').textContent = t('settings_save', 'Save');
+    });
+
+    // Load current settings
+    async function load() {
+      try {
+        const res = await fetch('/api/settings');
+        const settings = await res.json();
+        populateForm(settings);
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+      loader.style.display = 'none';
+      body.style.display = 'block';
+    }
+
+    load();
+  </script>
+</body>
+</html>

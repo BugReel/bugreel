@@ -533,8 +533,9 @@
         </div>`;
       }
 
-      // State D: No link — show YouTrack dropdown (during processing OR after)
-      if (r.status !== 'error') {
+      // State D: No link — show tracker dropdown (during processing OR after)
+      // Only show if a tracker is configured
+      if (r.status !== 'error' && trackerConfigured) {
         const showCreateNew = !!card; // only show "create new" if card exists
         return `<div class="yt-dropdown" style="margin-left:auto;">
           <button class="btn btn-sm btn-primary" id="btnYouTrack" style="gap:6px;">${icons.externalLink} YouTrack</button>

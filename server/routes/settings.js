@@ -59,6 +59,11 @@ router.put('/settings', (req, res) => {
   if (tracker_token !== undefined) setSetting('tracker_token', tracker_token || '');
   if (tracker_project !== undefined) setSetting('tracker_project', tracker_project || '');
 
+  // Update in-memory config so youtrack.js picks up changes immediately
+  if (tracker_url) config.youtrack.url = tracker_url;
+  if (tracker_token) config.youtrack.token = tracker_token;
+  if (tracker_project) config.youtrack.project = tracker_project;
+
   res.json({ ok: true });
 });
 

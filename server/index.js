@@ -122,6 +122,19 @@ app.get('*', (req, res) => {
 // Init DB and start
 initDB();
 
+// Sync tracker settings from DB to config (so youtrack.js picks them up)
+try {
+  const db = getDB();
+  const getSetting = (key) => { const r = db.prepare('SELECT value FROM settings WHERE key = ?').get(key); return r?.value || ''; };
+  const dbType = getSetting('tracker_type');
+  if (dbType && dbType !== 'none') {
+    config.youtrack.url = getSetting('tracker_url') || config.youtrack.url;
+    config.youtrack.token = getSetting('tracker_token') || config.youtrack.token;
+    config.youtrack.project = getSetting('tracker_project') || config.youtrack.project;
+    console.log(`[settings] Tracker config loaded from DB: ${dbType} → ${config.youtrack.url}`);
+  }
+} catch (e) { /* settings table may not exist yet */ }
+
 app.listen(config.port, config.host, () => {
   console.log(`BugReel running on ${config.host}:${config.port}`);
   // Retry any stuck/incomplete recordings from previous runs
