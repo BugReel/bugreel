@@ -95,6 +95,7 @@ router.get('/recordings', (req, res) => {
     `SELECT r.*,
       (SELECT f.filename FROM frames f WHERE f.recording_id = r.id ORDER BY f.time_seconds LIMIT 1) as first_frame,
       (SELECT COUNT(*) FROM video_comments vc WHERE vc.recording_id = r.id) as comment_count,
+      (SELECT COUNT(*) FROM views v WHERE v.recording_id = r.id) as view_count,
       c.title as card_title,
       c.summary as card_summary,
       c.id as card_id,

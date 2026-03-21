@@ -22,9 +22,9 @@
   </main>
 
   <script type="module">
-    import { getRecordings, getCards } from './js/api.js';
+    import { getRecordings, getCards, getViewAnalytics } from './js/api.js';
     import {
-      renderHeader, formatDate, statusLabel,
+      renderHeader, formatDate, formatDuration, statusLabel,
       escapeHTML, icons, timeAgo
     } from './js/shared.js';
 
@@ -35,12 +35,13 @@
 
     async function load() {
       try {
-        const [recData, cardData] = await Promise.all([
+        const [recData, cardData, viewData] = await Promise.all([
           getRecordings({ limit: 200, offset: 0 }),
           getCards({ limit: 200, offset: 0 }),
+          getViewAnalytics().catch(() => null),
         ]);
 
-        render(recData, cardData);
+        render(recData, cardData, viewData);
       } catch (err) {
         container.innerHTML = `
           <div class="empty-state">
@@ -51,7 +52,7 @@
       }
     }
 
-    function render(recData, cardData) {
+    function render(recData, cardData, viewData) {
       const recordings = recData.recordings || [];
       const cards = cardData.cards || [];
       const totalRec = recData.total || recordings.length;
@@ -179,6 +180,68 @@
             ` : `<div class="text-dim text-sm">${t('analytics_no_recordings', 'No recordings yet')}</div>`}
           </div>
         </div>
+
+        <!-- Views Section -->
+        ${viewData ? `
+        <div class="grid-2 mb-24">
+          <div class="card">
+            <h3 class="mb-16">${icons.eye} ${t('analytics_views', 'Views')}</h3>
+            <div class="grid-3" style="gap:16px; margin-bottom:16px;">
+              <div>
+                <div class="card-value">${viewData.total_views || 0}</div>
+                <div class="card-title">${t('analytics_total_views', 'Total Views')}</div>
+              </div>
+              <div>
+                <div class="card-value">${viewData.unique_viewers || 0}</div>
+                <div class="card-title">${t('analytics_unique_viewers', 'Unique Viewers')}</div>
+              </div>
+              <div>
+                <div class="card-value">${formatDuration(viewData.avg_watch_duration || 0)}</div>
+                <div class="card-title">${t('analytics_avg_watch', 'Avg Watch Time')}</div>
+              </div>
+            </div>
+            ${viewData.views_by_day && viewData.views_by_day.length > 0 ? `
+              <div class="analytics-chart-title text-dim text-xs mb-8">${t('analytics_views_over_time', 'Views Over Time')}</div>
+              <div class="dist-bar-container">
+                ${(() => {
+                  const days = viewData.views_by_day;
+                  const maxV = Math.max(...days.map(d => d.count), 1);
+                  return days.map(d => `
+                    <div class="dist-bar-row">
+                      <span class="dist-bar-label" style="width:70px;">${d.date.slice(5)}</span>
+                      <div class="dist-bar-track">
+                        ${d.count > 0 ? `<div class="dist-bar-fill" style="width: ${(d.count / maxV) * 100}%; background: var(--blue);">${d.count}</div>` : ''}
+                      </div>
+                      <span class="dist-bar-count">${d.count}</span>
+                    </div>
+                  `).join('');
+                })()}
+              </div>
+            ` : `<div class="text-dim text-sm">${t('no_views_yet', 'No views yet')}</div>`}
+          </div>
+
+          <!-- Top Recordings -->
+          <div class="card">
+            <h3 class="mb-16">${t('analytics_top_recordings', 'Top Recordings by Views')}</h3>
+            ${viewData.top_recordings && viewData.top_recordings.length > 0 ? `
+              <div class="dist-bar-container">
+                ${(() => {
+                  const maxV = Math.max(...viewData.top_recordings.map(r => r.view_count), 1);
+                  return viewData.top_recordings.map(r => `
+                    <div class="dist-bar-row">
+                      <span class="dist-bar-label"><a href="/recording/${encodeURIComponent(r.recording_id)}" style="color:var(--text);text-decoration:none;">${escapeHTML(r.card_title || r.recording_id)}</a></span>
+                      <div class="dist-bar-track">
+                        <div class="dist-bar-fill" style="width: ${(r.view_count / maxV) * 100}%; background: var(--blue);">${r.view_count}</div>
+                      </div>
+                      <span class="dist-bar-count">${r.view_count}</span>
+                    </div>
+                  `).join('');
+                })()}
+              </div>
+            ` : `<div class="text-dim text-sm">${t('analytics_no_recordings', 'No recordings yet')}</div>`}
+          </div>
+        </div>
+        ` : ''}
 
         <!-- Recent Activity -->
         <div class="card">

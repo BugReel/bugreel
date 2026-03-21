@@ -191,6 +191,23 @@ export async function deleteVideoComment(recordingId, commentId) {
   });
 }
 
+// --- View Analytics ---
+
+export async function recordView(recordingId) {
+  return request(`/api/analytics/view`, {
+    method: 'POST',
+    body: JSON.stringify({ recording_id: recordingId }),
+  });
+}
+
+export async function getRecordingViews(recordingId) {
+  return request(`/api/analytics/${encodeURIComponent(recordingId)}`);
+}
+
+export async function getViewAnalytics() {
+  return request('/api/analytics/views');
+}
+
 // --- Password Protection ---
 
 export async function setRecordingPassword(recordingId, password) {

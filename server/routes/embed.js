@@ -14,7 +14,11 @@ const router = Router();
  */
 router.get('/embed/:id', (req, res) => {
   const db = getDB();
-  const recording = db.prepare('SELECT * FROM recordings WHERE id = ?').get(req.params.id);
+  // Support both recording ID and share_token (UUID)
+  let recording = db.prepare('SELECT * FROM recordings WHERE id = ?').get(req.params.id);
+  if (!recording) {
+    recording = db.prepare('SELECT * FROM recordings WHERE share_token = ?').get(req.params.id);
+  }
 
   if (!recording) {
     return res.status(404).send(embedErrorPage('Recording not found'));

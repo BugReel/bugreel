@@ -72,6 +72,36 @@ function clearSessionCookie(res) {
  * Does NOT block — just identifies the user if possible.
  */
 export function authenticateRequest(req, res, next) {
+  // 0. Trust proxy headers from Cloud Layer (X-User-Id set by reverse proxy)
+  const proxyUserId = req.headers['x-user-id'];
+  if (proxyUserId) {
+    const db = getDB();
+    // Find user by ID or email
+    let user = db.prepare('SELECT * FROM users WHERE id = ?').get(proxyUserId);
+    if (!user) {
+      // Try by email (cloud layer sends X-User-Email)
+      const proxyEmail = req.headers['x-user-email'];
+      if (proxyEmail) {
+        user = db.prepare('SELECT * FROM users WHERE email = ?').get(proxyEmail);
+      }
+    }
+    if (!user) {
+      // Auto-create user from proxy headers (first Skrini user accessing BugReel)
+      const userId = proxyUserId;
+      const email = req.headers['x-user-email'] || `${proxyUserId}@proxy.local`;
+      const name = req.headers['x-user-name'] || 'Proxy User';
+      db.prepare(`
+        INSERT OR IGNORE INTO users (id, name, email, auth_provider, role)
+        VALUES (?, ?, ?, 'proxy', 'admin')
+      `).run(userId, name, email);
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    }
+    if (user) {
+      req.user = user;
+      return next();
+    }
+  }
+
   // 1. Check Bearer token (extension auth)
   const authHeader = req.headers.authorization || '';
   if (authHeader.startsWith('Bearer ')) {

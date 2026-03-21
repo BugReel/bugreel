@@ -128,6 +128,7 @@
               <th>${t('th_status', 'Status')}</th>
               <th>YT</th>
               <th>${t('th_duration', 'Duration')}</th>
+              <th>${icons.eye}</th>
             </tr>
           </thead>
           <tbody>
@@ -165,6 +166,7 @@
                   return '';
                 })()}</td>
                 <td class="text-muted">${formatDuration(r.duration_seconds)}</td>
+                <td class="text-muted">${r.view_count > 0 ? r.view_count : ''}</td>
               </tr>
             `).join('')}
           </tbody>

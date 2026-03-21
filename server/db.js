@@ -178,6 +178,16 @@ export function initDB() {
   try { db.exec('ALTER TABLE recordings ADD COLUMN trim_end REAL'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN segments_json TEXT'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN password_hash TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN share_token TEXT'); } catch {}
+
+  // Backfill share_token for existing recordings that don't have one
+  const noToken = db.prepare('SELECT id FROM recordings WHERE share_token IS NULL').all();
+  if (noToken.length > 0) {
+    const update = db.prepare('UPDATE recordings SET share_token = ? WHERE id = ?');
+    for (const row of noToken) {
+      update.run(crypto.randomUUID(), row.id);
+    }
+  }
 
   // Migration: add password_hash to users if missing (for existing DBs)
   try { db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT'); } catch {}

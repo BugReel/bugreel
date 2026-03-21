@@ -132,6 +132,7 @@
           <span class="detail-meta-item">${icons.user} ${escapeHTML(r.author || '--')}</span>
           <span class="detail-meta-item">${icons.calendar} ${formatDate(r.created_at)}</span>
           <span class="detail-meta-item">${icons.clock} ${formatDuration(r.duration_seconds)}</span>
+          <span class="detail-meta-item" id="viewCountMeta">${icons.eye} --</span>
           ${renderYouTrackSection(r, card)}
         </div>
 
@@ -350,7 +351,18 @@
       // Load view analytics panel (non-blocking)
       const analyticsPanel = document.getElementById('viewAnalyticsPanel');
       if (analyticsPanel) {
-        renderViewAnalytics(analyticsPanel, r.id);
+        renderViewAnalytics(analyticsPanel, r.id).then(() => {
+          // Update view count in meta bar
+          const metaEl = document.getElementById('viewCountMeta');
+          if (metaEl) {
+            fetch(`/api/analytics/${encodeURIComponent(r.id)}`)
+              .then(resp => resp.ok ? resp.json() : null)
+              .then(data => {
+                if (data) metaEl.innerHTML = `${icons.eye} ${data.total_views}`;
+              })
+              .catch(() => {});
+          }
+        });
       }
 
       // Load video comments panel (non-blocking)

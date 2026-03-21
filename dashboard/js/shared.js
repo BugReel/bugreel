@@ -73,6 +73,8 @@ export const icons = {
   lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
 
   unlock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 5-5 5 5 0 0 1 5 5"></path></svg>`,
+
+  eye: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
 };
 
 // --- Helpers ---
@@ -276,16 +278,14 @@ export function renderHeader(activePage) {
   ];
 
   const currentLang = window.__dashboardI18n?.lang || 'en';
-  const langSwitch = currentLang === 'ru'
-    ? `<button class="lang-btn" onclick="window.__dashboardI18n.setLang('en')" title="Switch to English">EN</button>`
-    : `<button class="lang-btn" onclick="window.__dashboardI18n.setLang('ru')" title="Переключить на русский">RU</button>`;
+  const brandName = t('brand_name', 'BugReel');
 
   return `
     <header class="app-header">
       <div class="container">
         <a href="/" class="logo">
           <div class="logo-icon">${icons.target}</div>
-          <span>BugReel</span>
+          <span>${brandName}</span>
         </a>
         <nav class="nav">
           ${navItems.map(item => `
@@ -294,8 +294,11 @@ export function renderHeader(activePage) {
               <span>${item.label}</span>
             </a>
           `).join('')}
-          ${langSwitch}
         </nav>
+        <div class="lang-switcher">
+          <button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
+          <button class="lang-btn ${currentLang === 'ru' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>
+        </div>
       </div>
     </header>
   `;

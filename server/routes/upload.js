@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -35,9 +36,9 @@ router.post('/upload', (req, res, next) => {
 
   const db = getDB();
   db.prepare(`
-    INSERT INTO recordings (id, author, video_filename, file_size_bytes, status)
-    VALUES (?, ?, 'video.webm', ?, 'uploaded')
-  `).run(id, author, req.file.size);
+    INSERT INTO recordings (id, author, video_filename, file_size_bytes, status, share_token)
+    VALUES (?, ?, 'video.webm', ?, 'uploaded', ?)
+  `).run(id, author, req.file.size, crypto.randomUUID());
 
   const urlEvents = req.body.url_events || null;
   const metadata = req.body.metadata || null;

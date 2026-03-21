@@ -149,6 +149,22 @@
       analytics_recorded: 'recorded',
       failed_load_analytics: 'Failed to load analytics',
 
+      // View analytics
+      views: 'Views',
+      view_count: 'views',
+      view_analytics: 'View Analytics',
+      total_views: 'Total Views',
+      unique_viewers: 'Unique Viewers',
+      avg_watch_time: 'Avg Watch Time',
+      no_views_yet: 'No views yet. Share the report link to start tracking.',
+      views_last_30: 'Views — Last 30 Days',
+      analytics_views: 'Views',
+      analytics_total_views: 'Total Views',
+      analytics_unique_viewers: 'Unique Viewers',
+      analytics_avg_watch: 'Avg Watch Time',
+      analytics_top_recordings: 'Top Recordings by Views',
+      analytics_views_over_time: 'Views Over Time',
+
       // Report page
       report_download: 'Download',
 
@@ -328,6 +344,22 @@
       analytics_no_activity: 'Активности пока нет',
       analytics_recorded: 'записал',
       failed_load_analytics: 'Не удалось загрузить аналитику',
+
+      // View analytics
+      views: 'Просмотры',
+      view_count: 'просмотров',
+      view_analytics: 'Аналитика просмотров',
+      total_views: 'Всего просмотров',
+      unique_viewers: 'Уникальных зрителей',
+      avg_watch_time: 'Среднее время просмотра',
+      no_views_yet: 'Пока нет просмотров. Поделитесь ссылкой на отчёт.',
+      views_last_30: 'Просмотры за 30 дней',
+      analytics_views: 'Просмотры',
+      analytics_total_views: 'Всего просмотров',
+      analytics_unique_viewers: 'Уникальных зрителей',
+      analytics_avg_watch: 'Среднее время просмотра',
+      analytics_top_recordings: 'Топ записей по просмотрам',
+      analytics_views_over_time: 'Просмотры за период',
 
       // Report page
       report_download: 'Скачать',

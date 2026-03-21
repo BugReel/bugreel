@@ -157,4 +157,61 @@ router.get('/analytics/:recordingId', requireAuth, (req, res) => {
   });
 });
 
+/**
+ * GET /api/analytics/views
+ * Aggregated view analytics across all recordings (authenticated).
+ *
+ * Returns:
+ *   total_views          — total view count
+ *   unique_viewers       — distinct viewer hashes
+ *   avg_watch_duration   — average watch duration in seconds
+ *   views_by_day         — array of { date, count } for last 30 days
+ *   top_recordings       — top 10 recordings by view count
+ */
+router.get('/analytics/views', requireAuth, (req, res) => {
+  const db = getDB();
+
+  // Aggregate stats
+  const stats = db.prepare(`
+    SELECT
+      COUNT(*) as total_views,
+      COUNT(DISTINCT viewer_hash) as unique_viewers,
+      COALESCE(ROUND(AVG(duration_seconds)), 0) as avg_watch_duration
+    FROM views
+  `).get();
+
+  // Views by day (last 30 days)
+  const viewsByDay = db.prepare(`
+    SELECT DATE(created_at) as date, COUNT(*) as count
+    FROM views
+    WHERE created_at > datetime('now', '-30 days')
+    GROUP BY DATE(created_at)
+    ORDER BY date ASC
+  `).all();
+
+  // Top recordings by views
+  const topRecordings = db.prepare(`
+    SELECT
+      v.recording_id,
+      COUNT(*) as view_count,
+      COUNT(DISTINCT v.viewer_hash) as unique_viewers,
+      COALESCE(ROUND(AVG(v.duration_seconds)), 0) as avg_watch_duration,
+      r.author,
+      r.created_at,
+      c.title as card_title
+    FROM views v
+    LEFT JOIN recordings r ON r.id = v.recording_id
+    LEFT JOIN cards c ON c.recording_id = v.recording_id
+    GROUP BY v.recording_id
+    ORDER BY view_count DESC
+    LIMIT 10
+  `).all();
+
+  res.json({
+    ...stats,
+    views_by_day: viewsByDay,
+    top_recordings: topRecordings,
+  });
+});
+
 export default router;
