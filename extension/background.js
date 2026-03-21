@@ -543,8 +543,11 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
 
   // Create recorder context
   if (HAS_OFFSCREEN) {
-    // Chrome: recreate offscreen document
-    try { await chrome.offscreen.closeDocument(); } catch {}
+    // Chrome: close existing offscreen first, then create new one
+    try {
+      await chrome.offscreen.closeDocument();
+      await new Promise(r => setTimeout(r, 100)); // Wait for cleanup
+    } catch {}
     const reasons = (mode === 'desktop' || !streamId)
       ? ['USER_MEDIA', 'DISPLAY_MEDIA']
       : ['USER_MEDIA'];

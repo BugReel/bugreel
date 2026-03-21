@@ -442,10 +442,12 @@ async function setupWebcamPiP(screenTrack) {
       pipCtx.restore();
     }
 
-    pipAnimationFrame = requestAnimationFrame(drawFrame);
   }
 
-  drawFrame();
+  // Use setInterval instead of requestAnimationFrame — RAF doesn't fire in offscreen documents
+  const frameIntervalMs = Math.round(1000 / fps);
+  pipAnimationFrame = setInterval(drawFrame, frameIntervalMs);
+  drawFrame(); // Draw first frame immediately
 
   // Capture the canvas as a video track
   const canvasStream = pipCanvas.captureStream(fps);
@@ -456,7 +458,7 @@ async function setupWebcamPiP(screenTrack) {
 
 function stopWebcamPiP() {
   if (pipAnimationFrame) {
-    cancelAnimationFrame(pipAnimationFrame);
+    clearInterval(pipAnimationFrame);
     pipAnimationFrame = null;
   }
   if (screenVideo) {
