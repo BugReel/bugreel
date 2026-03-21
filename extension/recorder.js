@@ -38,6 +38,7 @@ let micLevelInterval = null;
 let pendingServerUrl = '';
 let pendingAuthor = '';
 let pendingExtensionToken = '';
+let pendingWebcamCorner = 'bottom-left';
 let pendingAutoUpload = null;
 
 // Firefox recorder window timer
@@ -52,7 +53,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   switch (message.type) {
     case 'offscreen-start':
-      startRecording(message.streamId, message.serverUrl, message.author, message.mode, message.micEnabled, message.systemAudioEnabled, message.extensionToken, message.maxDuration, message.videoQuality, message.webcamEnabled, message.webcamDeviceId)
+      startRecording(message.streamId, message.serverUrl, message.author, message.mode, message.micEnabled, message.systemAudioEnabled, message.extensionToken, message.maxDuration, message.videoQuality, message.webcamEnabled, message.webcamDeviceId, message.webcamCorner)
         .then(() => sendResponse({ success: true }))
         .catch((err) => sendResponse({ success: false, error: err.message }));
       return true;
@@ -146,10 +147,11 @@ function stopMicPreview() {
 
 /* --- Recording --- */
 
-async function startRecording(streamId, serverUrl, author, mode, micEnabled, systemAudioEnabled, extensionToken, maxDuration, videoQuality, webcamEnabled, webcamDeviceId) {
+async function startRecording(streamId, serverUrl, author, mode, micEnabled, systemAudioEnabled, extensionToken, maxDuration, videoQuality, webcamEnabled, webcamDeviceId, webcamCorner) {
   pendingServerUrl = serverUrl;
   pendingAuthor = author;
   pendingExtensionToken = extensionToken || '';
+  pendingWebcamCorner = webcamCorner || 'bottom-left';
 
   // Apply user settings (passed via message from background.js — chrome.storage is not available in offscreen)
   const maxDurationMin = maxDuration || 10;
@@ -243,8 +245,8 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     try {
       const webcamConstraints = {
         video: webcamDeviceId
-          ? { deviceId: { exact: webcamDeviceId }, width: { ideal: 200 }, height: { ideal: 200 } }
-          : { width: { ideal: 200 }, height: { ideal: 200 } },
+          ? { deviceId: { exact: webcamDeviceId }, width: { ideal: 640 }, height: { ideal: 640 } }
+          : { width: { ideal: 640 }, height: { ideal: 640 } },
         audio: false
       };
       webcamStream = await navigator.mediaDevices.getUserMedia(webcamConstraints);
@@ -334,14 +336,15 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
 /* --- Webcam PiP compositing via Canvas --- */
 
 async function setupWebcamPiP(screenTrack) {
-  const PIP_DIAMETER = 150;
-  const PIP_MARGIN = 20;
-
   // Get screen video dimensions
   const screenSettings = screenTrack.getSettings();
   const canvasWidth = screenSettings.width || 1280;
   const canvasHeight = screenSettings.height || 720;
   const fps = screenSettings.frameRate || 30;
+
+  // PiP size: ~12% of screen width, min 120px, max 300px
+  const PIP_DIAMETER = Math.max(120, Math.min(300, Math.round(canvasWidth * 0.12)));
+  const PIP_MARGIN = Math.round(canvasWidth * 0.02);
 
   // Create canvas for compositing
   pipCanvas = document.createElement('canvas');
@@ -363,9 +366,27 @@ async function setupWebcamPiP(screenTrack) {
   webcamVideo.playsInline = true;
   await webcamVideo.play();
 
-  // PiP position: bottom-left corner
-  const pipX = PIP_MARGIN + PIP_DIAMETER / 2;
-  const pipY = canvasHeight - PIP_MARGIN - PIP_DIAMETER / 2;
+  // PiP position: configurable corner (bottom-left default)
+  // Reads from chrome.storage via message since storage isn't available in offscreen
+  const pipCorner = pendingWebcamCorner || 'bottom-left';
+  let pipX, pipY;
+  switch (pipCorner) {
+    case 'top-left':
+      pipX = PIP_MARGIN + PIP_DIAMETER / 2;
+      pipY = PIP_MARGIN + PIP_DIAMETER / 2;
+      break;
+    case 'top-right':
+      pipX = canvasWidth - PIP_MARGIN - PIP_DIAMETER / 2;
+      pipY = PIP_MARGIN + PIP_DIAMETER / 2;
+      break;
+    case 'bottom-right':
+      pipX = canvasWidth - PIP_MARGIN - PIP_DIAMETER / 2;
+      pipY = canvasHeight - PIP_MARGIN - PIP_DIAMETER / 2;
+      break;
+    default: // bottom-left
+      pipX = PIP_MARGIN + PIP_DIAMETER / 2;
+      pipY = canvasHeight - PIP_MARGIN - PIP_DIAMETER / 2;
+  }
   const pipRadius = PIP_DIAMETER / 2;
 
   // Compositing render loop

@@ -550,11 +550,11 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
     }
     // Save params to storage — recorder tab reads them and handles capture with user gesture
     const serverUrl_ = await getServerUrl();
-    const storage_ = await chrome.storage.local.get(['author', 'extensionToken', 'userName']);
+    const storage_ = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'userEmail']);
     await chrome.storage.local.set({
       recorderParams: {
         serverUrl: serverUrl_,
-        author: storage_.extensionToken ? (storage_.userName || 'unknown') : (storage_.author || 'unknown'),
+        author: storage_.extensionToken ? (storage_.userName || storage_.userEmail || 'unknown') : (storage_.author || 'unknown'),
         mode, micEnabled, systemAudioEnabled, streamId,
         webcamEnabled, webcamDeviceId,
         extensionToken: storage_.extensionToken || ''
@@ -574,8 +574,8 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
   }
 
   const serverUrl = await getServerUrl();
-  const storage = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'maxDuration', 'videoQuality']);
-  const author = storage.extensionToken ? (storage.userName || 'unknown') : (storage.author || 'unknown');
+  const storage = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'userEmail', 'maxDuration', 'videoQuality', 'webcamCorner']);
+  const author = storage.extensionToken ? (storage.userName || storage.userEmail || 'unknown') : (storage.author || 'unknown');
 
   console.log('[BugReel] Sending offscreen-start to recorder...');
   const offscreenResult = await chrome.runtime.sendMessage({
@@ -589,6 +589,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
     systemAudioEnabled,
     webcamEnabled,
     webcamDeviceId,
+    webcamCorner: storage.webcamCorner || 'bottom-left',
     extensionToken: storage.extensionToken || '',
     maxDuration: storage.maxDuration || 10,
     videoQuality: storage.videoQuality || '720p',
