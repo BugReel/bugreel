@@ -1,21 +1,67 @@
-const btn = document.getElementById('btn-allow');
-const contentEl = document.getElementById('content');
-const errorEl = document.getElementById('error');
+// --- Permission buttons ---
 
-btn.addEventListener('click', async () => {
+const btnMic = document.getElementById('btn-mic');
+const btnCam = document.getElementById('btn-cam');
+const micError = document.getElementById('mic-error');
+const camError = document.getElementById('cam-error');
+const systemHint = document.getElementById('system-hint');
+
+// Check existing permissions on load
+(async () => {
+  try {
+    const mic = await navigator.permissions.query({ name: 'microphone' });
+    if (mic.state === 'granted') markGranted(btnMic, 'mic');
+  } catch {}
+  try {
+    const cam = await navigator.permissions.query({ name: 'camera' });
+    if (cam.state === 'granted') markGranted(btnCam, 'cam');
+  } catch {}
+})();
+
+function markGranted(btn, type) {
+  btn.className = 'btn btn-granted';
+  btn.textContent = 'Granted';
   btn.disabled = true;
-  btn.textContent = 'Requesting...';
-  errorEl.style.display = 'none';
+  if (type === 'mic') chrome.storage.local.set({ micPermissionGranted: true });
+  if (type === 'cam') chrome.storage.local.set({ webcamPermissionGranted: true });
+}
+
+// Microphone
+btnMic.addEventListener('click', async () => {
+  btnMic.disabled = true;
+  btnMic.textContent = 'Requesting...';
+  micError.style.display = 'none';
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     stream.getTracks().forEach(t => t.stop());
-    chrome.storage.local.set({ micPermissionGranted: true });
-    contentEl.innerHTML = '<p class="success">Microphone access granted!</p><p>You can close this tab and use the extension.</p>';
+    markGranted(btnMic, 'mic');
   } catch (e) {
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Try again';
-    errorEl.textContent = e.message || 'Permission denied';
-    errorEl.style.display = '';
+    btnMic.disabled = false;
+    btnMic.textContent = 'Try again';
+    btnMic.className = 'btn btn-primary';
+    micError.textContent = e.message === 'Permission denied' ? 'Permission denied. Check system settings below.' : e.message;
+    micError.style.display = '';
+    systemHint.style.display = '';
+  }
+});
+
+// Camera
+btnCam.addEventListener('click', async () => {
+  btnCam.disabled = true;
+  btnCam.textContent = 'Requesting...';
+  camError.style.display = 'none';
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    stream.getTracks().forEach(t => t.stop());
+    markGranted(btnCam, 'cam');
+  } catch (e) {
+    btnCam.disabled = false;
+    btnCam.textContent = 'Try again';
+    btnCam.className = 'btn btn-primary';
+    camError.textContent = e.message === 'Permission denied' ? 'Permission denied. Check system settings below.' : e.message;
+    camError.style.display = '';
+    systemHint.style.display = '';
   }
 });

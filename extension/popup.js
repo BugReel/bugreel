@@ -397,20 +397,24 @@ toggleMic.addEventListener('change', () => {
 });
 toggleSystem.addEventListener('change', () => chrome.storage.local.set({ systemAudioEnabled: toggleSystem.checked }));
 
-// Webcam toggle — request camera permission in popup (offscreen can't show permission prompt)
+// Webcam toggle — check camera permission, open permission page if needed
 toggleWebcam.addEventListener('change', async () => {
   chrome.storage.local.set({ webcamEnabled: toggleWebcam.checked });
   if (toggleWebcam.checked) {
-    try {
-      // Request camera permission here so it's granted when offscreen document needs it
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      stream.getTracks().forEach(t => t.stop()); // Release immediately — just needed the permission
-      chrome.storage.local.set({ webcamPermissionGranted: true });
-    } catch (e) {
-      console.warn('[BugReel] Camera permission denied:', e.message);
-      toggleWebcam.checked = false;
-      chrome.storage.local.set({ webcamEnabled: false });
-      return;
+    // Check if camera permission is already granted
+    const stored = await chrome.storage.local.get(['webcamPermissionGranted']);
+    if (!stored.webcamPermissionGranted) {
+      // Try to check via permissions API
+      let granted = false;
+      try {
+        const cam = await navigator.permissions.query({ name: 'camera' });
+        granted = cam.state === 'granted';
+      } catch {}
+
+      if (!granted) {
+        // Open permission page — can't request camera from popup or offscreen
+        chrome.tabs.create({ url: chrome.runtime.getURL('mic-permission.html') });
+      }
     }
     webcamDeviceField.classList.remove('hidden');
     populateWebcamDevices();

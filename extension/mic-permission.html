@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title data-i18n="mic_title">BugReel — Microphone Access</title>
+  <title data-i18n="mic_title">BugReel — Permissions</title>
   <script src="i18n.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,7 +13,7 @@
     }
     .card {
       background: #1e293b; border: 1px solid #334155; border-radius: 16px;
-      padding: 40px; max-width: 400px; text-align: center;
+      padding: 40px; max-width: 460px; text-align: center;
     }
     h1 {
       font-size: 20px; margin-bottom: 8px;
@@ -21,40 +21,85 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     p { color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 12px 0; }
+
+    .permissions { display: flex; flex-direction: column; gap: 16px; margin-top: 20px; }
+    .perm-row {
+      display: flex; align-items: center; gap: 16px;
+      background: #0f172a; border: 1px solid #334155; border-radius: 12px;
+      padding: 16px 20px; text-align: left;
+    }
+    .perm-icon { flex-shrink: 0; width: 40px; height: 40px; color: #3b82f6; }
+    .perm-info { flex: 1; }
+    .perm-name { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+    .perm-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+
     .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 12px 24px; border: none; border-radius: 8px;
-      font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer;
-      transition: all 0.2s; margin-top: 12px;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+      transition: all 0.2s; flex-shrink: 0;
     }
     .btn-primary { background: #3b82f6; color: white; }
     .btn-primary:hover { background: #2563eb; }
     .btn-primary:disabled { background: #334155; color: #64748b; cursor: default; }
-    .success { color: #22c55e; font-weight: 600; font-size: 15px; }
-    .error { color: #ef4444; font-size: 13px; margin-top: 8px; }
-    .mic-icon { width: 48px; height: 48px; color: #3b82f6; margin-bottom: 12px; }
-    .hint { font-size: 12px; color: #64748b; margin-top: 16px; }
+    .btn-granted { background: #166534; color: #bbf7d0; cursor: default; }
+
+    .hint { font-size: 12px; color: #64748b; margin-top: 20px; }
+    .hint a { color: #818cf8; text-decoration: none; }
+    .error { color: #ef4444; font-size: 12px; margin-top: 4px; }
+
+    .system-hint {
+      display: none; margin-top: 16px; padding: 12px 16px;
+      background: #1a1a2e; border: 1px solid #334155; border-radius: 8px;
+      text-align: left; font-size: 12px; color: #94a3b8; line-height: 1.6;
+    }
+    .system-hint strong { color: #f1f5f9; }
   </style>
 </head>
 <body>
   <div class="card">
-    <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-      <line x1="12" y1="19" x2="12" y2="23"/>
-      <line x1="8" y1="23" x2="16" y2="23"/>
-    </svg>
     <h1 data-i18n="brandName">BugReel</h1>
-    <p data-i18n="mic_description">Microphone access is needed for voice recording.<br>Click the button and allow access in the browser dialog.</p>
+    <p data-i18n="permissions_description">Grant access to use microphone and camera during screen recording.</p>
 
-    <div id="content">
-      <button class="btn btn-primary" id="btn-allow">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-        <span data-i18n="mic_allowButton">Allow Microphone</span>
-      </button>
+    <div class="permissions">
+      <!-- Microphone -->
+      <div class="perm-row">
+        <svg class="perm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+        <div class="perm-info">
+          <div class="perm-name" data-i18n="perm_mic_name">Microphone</div>
+          <div class="perm-desc" data-i18n="perm_mic_desc">For voice recording</div>
+          <div id="mic-error" class="error" style="display:none;"></div>
+        </div>
+        <button class="btn btn-primary" id="btn-mic" data-i18n="perm_allow">Allow</button>
+      </div>
+
+      <!-- Camera -->
+      <div class="perm-row">
+        <svg class="perm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <div class="perm-info">
+          <div class="perm-name" data-i18n="perm_cam_name">Camera</div>
+          <div class="perm-desc" data-i18n="perm_cam_desc">For webcam overlay (PiP)</div>
+          <div id="cam-error" class="error" style="display:none;"></div>
+        </div>
+        <button class="btn btn-primary" id="btn-cam" data-i18n="perm_allow">Allow</button>
+      </div>
     </div>
-    <div id="error" class="error" style="display:none;"></div>
-    <p class="hint" data-i18n="mic_hint">This tab can be closed after granting access.</p>
+
+    <div id="system-hint" class="system-hint">
+      <strong>System permission required</strong><br>
+      If the browser dialog doesn't appear, check your system settings:<br>
+      <strong>macOS:</strong> System Settings &rarr; Privacy & Security &rarr; Camera / Microphone &rarr; enable for Chrome<br>
+      <strong>Windows:</strong> Settings &rarr; Privacy &rarr; Camera / Microphone &rarr; allow desktop apps
+    </div>
+
+    <p class="hint" data-i18n="perm_hint">You can close this tab after granting access.</p>
   </div>
 
   <script src="mic-permission.js"></script>
