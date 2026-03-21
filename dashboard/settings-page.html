@@ -373,12 +373,17 @@
 
         <!-- Branding -->
         <div class="settings-section">
-          <h2 class="settings-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-            <span data-i18n="settings_branding">Player Branding</span>
-          </h2>
-          <p class="settings-desc" data-i18n="settings_branding_desc">Custom logo on public report and embed pages. Leave empty for default BugReel branding.</p>
+          <div class="settings-section-header">
+            <div>
+              <div class="settings-section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                <span data-i18n="settings_branding">Player Branding</span>
+              </div>
+              <div class="settings-section-desc" data-i18n="settings_branding_desc">Custom logo on public report and embed pages. Leave empty for default BugReel branding.</div>
+            </div>
+          </div>
 
+          <div class="settings-section-body">
           <div class="settings-field">
             <label class="settings-label" for="brandingLogoUrl" data-i18n="settings_branding_logo_url">Logo URL</label>
             <input type="url" id="brandingLogoUrl" class="edit-field" placeholder="https://example.com/logo.svg" autocomplete="off">
@@ -396,6 +401,7 @@
             <div style="background:var(--bg-darker, #111);border:1px solid var(--border, #333);border-radius:8px;padding:16px 20px;display:inline-block;">
               <img id="brandingPreviewImg" src="" alt="Logo preview" style="height:28px;max-width:160px;object-fit:contain;">
             </div>
+          </div>
           </div>
         </div>
 
