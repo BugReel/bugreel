@@ -775,6 +775,24 @@
         const res = await fetch('/api/settings', { credentials: 'include' });
         const settings = await res.json();
         populateForm(settings);
+
+        // If already connected, auto-load projects list
+        if (settings.tracker_connected && settings.tracker_type === 'youtrack') {
+          try {
+            const testRes = await fetch('/api/settings/test-connection', {
+              credentials: 'include',
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tracker_type: settings.tracker_type }),
+            });
+            const testResult = await testRes.json();
+            if (testResult.ok && testResult.projects) {
+              populateProjects(testResult.projects, settings.tracker_project);
+            }
+          } catch (e) {
+            console.warn('Could not load projects:', e.message);
+          }
+        }
       } catch (err) {
         console.error('Failed to load settings:', err);
       }
