@@ -109,10 +109,8 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
 /* Karaoke subtitles */
 .karaoke{position:absolute;bottom:52px;left:0;right:0;text-align:center;z-index:12;pointer-events:none;padding:0 16px;transition:opacity .2s}
 .karaoke.hidden{opacity:0}
-.karaoke-line{display:inline;background:rgba(0,0,0,.7);padding:4px 10px;border-radius:4px;font-size:15px;line-height:1.8;white-space:pre-wrap;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-.karaoke-word{color:rgba(255,255,255,.45);transition:color .1s}
-.karaoke-word.active{color:#fff;text-shadow:0 0 8px rgba(59,130,246,.6)}
-.karaoke-word.spoken{color:rgba(255,255,255,.7)}
+.karaoke-line{display:inline;background:rgba(0,0,0,.75);padding:5px 12px;border-radius:4px;font-size:15px;line-height:1.8;color:rgba(255,255,255,.85)}
+.karaoke-word.active{color:#fff;font-weight:600}
 
 /* Subtitle toggle */
 .btn-cc{font-size:11px;font-weight:700;line-height:1;padding:2px 4px !important;letter-spacing:.5px;border:1.5px solid currentColor !important;border-radius:3px !important;opacity:.5}
@@ -381,9 +379,17 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
   var karaokeEl = document.getElementById('karaoke');
   var karaokeLine = document.getElementById('karaokeLine');
   var karaokeVisible = true;
-  var WINDOW = 8; // words to show around active word
 
-  if (!karaokeWords.length || !karaokeEl) {
+  // Pre-build segments of ~7 words
+  var segments = [];
+  if (karaokeWords.length) {
+    for (var i = 0; i < karaokeWords.length; i += 7) {
+      var seg = karaokeWords.slice(i, i + 7);
+      segments.push({ from: i, to: i + seg.length, words: seg, start: seg[0].s, end: seg[seg.length - 1].e });
+    }
+  }
+
+  if (!segments.length || !karaokeEl) {
     btnCC.style.display = 'none';
   }
 
@@ -393,32 +399,46 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
     if (karaokeEl) karaokeEl.classList.toggle('hidden', !karaokeVisible);
   });
 
-  if (karaokeWords.length && karaokeLine) {
-    var lastIdx = -1;
+  if (segments.length && karaokeLine) {
+    var lastSeg = -1;
+    var lastActive = -1;
+
     video.addEventListener('timeupdate', function() {
       var t = video.currentTime;
-      // Find active word index
-      var idx = -1;
-      for (var i = 0; i < karaokeWords.length; i++) {
-        if (t >= karaokeWords[i].s && t < karaokeWords[i].e) { idx = i; break; }
-        if (t >= karaokeWords[i].s) idx = i; // closest spoken word
+      // Find current segment
+      var si = -1;
+      for (var i = 0; i < segments.length; i++) {
+        if (t >= segments[i].start && t < segments[i].end + 0.3) { si = i; break; }
       }
-      if (idx === lastIdx) return;
-      lastIdx = idx;
+      if (si === -1) { karaokeLine.innerHTML = ''; lastSeg = -1; lastActive = -1; return; }
 
-      // Window of words around active
-      var from = Math.max(0, idx - WINDOW);
-      var to = Math.min(karaokeWords.length, idx + WINDOW + 1);
-      var html = '';
-      for (var j = from; j < to; j++) {
-        var cls = j === idx ? 'active' : j < idx ? 'spoken' : '';
-        html += '<span class="karaoke-word' + (cls ? ' ' + cls : '') + '">' + karaokeWords[j].w + ' </span>';
+      // Re-render segment if changed
+      if (si !== lastSeg) {
+        lastSeg = si;
+        lastActive = -1;
+        var html = '';
+        for (var j = 0; j < segments[si].words.length; j++) {
+          html += '<span class="karaoke-word" id="kw' + j + '">' + segments[si].words[j].w + ' </span>';
+        }
+        karaokeLine.innerHTML = html;
       }
-      karaokeLine.innerHTML = html;
+
+      // Highlight active word within segment
+      var ai = -1;
+      for (var j = 0; j < segments[si].words.length; j++) {
+        var w = segments[si].words[j];
+        if (t >= w.s && t < w.e) { ai = j; break; }
+        if (t >= w.s) ai = j;
+      }
+      if (ai !== lastActive) {
+        if (lastActive >= 0) { var prev = document.getElementById('kw' + lastActive); if (prev) prev.classList.remove('active'); }
+        if (ai >= 0) { var cur = document.getElementById('kw' + ai); if (cur) cur.classList.add('active'); }
+        lastActive = ai;
+      }
     });
 
-    video.addEventListener('ended', function() { karaokeLine.innerHTML = ''; });
-    video.addEventListener('seeked', function() { lastIdx = -1; });
+    video.addEventListener('ended', function() { karaokeLine.innerHTML = ''; lastSeg = -1; });
+    video.addEventListener('seeked', function() { lastSeg = -1; lastActive = -1; });
   }
 
   // CTA overlay logic
