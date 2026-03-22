@@ -1,6 +1,7 @@
 node_modules/
 data/
 .env
+CLAUDE.local.md
 *.log
 .DS_Store
 dist/
