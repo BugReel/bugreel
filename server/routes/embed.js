@@ -170,10 +170,10 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
   ${showBranding ? (() => {
     const logoUrl = branding.logo_url;
     const logoLink = branding.logo_link || branding.url || 'https://bugreel.io';
-    if (logoUrl) {
-      return `<a class="branding" href="${escapeHTML(logoLink)}" target="_blank" rel="noopener"><img src="${escapeHTML(logoUrl)}" alt="" style="height:18px;max-width:120px;object-fit:contain;vertical-align:middle;"></a>`;
-    }
     const brandName = branding.name || 'BugReel';
+    if (logoUrl) {
+      return `<a class="branding" href="${escapeHTML(logoLink)}" target="_blank" rel="noopener"><img src="${escapeHTML(logoUrl)}" alt="" style="height:18px;max-width:120px;object-fit:contain;vertical-align:middle;"> ${escapeHTML(brandName)}</a>`;
+    }
     return `<a class="branding" href="${escapeHTML(logoLink)}" target="_blank" rel="noopener">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
     ${escapeHTML(brandName)}
