@@ -342,7 +342,7 @@
         recordingId = data.recording.id;
         render(data);
         document.title = data.card
-          ? `${data.card.title} — BugReel`
+          ? `${data.card.title} — ${window.__branding?.name || 'BugReel'}`
           : `Report: ${recordingId}`;
       } catch (err) {
         content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>Failed to load: ${escapeHTML(err.message)}</p></div>`;
@@ -361,7 +361,7 @@
           <div class="report-header">
             <div class="logo" id="report-logo">
               <div class="logo-icon">${icons.target}</div>
-              <span>BugReel</span>
+              <span class="brand-name">BugReel</span>
             </div>
             <span class="text-dim" style="margin-left:auto; font-size:0.8rem;">${escapeHTML(r.id)}</span>
           </div>
@@ -597,6 +597,10 @@
         if (settings.branding_logo_url) {
           const link = settings.branding_logo_link || '#';
           logoEl.innerHTML = `<a href="${escapeHTML(link)}" target="_blank" rel="noopener" style="display:flex;align-items:center;text-decoration:none;"><img src="${escapeHTML(settings.branding_logo_url)}" alt="" style="height:28px;max-width:160px;object-fit:contain;"></a>`;
+        }
+        if (settings.branding_name) {
+          document.querySelectorAll('.brand-name').forEach(el => { el.textContent = settings.branding_name; });
+          document.title = document.title.replace(/BugReel/g, settings.branding_name);
         }
       } catch { /* branding is optional */ }
     }

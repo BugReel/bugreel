@@ -55,7 +55,7 @@ export function showEmbedModal(recordingId) {
             <input type="number" id="embedStart" min="0" step="1" value="0" class="embed-input-num">
           </div>
           <label class="embed-option">
-            <input type="checkbox" id="embedBranding" checked> Show BugReel branding
+            <input type="checkbox" id="embedBranding" checked> Show ${window.__branding?.name || 'BugReel'} branding
           </label>
         </div>
 

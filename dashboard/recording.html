@@ -63,9 +63,10 @@
         }
         currentData = data;
         render(data);
+        const brandName = window.__branding?.name || 'BugReel';
         document.title = data.card
-          ? `${data.card.title} - BugReel`
-          : `${recordingId} - BugReel`;
+          ? `${data.card.title} - ${brandName}`
+          : `${recordingId} - ${brandName}`;
       } catch (err) {
         content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>${t('failed_load_recordings', 'Failed to load recording')}: ${escapeHTML(err.message)}</p></div>`;
       }

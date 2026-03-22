@@ -290,7 +290,7 @@
           <circle cx="12" cy="12" r="2"></circle>
         </svg>
       </div>
-      <div class="logo-title">BugReel</div>
+      <div class="logo-title brand-name">BugReel</div>
       <div class="logo-subtitle" data-i18n="login_subtitle">Screen Recording QA Tool</div>
     </div>
 
@@ -313,6 +313,14 @@
   </div>
 
   <script>
+    // Apply branding to login page
+    fetch('/api/branding').then(r => r.json()).then(b => {
+      if (b.name && b.name !== 'BugReel') {
+        document.querySelectorAll('.brand-name').forEach(el => { el.textContent = b.name; });
+        document.title = document.title.replace(/BugReel/g, b.name);
+      }
+    }).catch(() => {});
+
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();

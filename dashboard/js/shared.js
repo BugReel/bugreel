@@ -353,6 +353,12 @@ function fetchBranding() {
     if (b.name) document.title = document.title.replace(/BugReel/g, b.name);
 
     window.__branding = b;
+
+    // Replace brand name in page content (elements with class="brand-name")
+    if (b.name && b.name !== 'BugReel') {
+      document.querySelectorAll('.brand-name').forEach(el => { el.textContent = b.name; });
+    }
+
     return b;
   }).catch(() => {
     // Fallback: show defaults if API fails
