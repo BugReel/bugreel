@@ -19,22 +19,22 @@
     .popup-inner { padding: 0 16px 16px; }
 
     .brand {
-      text-align: center;
-      padding: 18px 16px 14px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px 10px;
       background: linear-gradient(180deg, rgba(59,130,246,0.08) 0%, transparent 100%);
       border-bottom: 1px solid rgba(51,65,85,0.3);
       margin-bottom: 14px;
     }
     .brand-logo {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px;
+      width: 32px; height: 32px; min-width: 32px;
       background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      border-radius: 8px; margin-bottom: 6px;
+      border-radius: 8px;
       box-shadow: 0 2px 8px rgba(59,130,246,0.3);
     }
     .brand-logo svg { width: 16px; height: 16px; color: white; }
-    .brand h1 { font-size: 16px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.02em; }
-    .brand .subtitle { font-size: 10px; color: #475569; margin-top: 2px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .brand h1 { font-size: 15px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.02em; line-height: 1; }
+    .brand .subtitle { font-size: 9px; color: #475569; letter-spacing: 0.08em; text-transform: uppercase; margin-left: auto; line-height: 1; }
 
     .field { margin-bottom: 10px; }
     .field label { display: block; font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
@@ -120,7 +120,7 @@
     .status-link:hover { color: #60a5fa; text-decoration: underline; }
 
     /* Dashboard link */
-    .dashboard-link { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 10px; font-size: 10px; color: #334155; text-decoration: none; transition: color 0.15s; letter-spacing: 0.03em; }
+    .dashboard-link { display: inline-flex; align-items: center; gap: 4px; margin: 6px 7px 0; font-size: 10px; color: #64748b; text-decoration: none; transition: color 0.15s; letter-spacing: 0.03em; }
     .dashboard-link:hover { color: #3b82f6; }
     .dashboard-link svg { width: 11px; height: 11px; }
 
@@ -149,11 +149,11 @@
   <div id="controls" class="popup-inner">
     <!-- User info / auth status -->
     <div id="user-info-area" style="margin-bottom:10px;">
-      <div id="user-connected" class="hidden" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0e1525;border:1px solid #1e2d48;border-radius:8px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span id="user-display-name" style="font-size:11px;color:#e2e8f0;flex:1;"></span>
+      <div id="user-connected" class="hidden" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0e1525;border:1px solid #1e2d48;border-radius:10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="user-display-name" style="font-size:11px;color:#e2e8f0;flex:1;line-height:1;"></span>
       </div>
-      <div id="user-not-connected" class="hidden" style="padding:6px 10px;background:#1c1306;border:1px solid #854d0e;border-radius:8px;font-size:11px;color:#fbbf24;">
+      <div id="user-not-connected" class="hidden" style="padding:8px 12px;background:#1c1306;border:1px solid #854d0e;border-radius:10px;font-size:11px;color:#fbbf24;">
         <span data-i18n="popup_notConnected">Not connected</span> &mdash; <a href="#" id="link-setup-auth" style="color:#3b82f6;text-decoration:underline;cursor:pointer;" data-i18n="popup_setupAccount">Set up account</a>
       </div>
     </div>
@@ -229,7 +229,7 @@
     </div>
   </div>
 
-  <div class="popup-inner">
+  <div class="popup-inner" style="text-align:center;">
   <div class="divider"></div>
 
   <div class="record-section">
