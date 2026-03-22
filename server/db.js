@@ -162,6 +162,19 @@ export function initDB() {
 
     CREATE INDEX IF NOT EXISTS idx_video_comments_recording
       ON video_comments (recording_id);
+
+    CREATE TABLE IF NOT EXISTS cta_buttons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recording_id TEXT REFERENCES recordings(id) ON DELETE CASCADE,
+      label TEXT NOT NULL DEFAULT 'Learn More',
+      url TEXT NOT NULL,
+      bg_color TEXT DEFAULT '#3b82f6',
+      text_color TEXT DEFAULT '#ffffff',
+      position TEXT DEFAULT 'end',
+      show_at_seconds REAL,
+      enabled INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   // Migrations for existing tables

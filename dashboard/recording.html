@@ -180,6 +180,7 @@
             <div class="video-container">
               <video id="videoPlayer" controls preload="metadata">
                 <source src="${videoUrl(r.id)}" type="video/webm">
+                ${transcript.words?.length ? `<track kind="captions" src="/api/recordings/${encodeURIComponent(r.id)}/subtitles.vtt" srclang="auto" label="Captions" default>` : ''}
               </video>
             </div>
             <div id="urlBar" class="url-bar hidden">

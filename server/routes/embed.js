@@ -39,8 +39,11 @@ router.get('/embed/:id', (req, res) => {
   res.removeHeader('X-Frame-Options');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
+  // Load CTA buttons for this recording
+  const ctaButtons = db.prepare('SELECT * FROM cta_buttons WHERE recording_id = ? AND enabled = 1 ORDER BY created_at ASC').all(recording.id);
+
   const branding = getBrandingConfig();
-  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id, branding }));
+  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id, branding, ctaButtons }));
 });
 
 /**
@@ -76,7 +79,7 @@ router.get('/embed/:id/code', (req, res) => {
 /**
  * Generate the full embed HTML page with inline CSS and JS.
  */
-function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId, branding = {} }) {
+function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId, branding = {}, ctaButtons = [] }) {
   const escapedTitle = escapeHTML(title);
 
   return `<!DOCTYPE html>
@@ -92,6 +95,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#060a14;color:#f1f5f
 .embed-wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 
 video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
+video::cue{background:rgba(0,0,0,.75);color:#fff;font-size:14px;border-radius:2px}
+
+/* Subtitle toggle */
+.btn-cc{font-size:11px;font-weight:700;line-height:1;padding:2px 4px !important;letter-spacing:.5px;border:1.5px solid currentColor !important;border-radius:3px !important;opacity:.5}
+.btn-cc.active{opacity:1;color:#3b82f6;border-color:#3b82f6 !important}
 
 /* Custom controls overlay */
 .controls{position:absolute;bottom:0;left:0;right:0;padding:8px 12px;background:linear-gradient(transparent,rgba(0,0,0,.85));display:flex;align-items:center;gap:8px;opacity:0;transition:opacity .25s;z-index:10}
@@ -131,6 +139,14 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
 
 /* Fullscreen */
 .embed-wrap:fullscreen video,.embed-wrap:-webkit-full-screen video{width:100%;height:100%}
+
+/* CTA overlay */
+.cta-overlay{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);z-index:15;display:none;animation:ctaFadeIn .3s ease}
+.cta-overlay.visible{display:block}
+.cta-btn{display:inline-block;padding:10px 24px;border-radius:6px;font-weight:600;font-size:14px;text-decoration:none;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.cta-btn:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.cta-dismiss{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;border:none;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+@keyframes ctaFadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 </style>
 </head>
 <body>
@@ -150,6 +166,7 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
 
   <video id="video" preload="metadata" playsinline${autoplay ? ' autoplay muted' : ''}>
     <source src="${videoSrc}" type="video/webm">
+    <track kind="captions" src="/api/recordings/${recordingId}/subtitles.vtt" srclang="auto" label="Captions" default>
   </video>
 
   <button class="big-play${autoplay ? ' hidden' : ''}" id="bigPlay">
@@ -179,10 +196,18 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
       </div>
     </div>
 
+    <button id="btnCC" class="btn-cc active" title="Captions">CC</button>
+
     <button id="btnFullscreen" title="Fullscreen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
     </button>
   </div>
+
+  ${ctaButtons.length > 0 ? ctaButtons.map((cta, i) => `
+  <div class="cta-overlay" id="ctaOverlay${i}" data-position="${escapeHTML(cta.position)}" data-show-at="${cta.show_at_seconds ?? ''}">
+    <a class="cta-btn" href="${escapeHTML(cta.url)}" target="_blank" rel="noopener" style="background:${escapeHTML(cta.bg_color)};color:${escapeHTML(cta.text_color)}">${escapeHTML(cta.label)}</a>
+    <button class="cta-dismiss" onclick="this.parentElement.classList.remove('visible')">&times;</button>
+  </div>`).join('') : ''}
 </div>
 
 <script>
@@ -203,6 +228,7 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
   var volumeSlider = document.getElementById('volumeSlider');
   var volumeFill = document.getElementById('volumeFill');
   var btnFullscreen = document.getElementById('btnFullscreen');
+  var btnCC = document.getElementById('btnCC');
 
   var startTime = ${startTime};
   var hideTimer = null;
@@ -326,9 +352,63 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
     if (e.key === ' ' || e.key === 'k') { e.preventDefault(); togglePlay(); }
     if (e.key === 'f') { btnFullscreen.click(); }
     if (e.key === 'm') { btnMute.click(); }
+    if (e.key === 'c') { btnCC.click(); }
     if (e.key === 'ArrowLeft') { video.currentTime = Math.max(0, video.currentTime - 5); }
     if (e.key === 'ArrowRight') { video.currentTime = Math.min(video.duration || 0, video.currentTime + 5); }
   });
+
+  // Subtitle toggle
+  btnCC.addEventListener('click', function() {
+    var track = video.textTracks[0];
+    if (track) {
+      var showing = track.mode === 'showing';
+      track.mode = showing ? 'hidden' : 'showing';
+      btnCC.classList.toggle('active', !showing);
+    }
+  });
+  // Hide CC button if no subtitles available
+  video.addEventListener('loadedmetadata', function() {
+    var track = video.textTracks[0];
+    if (!track) { btnCC.style.display = 'none'; return; }
+    // Check if track loaded successfully
+    track.addEventListener('error', function() { btnCC.style.display = 'none'; });
+    // Also check via cuechange — if no cues after load, hide
+    if (track.mode === 'disabled') track.mode = 'showing';
+  }, { once: true });
+
+  // CTA overlay logic
+  var ctaOverlays = document.querySelectorAll('.cta-overlay');
+  if (ctaOverlays.length > 0) {
+    var ctaShown = {};
+
+    video.addEventListener('ended', function() {
+      ctaOverlays.forEach(function(el, i) {
+        if (el.dataset.position === 'end') el.classList.add('visible');
+      });
+    });
+
+    video.addEventListener('play', function() {
+      ctaOverlays.forEach(function(el, i) {
+        if (el.dataset.position === 'start' && !ctaShown['start_' + i]) {
+          ctaShown['start_' + i] = true;
+          el.classList.add('visible');
+          setTimeout(function() { el.classList.remove('visible'); }, 5000);
+        }
+      });
+    });
+
+    video.addEventListener('timeupdate', function() {
+      ctaOverlays.forEach(function(el, i) {
+        if (el.dataset.position === 'custom' && el.dataset.showAt && !ctaShown['custom_' + i]) {
+          var showAt = parseFloat(el.dataset.showAt);
+          if (video.currentTime >= showAt) {
+            ctaShown['custom_' + i] = true;
+            el.classList.add('visible');
+          }
+        }
+      });
+    });
+  }
 })();
 </script>
 </body>

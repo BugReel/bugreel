@@ -266,6 +266,75 @@ router.put('/recordings/:id/context', (req, res) => {
   res.json({ ok: true });
 });
 
+// Serve WebVTT subtitles generated from transcript_json (supports both recording ID and share_token)
+router.get('/recordings/:id/subtitles.vtt', (req, res) => {
+  const db = getDB();
+  // Resolve share_token to recording ID if needed
+  let recId = req.params.id;
+  const byId = db.prepare('SELECT id, transcript_json FROM recordings WHERE id = ?').get(recId);
+  let recording = byId;
+  if (!byId) {
+    const byToken = db.prepare('SELECT id, transcript_json FROM recordings WHERE share_token = ?').get(recId);
+    if (byToken) recording = byToken;
+  }
+
+  if (!recording || !recording.transcript_json) {
+    return res.status(404).type('text/plain').send('No subtitles available');
+  }
+
+  let transcript;
+  try { transcript = JSON.parse(recording.transcript_json); } catch {
+    return res.status(404).type('text/plain').send('No subtitles available');
+  }
+
+  if (!transcript.words || !transcript.words.length) {
+    return res.status(404).type('text/plain').send('No subtitles available');
+  }
+
+  // Group words into cues of ~10 words or ~5 seconds
+  const cues = [];
+  let cueWords = [];
+  let cueStart = null;
+
+  for (const w of transcript.words) {
+    if (cueStart === null) cueStart = w.start;
+    cueWords.push(w.word);
+
+    const elapsed = w.end - cueStart;
+    if (cueWords.length >= 10 || elapsed >= 5) {
+      cues.push({ start: cueStart, end: w.end, text: cueWords.join(' ') });
+      cueWords = [];
+      cueStart = null;
+    }
+  }
+  // Flush remaining words
+  if (cueWords.length > 0) {
+    const lastWord = transcript.words[transcript.words.length - 1];
+    cues.push({ start: cueStart, end: lastWord.end, text: cueWords.join(' ') });
+  }
+
+  // Format as WebVTT
+  let vtt = 'WEBVTT\n';
+  for (const cue of cues) {
+    vtt += `\n${formatVTTTime(cue.start)} --> ${formatVTTTime(cue.end)}\n${cue.text}\n`;
+  }
+
+  res.setHeader('Content-Type', 'text/vtt; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.send(vtt);
+});
+
+/**
+ * Format seconds to WebVTT timestamp: HH:MM:SS.mmm
+ */
+function formatVTTTime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const ms = Math.round((seconds % 1) * 1000);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+}
+
 // Serve video file (supports both recording ID and share_token)
 router.get('/recordings/:id/video', (req, res) => {
   const db = getDB();

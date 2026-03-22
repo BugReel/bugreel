@@ -236,6 +236,32 @@ export async function removeRecordingPassword(recordingId) {
   });
 }
 
+// --- CTA Buttons ---
+
+export async function getRecordingCTA(recordingId) {
+  return request(`/api/recordings/${encodeURIComponent(recordingId)}/cta`);
+}
+
+export async function createCTA(recordingId, data) {
+  return request(`/api/recordings/${encodeURIComponent(recordingId)}/cta`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateCTA(ctaId, data) {
+  return request(`/api/cta/${encodeURIComponent(ctaId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCTA(ctaId) {
+  return request(`/api/cta/${encodeURIComponent(ctaId)}`, {
+    method: 'DELETE',
+  });
+}
+
 // --- Helpers ---
 
 /**

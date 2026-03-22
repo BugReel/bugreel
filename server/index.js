@@ -15,6 +15,7 @@ import { retryStuckRecordings } from './services/pipeline.js';
 import { authGuard, authRouter, handleLegacyLogin, handleLogout } from './auth.js';
 import { handleGetLicense } from './license.js';
 import passwordRouter from './routes/password.js';
+import ctaRouter from './routes/cta.js';
 import { passwordCheckPage, passwordCheckAPI, passwordCheckData } from './middleware/password-check.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -61,6 +62,7 @@ app.use('/api', analyticsRouter);
 app.use('/api', videoCommentsRouter);
 app.use('/api', settingsRouter);
 app.use('/api', passwordRouter);
+app.use('/api', ctaRouter);
 
 // Serve extension files for download
 app.use('/extension', express.static(path.join(__dirname, '..', 'extension')));
