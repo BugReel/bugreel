@@ -787,3 +787,8 @@ document.getElementById('dashboard-link')?.addEventListener('click', (e) => {
   e.preventDefault();
   chrome.tabs.create({ url: SERVER_URL + DASHBOARD_PATH });
 });
+
+/* --- User badge → open dashboard --- */
+document.getElementById('user-connected')?.addEventListener('click', () => {
+  chrome.tabs.create({ url: SERVER_URL + DASHBOARD_PATH });
+});

@@ -119,6 +119,8 @@
     .status-link { color: #3b82f6; text-decoration: none; font-weight: 600; cursor: pointer; }
     .status-link:hover { color: #60a5fa; text-decoration: underline; }
 
+    #user-connected:hover { border-color: #334155 !important; background: #151d30 !important; }
+
     /* Dashboard link */
     .dashboard-link { display: inline-flex; align-items: center; gap: 4px; margin: 6px 7px 0; font-size: 10px; color: #64748b; text-decoration: none; transition: color 0.15s; letter-spacing: 0.03em; }
     .dashboard-link:hover { color: #3b82f6; }
@@ -149,9 +151,10 @@
   <div id="controls" class="popup-inner">
     <!-- User info / auth status -->
     <div id="user-info-area" style="margin-bottom:10px;">
-      <div id="user-connected" class="hidden" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0e1525;border:1px solid #1e2d48;border-radius:10px;">
+      <div id="user-connected" class="hidden" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0e1525;border:1px solid #1e2d48;border-radius:10px;cursor:pointer;transition:border-color 0.15s;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span id="user-display-name" style="font-size:11px;color:#e2e8f0;flex:1;line-height:1;"></span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" style="flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       </div>
       <div id="user-not-connected" class="hidden" style="padding:8px 12px;background:#1c1306;border:1px solid #854d0e;border-radius:10px;font-size:11px;color:#fbbf24;">
         <span data-i18n="popup_notConnected">Not connected</span> &mdash; <a href="#" id="link-setup-auth" style="color:#3b82f6;text-decoration:underline;cursor:pointer;" data-i18n="popup_setupAccount">Set up account</a>
