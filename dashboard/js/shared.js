@@ -6,6 +6,18 @@
 // --- i18n helper (loaded via i18n-dashboard.js before this module) ---
 const t = window.__dashboardI18n?.t || ((k, f) => f || k);
 
+// --- Base path detection for reverse-proxy deployments ---
+// Auto-detects path prefix (e.g., '/app' when dashboard runs at /app/).
+// Works out of the box: standalone → '', proxied at /app/ → '/app'.
+export const basePath = (() => {
+  try {
+    const p = new URL(import.meta.url).pathname;
+    const i = p.indexOf('/js/shared.js');
+    if (i > 0) return p.slice(0, i);
+  } catch {}
+  return '';
+})();
+
 // --- SVG Icons (Lucide-style, 24x24 viewBox) ---
 export const icons = {
   video: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`,
@@ -276,10 +288,10 @@ export function renderComment(comment) {
  */
 export function renderHeader(activePage) {
   const navItems = [
-    { href: '/', label: t('nav_recordings', 'Recordings'), icon: icons.video, key: 'recordings' },
-    { href: '/analytics', label: t('nav_analytics', 'Analytics'), icon: icons.chart, key: 'analytics' },
-    { href: '/guide', label: t('nav_guide', 'Guide'), icon: icons.fileText, key: 'guide' },
-    { href: '/settings-page', label: t('nav_settings', 'Settings'), icon: icons.settings, key: 'settings' },
+    { href: `${basePath}/`, label: t('nav_recordings', 'Recordings'), icon: icons.video, key: 'recordings' },
+    { href: `${basePath}/analytics`, label: t('nav_analytics', 'Analytics'), icon: icons.chart, key: 'analytics' },
+    { href: `${basePath}/guide`, label: t('nav_guide', 'Guide'), icon: icons.fileText, key: 'guide' },
+    { href: `${basePath}/settings-page`, label: t('nav_settings', 'Settings'), icon: icons.settings, key: 'settings' },
   ];
 
   const currentLang = window.__dashboardI18n?.lang || 'en';
@@ -290,7 +302,7 @@ export function renderHeader(activePage) {
   return `
     <header class="app-header">
       <div class="container">
-        <a href="/" class="logo" id="brand-logo" style="opacity:0;transition:opacity .15s">
+        <a href="${basePath}/" class="logo" id="brand-logo" style="opacity:0;transition:opacity .15s">
           <div class="logo-icon" id="brand-icon"></div>
           <span id="brand-name"></span>
         </a>

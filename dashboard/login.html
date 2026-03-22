@@ -332,7 +332,8 @@
         });
 
         if (res.ok) {
-          window.location.href = '/';
+          // Redirect to dashboard root (works with reverse-proxy path prefix)
+          window.location.href = window.location.pathname.replace(/\/login\/?$/, '/') || '/';
         } else {
           errorEl.textContent = t('login_wrong_password', 'Wrong password');
           errorEl.style.display = 'block';

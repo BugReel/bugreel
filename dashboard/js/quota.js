@@ -3,6 +3,7 @@
  * Fetches /api/subscription and displays storage usage in the header.
  * Silently does nothing if the endpoint doesn't exist (self-hosted BugReel).
  */
+import { basePath } from './shared.js';
 
 const t = (key, fallback) => (window.__dashboardI18n?.t || ((k, f) => f || k))(key, fallback);
 
@@ -87,7 +88,7 @@ function _renderHeaderWidget(data) {
   `;
   el.style.display = 'flex';
   el.title = t('quota_storage', 'Storage') + ': ' + usedStr + ' / ' + limitStr;
-  el.onclick = () => { window.location.href = '/settings-page'; };
+  el.onclick = () => { window.location.href = `${basePath}/settings-page`; };
 }
 
 /**

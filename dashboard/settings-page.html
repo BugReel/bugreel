@@ -503,7 +503,7 @@
   </div>
 
   <script type="module">
-    import { renderHeader, icons, escapeHTML } from './js/shared.js';
+    import { renderHeader, icons, escapeHTML, basePath } from './js/shared.js';
     import { initQuotaWidget, getQuotaDataAsync, formatBytes } from './js/quota.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
@@ -1002,7 +1002,7 @@
 
       // Upgrade button for free/standard
       if (plan === 'free' || plan === 'standard') {
-        html += `<div style="margin-top:16px;"><a href="/pricing" class="quota-upgrade-btn">${t('quota_upgrade', 'Upgrade plan')}</a></div>`;
+        html += `<div style="margin-top:16px;"><a href="${basePath}/pricing" class="quota-upgrade-btn">${t('quota_upgrade', 'Upgrade plan')}</a></div>`;
       }
 
       body_.innerHTML = html;

@@ -636,8 +636,8 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
 
   startTrackingListeners();
 
-  const now = Date.now();
-  await setState('recording', { recordingStartedAt: now, pausedElapsed: 0 });
+  const startedAt = Date.now();
+  await setState('recording', { recordingStartedAt: startedAt, pausedElapsed: 0 });
 
   console.log('[BugReel] Recording started successfully');
   return { success: true };

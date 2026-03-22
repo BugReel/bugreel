@@ -25,7 +25,7 @@
     import { getRecordings, getCards, getViewAnalytics } from './js/api.js';
     import {
       renderHeader, formatDate, formatDuration, statusLabel,
-      escapeHTML, icons, timeAgo
+      escapeHTML, icons, timeAgo, basePath
     } from './js/shared.js';
     import { initQuotaWidget } from './js/quota.js';
 
@@ -231,7 +231,7 @@
                   const maxV = Math.max(...viewData.top_recordings.map(r => r.view_count), 1);
                   return viewData.top_recordings.map(r => `
                     <div class="dist-bar-row">
-                      <span class="dist-bar-label"><a href="/recording/${encodeURIComponent(r.recording_id)}" style="color:var(--text);text-decoration:none;">${escapeHTML(r.card_title || r.recording_id)}</a></span>
+                      <span class="dist-bar-label"><a href="${basePath}/recording/${encodeURIComponent(r.recording_id)}" style="color:var(--text);text-decoration:none;">${escapeHTML(r.card_title || r.recording_id)}</a></span>
                       <div class="dist-bar-track">
                         <div class="dist-bar-fill" style="width: ${(r.view_count / maxV) * 100}%; background: var(--blue);">${r.view_count}</div>
                       </div>

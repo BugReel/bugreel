@@ -61,7 +61,7 @@
     import { getCards } from './js/api.js';
     import {
       renderHeader, formatDate, statusLabel, categoryLabel, csCircleHTML,
-      escapeHTML, icons, timeAgo
+      escapeHTML, icons, timeAgo, basePath
     } from './js/shared.js';
     import { initQuotaWidget } from './js/quota.js';
 
@@ -137,7 +137,7 @@
       // Click handler
       container.querySelectorAll('.card-item').forEach(el => {
         el.addEventListener('click', () => {
-          window.location.href = `/card/${el.dataset.id}`;
+          window.location.href = `${basePath}/card/${el.dataset.id}`;
         });
       });
     }
