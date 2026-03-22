@@ -50,7 +50,7 @@ Development teams waste 10-20 minutes writing every bug report — capturing scr
 ## Features — Status Matrix
 
 Status definitions:
-- **Shipped** — Code exists in the repo, functional, tested in production (internal internal-tool instance)
+- **Shipped** — Code exists in the repo, functional, tested in production
 - **Built** — Code exists in the repo, implemented, not yet tested with external users
 - **Scaffold** — Code structure/interface exists, implementation partially complete
 - **Planned** — In roadmap, no code yet
@@ -384,7 +384,7 @@ These constraints affect what we can honestly claim:
 
 **Domain:** bugreel.io (Reg.ru). DNS: A @ -> 76.76.21.21, CNAME www -> cname.vercel-dns.com. www.bugreel.io redirects to bugreel.io. SSL working.
 
-**Vercel project:** "landing" under scope "your-vercel-scope".
+**Vercel project:** auto-deploys from GitHub on push to main.
 
 ---
 

@@ -89,7 +89,7 @@ The Chrome extension uses a separate build-time override mechanism (not runtime)
 - `extension/_locales/*/messages.json` — `brandName`, `extName` keys
 - `extension/icons/` — icon PNGs (16, 48, 128)
 
-For white-label extension builds, create an overlay directory with your locale files and icons, then merge them during the build. See `your-brand-overlay/` for a reference implementation.
+For white-label extension builds, create an overlay directory with your locale files and icons, then merge them during the build.
 
 ## Programmatic Setup
 

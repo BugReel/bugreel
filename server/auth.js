@@ -86,7 +86,7 @@ export function authenticateRequest(req, res, next) {
       }
     }
     if (!user) {
-      // Auto-create user from proxy headers (first Skrini user accessing BugReel)
+      // Auto-create user from proxy headers (first proxied user accessing BugReel)
       const userId = proxyUserId;
       const email = req.headers['x-user-email'] || `${proxyUserId}@proxy.local`;
       const name = req.headers['x-user-name'] || 'Proxy User';

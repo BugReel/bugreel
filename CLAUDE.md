@@ -1,19 +1,19 @@
 # BugReel — Development Instructions
 
 > AI-powered bug reporting tool: screen recording → transcription → AI analysis → bug card → tracker export.
-> Commercial product based on internal-tool codebase.
+> Open-source screen recording and bug reporting tool.
 >
 > Core features: AI analysis, smart screenshots, one-click export (Jira/Linear/GitHub/YouTrack/webhook),
 > webcam PiP, password-protected recordings, embeddable player, video comments, view analytics.
 
 ## Project Status: Deployed
 
-Code migrated from `../internal/internal-tool/` (internal tool) → this repo (commercial product). Landing and GitHub repo are live.
+Landing and GitHub repo are live.
 
 **Live URLs:**
 - **Landing:** https://bugreel.io (Vercel, Astro 6 static, SSL working)
 - **GitHub:** https://github.com/BugReel/bugreel (public, BugReel org, 107 files, 27K+ lines)
-- **Vercel:** auto-deploys from GitHub on push to main (project "landing" under scope "your-vercel-scope")
+- **Vercel:** auto-deploys from GitHub on push to main
 - **Chrome Web Store:** not submitted yet
 - **Firefox Add-ons:** not submitted yet
 
@@ -22,7 +22,7 @@ Code migrated from `../internal/internal-tool/` (internal tool) → this repo (c
 ```
 bugreel/
 ├── server/                    # Node.js 20, Express, SQLite
-│   ├── core/                  # Pipeline: ffmpeg, whisper, gpt (from internal-tool)
+│   ├── core/                  # Pipeline: ffmpeg, whisper, gpt
 │   ├── integrations/          # Plugin system: jira, linear, github, youtrack, webhook
 │   ├── auth/                  # OAuth (via tracker) + invite links + simple (legacy)
 │   ├── routes/                # API endpoints
@@ -45,17 +45,9 @@ bugreel/
 └── package.json
 ```
 
-## Source codebase
+## Codebase
 
-Original code: `../internal/internal-tool/` (~10K lines JS, 6 npm deps, 5 SQLite tables, 25+ API endpoints).
-
-**What needs to change (sanitization):**
-- Remove all Internal hardcodes (18 files — full list in `docs/strategy.md` §14)
-- Replace api.openai.com → standard OpenAI endpoints in defaults
-- Translate UI: Russian → English
-- Translate GPT prompt: Russian → English (multi-language transcription stays)
-- Remove seed data (team names)
-- Add config-driven architecture (everything via .env)
+~10K lines JS, 6 npm deps, 5 SQLite tables, 25+ API endpoints. Config-driven architecture — everything via `.env`.
 
 ## Testing
 
@@ -178,7 +170,7 @@ export class TrackerIntegration {
 - **Docker-ready** — Must work with `docker-compose up`
 - **Minimal dependencies** — Keep it lean (currently 6 npm packages)
 - **.env.example** — Always up to date, with standard OpenAI endpoints as defaults
-- **No references to Internal, internal, gptproxy, or any internal infrastructure**
+- **No references to internal infrastructure in committed code**
 
 ### Monetization: License Key Gating
 - **Single codebase** — paid features are in this repo, gated by `server/license.js`

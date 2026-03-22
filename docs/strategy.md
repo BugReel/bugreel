@@ -2,7 +2,6 @@
 
 > Date: 2026-03-17
 > Status: Deployed
-> Origin: internal-tool (internal tool, production since Dec 2025)
 > Domain: bugreel.io (live)
 
 ---
@@ -60,7 +59,7 @@ Bug reports are painful for every team:
 
 ### Single codebase, NOT a fork
 
-The original internal-tool continues to work as a **BugReel instance** with a private config file. One codebase, two products. Fixes and features benefit both.
+BugReel can be deployed as multiple independent instances with private config files. One codebase, multiple deployments. Fixes and features benefit all.
 
 ### Repository Structure
 
@@ -80,7 +79,7 @@ bugreel/
 ├── docs/                      # Documentation
 ├── deploy/
 │   └── presets/
-│       └── custom.env         # Internal-specific config (private, not in repo)
+│       └── custom.env         # Instance-specific config (private, not in repo)
 ├── Dockerfile
 ├── docker-compose.yml
 └── package.json
@@ -90,27 +89,9 @@ bugreel/
 
 ## 3. Core Changes Required
 
-### 3.1 Remove Hardcoded References (CRITICAL)
+### 3.1 Configuration (DONE)
 
-18 files need sanitization. Full list:
-
-| What | Where | Action |
-|---|---|---|
-| `tasktracker.example.com` | popup.js, review.js, background.js | → `config.serverUrl` |
-| `internal-tool-widget` | content-script-widget.js | → `bugreel-widget` |
-| `internal-tool-blobs` | idb-helper.js | → `bugreel-blobs` |
-| `internal-tool-salt` | auth.js | → env variable |
-| `BUG` project default | db.js, config.js | → `config.defaultProject` |
-| 10 hardcoded team names | db.js seed | → remove, API for user management |
-| `internal-tool@example.com` | manifest.firefox.json | → `bugreel@bugreel.io` |
-| `lk.example.com` detection | content-script-actions.js | → remove |
-| `api.openai.com` / `api.openai.com` | .env.example, config.js | → `api.openai.com` defaults |
-| Russian UI text | All dashboard HTML files | → English |
-| Russian GPT prompt (116 lines) | prompts/analyze-transcript.txt | → English |
-| Russian extension strings | popup.js, setup.html, review.js | → English |
-| Russian guide page | guide.html (`<html lang="ru">`) | → English |
-| Internal IP addresses | README.md | → generic self-hosting guide |
-| `extension-chrome-only/` | Old folder with hardcoded names | → remove entirely |
+All instance-specific values are now configurable via environment variables or the Settings UI. No hardcoded URLs, team names, or API endpoints remain in the codebase. See `.env.example` for the full list of configurable options.
 
 ### 3.2 Authentication: OAuth via Tracker (HIGH)
 
@@ -310,7 +291,7 @@ Monday.com, Notion, Basecamp, Shortcut.
 
 **Core (2-3 weeks):**
 - [x] New repository initialized
-- [x] All Internal hardcodes removed (18 files, list in §3.1)
+- [x] All hardcodes removed, config-driven
 - [x] Config-driven architecture (.env for everything)
 - [x] Dockerfile + docker-compose (one-command setup)
 - [x] Auth: OAuth via Jira + GitHub + invite links (§3.2)
@@ -628,7 +609,7 @@ bugreel.io
 | Pronunciation | Unambiguous in any language |
 | Length | 7 characters |
 
-**GitHub organization:** `BugReel` (owner: owner) — [github.com/BugReel](https://github.com/BugReel)
+**GitHub:** [github.com/BugReel](https://github.com/BugReel)
 
 ---
 
@@ -637,19 +618,19 @@ bugreel.io
 ### Phase 0: Setup (week 1-2)
 - [x] Buy domain bugreel.io (+ bugreel.com if available)
 - [x] Create GitHub organization + public repo
-- [x] Copy internal-tool codebase
-- [x] Basic rebranding (package.json, README)
+- [x] Initialize codebase
+- [x] Basic setup (package.json, README)
 - [x] Initialize project structure
 
 ### Phase 1: Core Abstraction (week 2-4)
-- [x] Remove all Internal hardcodes (18 files)
+- [x] Config-driven setup (no hardcodes)
 - [x] Config-driven architecture (.env)
 - [x] Dockerfile + docker-compose
 - [x] English UI (dashboard + extension + prompt)
 - [x] Auth: OAuth via Jira + GitHub + invite links
 - [x] User management (DB tables + API)
 - [x] Integration plugin interface
-- [ ] **Switch Internal Tool to run as BugReel instance + custom.env**
+- [ ] Multi-instance deployment presets
 
 ### Phase 2: Integrations + Landing (week 4-6)
 - [x] Jira Cloud integration
@@ -705,14 +686,14 @@ bugreel.io
 | DB tables | 5 (SQLite) | Simple schema, easy to extend |
 | API endpoints | 25+ | Full CRUD coverage |
 | External APIs | 3 (Whisper, GPT, YouTrack) | Abstraction needed |
-| Internal hardcodes | ~18 places | Documented, mechanical replacement |
+| Hardcodes | 0 | All config-driven |
 | Tests | 0 | Needed before public release |
 
 ---
 
 ## 13. Infrastructure
 
-| Component | Current (Internal) | BugReel | URL | Cost |
+| Component | Stack | URL | Cost |
 |---|---|---|---|---|
 | **Landing** | — | Vercel (Astro 6 static) | [bugreel.io](https://bugreel.io) | $0 |
 | **Docs** | — | Vercel (VitePress) | TBD | $0 |
@@ -722,9 +703,9 @@ bugreel.io
 | **Domain** | — | bugreel.io (Reg.ru, DNS: A → 76.76.21.21, CNAME www → cname.vercel-dns.com) | [bugreel.io](https://bugreel.io) | ~$30/yr |
 | **Email** | — | hello@bugreel.io (Cloudflare) | — | $0 |
 
-**Vercel project:** "landing" under scope "your-vercel-scope". www.bugreel.io redirects to bugreel.io.
+**Vercel:** auto-deploys from GitHub on push to main. www.bugreel.io redirects to bugreel.io.
 
-**GitHub org:** BugReel (owner: owner). Public repo, 107 files, 27K+ lines.
+**GitHub:** [github.com/BugReel/bugreel](https://github.com/BugReel/bugreel) — public repo.
 
 **Total launch cost: ~$40 + $5/mo.**
 
@@ -738,10 +719,10 @@ Not "hiding Russia" — building a proper international product. Zero country/te
 
 ### What stays private (NOT in repo)
 
-- api.openai.com/api.openai.com endpoints → private `.env`
+- Custom AI endpoints → private `.env`
 - Server IPs, SSH access → private `.env`
 - Team member names → not seeded
-- custom.env config → private preset
+- Instance-specific config → private `.env` preset
 
 ### Public `.env.example`
 
