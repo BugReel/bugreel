@@ -169,7 +169,7 @@ video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
 
   ${showBranding ? (() => {
     const logoUrl = branding.logo_url;
-    const logoLink = branding.logo_link || 'https://bugreel.io';
+    const logoLink = branding.logo_link || branding.url || 'https://bugreel.io';
     if (logoUrl) {
       return `<a class="branding" href="${escapeHTML(logoLink)}" target="_blank" rel="noopener"><img src="${escapeHTML(logoUrl)}" alt="" style="height:18px;max-width:120px;object-fit:contain;vertical-align:middle;"></a>`;
     }
@@ -489,7 +489,7 @@ function embedErrorPage(message) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Error — BugReel</title>
+<title>Error — ${escapeHTML(getBrandingConfig().name)}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;background:#060a14;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;justify-content:center}

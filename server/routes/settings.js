@@ -34,13 +34,15 @@ function getTrackerConfig() {
 }
 
 /**
- * Resolve branding config from DB settings.
+ * Resolve branding config: DB settings take priority, then env/config fallback.
+ * See docs/branding.md for the full override chain.
  */
 function getBrandingConfig() {
   return {
-    logo_url: getSetting('branding_logo_url', ''),
-    logo_link: getSetting('branding_logo_link', ''),
-    name: getSetting('branding_name', ''),
+    name: getSetting('branding_name', config.branding.name),
+    logo_url: getSetting('branding_logo_url', config.branding.logoUrl),
+    logo_link: getSetting('branding_logo_link', config.branding.logoLink || config.branding.url),
+    url: config.branding.url,
   };
 }
 
@@ -64,6 +66,7 @@ router.get('/settings', (req, res) => {
     tracker_project: tracker.project,
     tracker_token_mask: tokenMask,
     tracker_connected: tracker.connected,
+    branding_name: branding.name,
     branding_logo_url: branding.logo_url,
     branding_logo_link: branding.logo_link,
   });
@@ -82,7 +85,8 @@ router.put('/settings', (req, res) => {
   if (tracker_project !== undefined) setSetting('tracker_project', tracker_project || '');
 
   // Branding settings
-  const { branding_logo_url, branding_logo_link } = req.body;
+  const { branding_name, branding_logo_url, branding_logo_link } = req.body;
+  if (branding_name !== undefined) setSetting('branding_name', branding_name || '');
   if (branding_logo_url !== undefined) setSetting('branding_logo_url', branding_logo_url || '');
   if (branding_logo_link !== undefined) setSetting('branding_logo_link', branding_logo_link || '');
 
@@ -92,6 +96,15 @@ router.put('/settings', (req, res) => {
   if (tracker_project) config.youtrack.project = tracker_project;
 
   res.json({ ok: true });
+});
+
+/**
+ * GET /api/branding — lightweight, no-auth endpoint for dashboard/embed.
+ * Returns resolved branding config (DB → env → defaults).
+ */
+router.get('/branding', (req, res) => {
+  const branding = getBrandingConfig();
+  res.json(branding);
 });
 
 /**

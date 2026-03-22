@@ -31,4 +31,13 @@ export const config = {
   dashboardPassword: process.env.DASHBOARD_PASSWORD || '',
   dashboardUrl: process.env.DASHBOARD_URL || '',
   licenseKey: process.env.LICENSE_KEY || '',
+
+  // Branding defaults — override via env vars or Settings UI (DB takes priority).
+  // See docs/branding.md for details.
+  branding: {
+    name: process.env.BRAND_NAME || 'BugReel',
+    url: process.env.BRAND_URL || 'https://bugreel.io',
+    logoUrl: process.env.BRAND_LOGO_URL || '',
+    logoLink: process.env.BRAND_LOGO_LINK || '',
+  },
 };

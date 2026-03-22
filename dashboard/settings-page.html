@@ -466,6 +466,12 @@
 
           <div class="settings-section-body">
           <div class="settings-field">
+            <label class="settings-label" for="brandingName" data-i18n="settings_branding_name">Brand Name</label>
+            <input type="text" id="brandingName" class="edit-field" placeholder="BugReel" autocomplete="off">
+            <span class="settings-hint" data-i18n="settings_branding_name_hint">Displayed in header, page titles, and embed player</span>
+          </div>
+
+          <div class="settings-field">
             <label class="settings-label" for="brandingLogoUrl" data-i18n="settings_branding_logo_url">Logo URL</label>
             <input type="url" id="brandingLogoUrl" class="edit-field" placeholder="https://example.com/logo.svg" autocomplete="off">
             <span class="settings-hint" data-i18n="settings_branding_logo_hint">PNG, SVG or JPG. Recommended height: 28-40px</span>
@@ -617,6 +623,7 @@
       }
 
       // Branding
+      data.branding_name = document.getElementById('brandingName').value.trim();
       data.branding_logo_url = document.getElementById('brandingLogoUrl').value.trim();
       data.branding_logo_link = document.getElementById('brandingLogoLink').value.trim();
 
@@ -853,6 +860,7 @@
       }
 
       // Branding
+      document.getElementById('brandingName').value = settings.branding_name || '';
       document.getElementById('brandingLogoUrl').value = settings.branding_logo_url || '';
       document.getElementById('brandingLogoLink').value = settings.branding_logo_link || '';
       updateBrandingPreview();

@@ -38,7 +38,7 @@ bugreel/
 │   ├── popup.*                # Recording UI
 │   └── content-scripts/       # Error capture, action tracking, widget
 ├── landing/                   # Marketing site (Astro/static)
-├── docs/                      # Strategy, architecture, integration specs
+├── docs/                      # Strategy, architecture, branding, integration specs
 ├── deploy/                    # Docker, docker-compose, presets/
 ├── Dockerfile
 ├── docker-compose.yml

@@ -248,6 +248,16 @@
       settings_project_updated: 'Project updated',
       settings_connecting: 'Connecting...',
 
+      // Branding
+      settings_branding: 'Branding',
+      settings_branding_desc: 'Custom name and logo on dashboard, embed player, and public pages. Leave empty for defaults.',
+      settings_branding_name: 'Brand Name',
+      settings_branding_name_hint: 'Displayed in header, page titles, and embed player',
+      settings_branding_logo_url: 'Logo URL',
+      settings_branding_logo_hint: 'PNG, SVG or JPG. Recommended height: 28-40px',
+      settings_branding_logo_link: 'Logo Link URL',
+      settings_branding_link_hint: 'Where clicking the logo navigates to',
+
       // Quota & Storage
       quota_storage_section: 'Storage & Subscription',
       quota_storage_section_desc: 'Current usage, plan limits, and subscription status',
@@ -508,6 +518,16 @@
       settings_select_project: '— Выберите проект —',
       settings_project_updated: 'Проект обновлён',
       settings_connecting: 'Подключение...',
+
+      // Branding
+      settings_branding: 'Брендирование',
+      settings_branding_desc: 'Название и логотип в дашборде, плеере и на публичных страницах. Оставьте пустым для значений по умолчанию.',
+      settings_branding_name: 'Название',
+      settings_branding_name_hint: 'Отображается в заголовке, титулах страниц и в плеере',
+      settings_branding_logo_url: 'URL логотипа',
+      settings_branding_logo_hint: 'PNG, SVG или JPG. Рекомендуемая высота: 28-40px',
+      settings_branding_logo_link: 'Ссылка при клике на логотип',
+      settings_branding_link_hint: 'Куда ведёт клик по логотипу',
 
       // Quota & Storage
       quota_storage_section: 'Хранилище и подписка',
