@@ -283,19 +283,16 @@ export function renderHeader(activePage) {
   ];
 
   const currentLang = window.__dashboardI18n?.lang || 'en';
-  const brandName = t('brand_name', 'BugReel');
 
-  // Fetch server branding config and update header + page title if customized.
-  // This runs async — the header renders instantly with i18n defaults,
-  // then updates if the server has different branding configured.
+  // Logo starts hidden, revealed after branding loads (prevents BugReel→custom flash)
   fetchBranding();
 
   return `
     <header class="app-header">
       <div class="container">
-        <a href="/" class="logo" id="brand-logo">
-          <div class="logo-icon" id="brand-icon">${icons.target}</div>
-          <span id="brand-name">${brandName}</span>
+        <a href="/" class="logo" id="brand-logo" style="opacity:0;transition:opacity .15s">
+          <div class="logo-icon" id="brand-icon"></div>
+          <span id="brand-name"></span>
         </a>
         <nav class="nav">
           ${navItems.map(item => `
@@ -323,22 +320,36 @@ let _brandingPromise = null;
 function fetchBranding() {
   if (_brandingPromise) return _brandingPromise;
   _brandingPromise = fetch('/api/branding').then(r => r.json()).then(b => {
-    // Update brand name if server has a custom value
     const nameEl = document.getElementById('brand-name');
-    if (nameEl && b.name && b.name !== nameEl.textContent) {
-      nameEl.textContent = b.name;
-    }
-    // Update page title
-    if (b.name) {
-      document.title = document.title.replace(/BugReel/g, b.name);
-    }
-    // Update logo icon if custom logo_url is set
     const iconEl = document.getElementById('brand-icon');
-    if (iconEl && b.logo_url) {
-      iconEl.innerHTML = `<img src="${escapeHTML(b.logo_url)}" alt="" style="height:24px;max-width:100px;object-fit:contain;">`;
+    const logoEl = document.getElementById('brand-logo');
+
+    // Set brand name
+    if (nameEl) nameEl.textContent = b.name || t('brand_name', 'BugReel');
+
+    // Set logo icon
+    if (iconEl) {
+      iconEl.innerHTML = b.logo_url
+        ? `<img src="${escapeHTML(b.logo_url)}" alt="" style="height:24px;max-width:100px;object-fit:contain;">`
+        : icons.target;
     }
+
+    // Reveal logo (was hidden to prevent flash)
+    if (logoEl) logoEl.style.opacity = '1';
+
+    // Update page title
+    if (b.name) document.title = document.title.replace(/BugReel/g, b.name);
+
     window.__branding = b;
     return b;
-  }).catch(() => null);
+  }).catch(() => {
+    // Fallback: show defaults if API fails
+    const nameEl = document.getElementById('brand-name');
+    const iconEl = document.getElementById('brand-icon');
+    const logoEl = document.getElementById('brand-logo');
+    if (nameEl) nameEl.textContent = t('brand_name', 'BugReel');
+    if (iconEl) iconEl.innerHTML = icons.target;
+    if (logoEl) logoEl.style.opacity = '1';
+  });
   return _brandingPromise;
 }
