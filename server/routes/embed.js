@@ -42,8 +42,19 @@ router.get('/embed/:id', (req, res) => {
   // Load CTA buttons for this recording
   const ctaButtons = db.prepare('SELECT * FROM cta_buttons WHERE recording_id = ? AND enabled = 1 ORDER BY created_at ASC').all(recording.id);
 
+  // Load transcript words for karaoke subtitles
+  let transcriptWords = [];
+  if (recording.transcript_json) {
+    try {
+      const transcript = JSON.parse(recording.transcript_json);
+      if (transcript.words && Array.isArray(transcript.words)) {
+        transcriptWords = transcript.words;
+      }
+    } catch {}
+  }
+
   const branding = getBrandingConfig();
-  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id, branding, ctaButtons }));
+  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id, branding, ctaButtons, transcriptWords }));
 });
 
 /**
@@ -79,7 +90,7 @@ router.get('/embed/:id/code', (req, res) => {
 /**
  * Generate the full embed HTML page with inline CSS and JS.
  */
-function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId, branding = {}, ctaButtons = [] }) {
+function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId, branding = {}, ctaButtons = [], transcriptWords = [] }) {
   const escapedTitle = escapeHTML(title);
 
   return `<!DOCTYPE html>
@@ -95,7 +106,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#060a14;color:#f1f5f
 .embed-wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 
 video{width:100%;height:100%;object-fit:contain;background:#000;outline:none}
-video::cue{background:rgba(0,0,0,.75);color:#fff;font-size:14px;border-radius:2px}
+/* Karaoke subtitles */
+.karaoke{position:absolute;bottom:52px;left:0;right:0;text-align:center;z-index:12;pointer-events:none;padding:0 16px;transition:opacity .2s}
+.karaoke.hidden{opacity:0}
+.karaoke-line{display:inline;background:rgba(0,0,0,.7);padding:4px 10px;border-radius:4px;font-size:15px;line-height:1.8;white-space:pre-wrap;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.karaoke-word{color:rgba(255,255,255,.45);transition:color .1s}
+.karaoke-word.active{color:#fff;text-shadow:0 0 8px rgba(59,130,246,.6)}
+.karaoke-word.spoken{color:rgba(255,255,255,.7)}
 
 /* Subtitle toggle */
 .btn-cc{font-size:11px;font-weight:700;line-height:1;padding:2px 4px !important;letter-spacing:.5px;border:1.5px solid currentColor !important;border-radius:3px !important;opacity:.5}
@@ -158,16 +175,18 @@ video::cue{background:rgba(0,0,0,.75);color:#fff;font-size:14px;border-radius:2p
     if (logoUrl) {
       return `<a class="branding" href="${escapeHTML(logoLink)}" target="_blank" rel="noopener"><img src="${escapeHTML(logoUrl)}" alt="" style="height:18px;max-width:120px;object-fit:contain;vertical-align:middle;"></a>`;
     }
+    const brandName = branding.name || 'BugReel';
     return `<a class="branding" href="${escapeHTML(logoLink)}" target="_blank" rel="noopener">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
-    BugReel
+    ${escapeHTML(brandName)}
   </a>`;
   })() : ''}
 
   <video id="video" preload="metadata" playsinline${autoplay ? ' autoplay muted' : ''}>
     <source src="${videoSrc}" type="video/webm">
-    <track kind="captions" src="/api/recordings/${recordingId}/subtitles.vtt" srclang="auto" label="Captions" default>
   </video>
+
+  ${transcriptWords.length > 0 ? `<div class="karaoke" id="karaoke"><span class="karaoke-line" id="karaokeLine"></span></div>` : ''}
 
   <button class="big-play${autoplay ? ' hidden' : ''}" id="bigPlay">
     <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -357,24 +376,50 @@ video::cue{background:rgba(0,0,0,.75);color:#fff;font-size:14px;border-radius:2p
     if (e.key === 'ArrowRight') { video.currentTime = Math.min(video.duration || 0, video.currentTime + 5); }
   });
 
-  // Subtitle toggle
+  // Karaoke subtitles
+  var karaokeWords = ${JSON.stringify(transcriptWords.map(w => ({ w: (w.word || '').trim(), s: w.start, e: w.end })))};
+  var karaokeEl = document.getElementById('karaoke');
+  var karaokeLine = document.getElementById('karaokeLine');
+  var karaokeVisible = true;
+  var WINDOW = 8; // words to show around active word
+
+  if (!karaokeWords.length || !karaokeEl) {
+    btnCC.style.display = 'none';
+  }
+
   btnCC.addEventListener('click', function() {
-    var track = video.textTracks[0];
-    if (track) {
-      var showing = track.mode === 'showing';
-      track.mode = showing ? 'hidden' : 'showing';
-      btnCC.classList.toggle('active', !showing);
-    }
+    karaokeVisible = !karaokeVisible;
+    btnCC.classList.toggle('active', karaokeVisible);
+    if (karaokeEl) karaokeEl.classList.toggle('hidden', !karaokeVisible);
   });
-  // Hide CC button if no subtitles available
-  video.addEventListener('loadedmetadata', function() {
-    var track = video.textTracks[0];
-    if (!track) { btnCC.style.display = 'none'; return; }
-    // Check if track loaded successfully
-    track.addEventListener('error', function() { btnCC.style.display = 'none'; });
-    // Also check via cuechange — if no cues after load, hide
-    if (track.mode === 'disabled') track.mode = 'showing';
-  }, { once: true });
+
+  if (karaokeWords.length && karaokeLine) {
+    var lastIdx = -1;
+    video.addEventListener('timeupdate', function() {
+      var t = video.currentTime;
+      // Find active word index
+      var idx = -1;
+      for (var i = 0; i < karaokeWords.length; i++) {
+        if (t >= karaokeWords[i].s && t < karaokeWords[i].e) { idx = i; break; }
+        if (t >= karaokeWords[i].s) idx = i; // closest spoken word
+      }
+      if (idx === lastIdx) return;
+      lastIdx = idx;
+
+      // Window of words around active
+      var from = Math.max(0, idx - WINDOW);
+      var to = Math.min(karaokeWords.length, idx + WINDOW + 1);
+      var html = '';
+      for (var j = from; j < to; j++) {
+        var cls = j === idx ? 'active' : j < idx ? 'spoken' : '';
+        html += '<span class="karaoke-word' + (cls ? ' ' + cls : '') + '">' + karaokeWords[j].w + ' </span>';
+      }
+      karaokeLine.innerHTML = html;
+    });
+
+    video.addEventListener('ended', function() { karaokeLine.innerHTML = ''; });
+    video.addEventListener('seeked', function() { lastIdx = -1; });
+  }
 
   // CTA overlay logic
   var ctaOverlays = document.querySelectorAll('.cta-overlay');

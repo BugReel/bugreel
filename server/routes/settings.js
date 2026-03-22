@@ -40,6 +40,7 @@ function getBrandingConfig() {
   return {
     logo_url: getSetting('branding_logo_url', ''),
     logo_link: getSetting('branding_logo_link', ''),
+    name: getSetting('branding_name', ''),
   };
 }
 
