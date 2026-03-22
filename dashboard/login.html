@@ -313,13 +313,16 @@
   </div>
 
   <script>
-    // Apply branding to login page
+    // Apply branding to login page (hidden via CSS, revealed after load)
     fetch('/api/branding').then(r => r.json()).then(b => {
       if (b.name && b.name !== 'BugReel') {
         document.querySelectorAll('.brand-name').forEach(el => { el.textContent = b.name; });
         document.title = document.title.replace(/BugReel/g, b.name);
       }
-    }).catch(() => {});
+      document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
+    }).catch(() => {
+      document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
+    });
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('loginForm').addEventListener('submit', async (e) => {

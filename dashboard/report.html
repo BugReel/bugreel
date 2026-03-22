@@ -602,7 +602,9 @@
           document.querySelectorAll('.brand-name').forEach(el => { el.textContent = settings.branding_name; });
           document.title = document.title.replace(/BugReel/g, settings.branding_name);
         }
-      } catch { /* branding is optional */ }
+      } catch { /* branding is optional */ } finally {
+        document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
+      }
     }
 
     async function loadComments() {

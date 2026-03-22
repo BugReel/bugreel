@@ -3462,3 +3462,6 @@ select.edit-field {
     padding: 10px 12px;
   }
 }
+
+/* Brand name: hidden until branding loads (prevents BugReel→custom flash) */
+.brand-name { opacity: 0; transition: opacity 0.15s; }

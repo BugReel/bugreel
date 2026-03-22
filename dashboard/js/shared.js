@@ -354,10 +354,12 @@ function fetchBranding() {
 
     window.__branding = b;
 
-    // Replace brand name in page content (elements with class="brand-name")
+    // Replace brand name in page content and reveal (hidden via CSS to prevent flash)
+    const brandEls = document.querySelectorAll('.brand-name');
     if (b.name && b.name !== 'BugReel') {
-      document.querySelectorAll('.brand-name').forEach(el => { el.textContent = b.name; });
+      brandEls.forEach(el => { el.textContent = b.name; });
     }
+    brandEls.forEach(el => { el.style.opacity = '1'; });
 
     return b;
   }).catch(() => {
@@ -368,6 +370,7 @@ function fetchBranding() {
     if (nameEl) nameEl.textContent = t('brand_name', 'BugReel');
     if (iconEl) iconEl.innerHTML = icons.target;
     if (logoEl) logoEl.style.opacity = '1';
+    document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
   });
   return _brandingPromise;
 }
