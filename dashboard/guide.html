@@ -81,10 +81,8 @@
           <div class="guide-nav-title" data-i18n="guide_contents">Contents</div>
           <a href="#install"><span class="nav-num">1</span><span data-i18n="guide_install">Installation</span><span class="nav-tag tag-req">start</span></a>
           <a href="#record"><span class="nav-num">2</span><span data-i18n="guide_recording">Recording</span></a>
-          <a href="#link"><span class="nav-num">3</span><span data-i18n="guide_link">Link to issue</span></a>
-          <a href="#review"><span class="nav-num">4</span><span data-i18n="guide_review">Review & send</span></a>
-          <div class="nav-divider"></div>
-          <a href="#batch"><span data-i18n="guide_batch">Batch testing</span><span class="nav-tag tag-opt">opt.</span></a>
+          <a href="#review"><span class="nav-num">3</span><span data-i18n="guide_review">Review & share</span></a>
+          <a href="#tracker"><span class="nav-num">4</span><span data-i18n="guide_tracker">Issue tracker</span><span class="nav-tag tag-opt">opt.</span></a>
           <a href="#tips"><span data-i18n="guide_tips">Tips</span></a>
           <a href="#faq"><span data-i18n="guide_faq">FAQ</span></a>
         </nav>
@@ -196,43 +194,29 @@
           <em>"I click Save in the employee form, expecting it to save, but the form freezes"</em> &mdash; good
         </div>
 
-        <!-- 3. Link -->
-        <h2 id="link"><span class="sn">3</span><span data-i18n="guide_link">Link to an issue</span></h2>
-        <p data-i18n-html="guide_link_intro">Right after uploading, <strong>without waiting for processing</strong>:</p>
-        <ol data-i18n-html="guide_link_steps">
-          <li>Click the <strong>Issue Tracker</strong> button (blue, top right)</li>
-          <li>Find the issue &mdash; filter by user, project, status</li>
-          <li>Or enter an ID (e.g. <code>BUG-42</code>) in the search</li>
-          <li>Click on an issue &rarr; confirm</li>
+        <!-- 3. Review & share -->
+        <h2 id="review"><span class="sn">3</span><span data-i18n="guide_review">Review & share</span></h2>
+        <p data-i18n-html="guide_review_intro">When processing is complete (30-60 sec), an AI-generated card will appear on the recording page:</p>
+        <ol data-i18n-html="guide_review_steps">
+          <li>Check the <strong>title</strong> and <strong>description</strong> &mdash; edit if needed</li>
+          <li>Review the <strong>screenshots</strong> &mdash; add more by clicking on the timeline</li>
+          <li>Click <strong>Share</strong> to copy the public link</li>
+          <li>Or use <strong>Embed</strong> to generate an iframe code</li>
         </ol>
-        <p data-i18n-html="guide_link_draft">The link is saved as a <strong>draft</strong>. Nothing is sent to the tracker until you click "Send" in step 4.</p>
-        <div class="note note-green" data-i18n-html="guide_link_nowait_note">
-          <strong>No need to wait</strong>
-          Link it &rarr; move to the next task &rarr; record &rarr; link. Come back later and send them all.
+        <div class="note note-blue" data-i18n-html="guide_review_share_note">
+          <strong>Share link</strong>
+          Each recording gets a unique public URL. Anyone with the link can view the video, AI card, and screenshots &mdash; no login required. You can also protect it with a password.
         </div>
 
-        <!-- 4. Review -->
-        <h2 id="review"><span class="sn">4</span><span data-i18n="guide_review">Review and send</span></h2>
-        <p data-i18n-html="guide_review_intro">When processing is complete (30-60 sec), an AI-generated card will appear on the page.</p>
-        <h3 data-i18n="guide_review_checklist_title">Checklist before sending</h3>
-        <ol data-i18n-html="guide_review_checklist">
-          <li>Is the title clear? &rarr; click <strong>Edit</strong></li>
-          <li>Do the screenshots show the problem? &rarr; add by clicking on the timeline</li>
-          <li>Did AI describe the bug correctly?</li>
+        <!-- 4. Issue tracker (optional) -->
+        <h2 id="tracker"><span class="sn">4</span><span data-i18n="guide_tracker">Issue tracker</span> <span class="nav-tag tag-opt" style="vertical-align:middle;font-size:0.65rem;">opt.</span></h2>
+        <p data-i18n-html="guide_tracker_intro">If you have an issue tracker connected (Settings &rarr; Tracker Integration), you can send AI cards directly:</p>
+        <ol data-i18n-html="guide_tracker_steps">
+          <li>Click the <strong>Issue Tracker</strong> button on the recording page</li>
+          <li>Find an existing issue &mdash; or create a new one</li>
+          <li>Review the AI-generated card &rarr; click <strong>Send</strong></li>
         </ol>
-        <h3 data-i18n="guide_review_sending_title">Sending</h3>
-        <p data-i18n-html="guide_review_sending_linked"><strong>Linked to an issue</strong> (yellow badge): click <strong>Send</strong></p>
-        <p data-i18n-html="guide_review_sending_new"><strong>New bug</strong>: Issue Tracker &rarr; Create new issue (bottom of the list)</p>
-
-        <!-- Batch -->
-        <h2 id="batch"><span data-i18n="guide_batch">Batch testing</span></h2>
-        <ol data-i18n-html="guide_batch_steps">
-          <li>Record #1 &rarr; link &rarr; next</li>
-          <li>Record #2 &rarr; link &rarr; next</li>
-          <li>Open the dashboard &rarr; filter <strong>"Not sent to tracker"</strong></li>
-          <li>Review and send one by one</li>
-        </ol>
-        <p data-i18n-html="guide_batch_status">In the extension (RECENT): <code>...</code> processing &bull; <code>review</code> awaiting review &bull; <code>BUG-14</code> sent</p>
+        <p data-i18n-html="guide_tracker_supported">Supported trackers: <strong>YouTrack</strong>, <strong>Jira</strong>, <strong>GitHub Issues</strong>, <strong>Linear</strong>, and <strong>Webhook</strong>.</p>
 
         <!-- Tips -->
         <h2 id="tips"><span data-i18n="guide_tips">Tips</span></h2>
