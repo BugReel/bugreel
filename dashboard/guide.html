@@ -90,21 +90,18 @@
         </nav>
       </aside>
 
-      <!-- CONTENT -->
-      <div class="guide">
+      <!-- CONTENT (English) -->
+      <div class="guide" id="guide-en">
 
         <h1 class="brand-name">BugReel</h1>
-        <p class="intro" data-i18n="guide_intro">
+        <p class="intro">
           Record your screen, describe with your voice &mdash; AI creates the card.
           Review and send to your issue tracker.
         </p>
 
-        <!-- 1 -->
         <h2 id="install"><span class="sn">1</span>Install the extension</h2>
-
         <p>The extension works in <strong>Chrome</strong> and <strong>Firefox</strong>. Choose your browser:</p>
 
-        <!-- Browser tabs -->
         <div class="browser-tabs">
           <div class="browser-tab active" data-browser="chrome">
             <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
@@ -116,10 +113,8 @@
           </div>
         </div>
 
-        <!-- Chrome instructions -->
         <div class="browser-content" id="chrome-install">
           <p><a href="static/bugreel-extension.zip" class="dl-btn" download>Download for Chrome (ZIP)</a></p>
-
           <ol>
             <li><strong>Extract the archive</strong> to any folder</li>
             <li>Open in Chrome: <code>chrome://extensions</code></li>
@@ -128,7 +123,6 @@
             <li>Select the <code>extension</code> folder from the archive</li>
             <li>Pin the extension: puzzle icon &rarr; pin <span class="brand-name">BugReel</span></li>
           </ol>
-
           <div class="note note-amber">
             <strong>Microphone &mdash; check immediately after install!</strong>
             After installing, open the extension, enable <strong>Microphone</strong> and make sure Chrome prompts for permission.
@@ -139,10 +133,8 @@
           </div>
         </div>
 
-        <!-- Firefox instructions -->
         <div class="browser-content hidden" id="firefox-install">
           <p><a href="static/bugreel-firefox.zip" class="dl-btn" download>Download for Firefox (ZIP)</a></p>
-
           <ol>
             <li><strong>Extract the archive</strong> to any folder</li>
             <li>Open in Firefox: <code>about:debugging#/runtime/this-firefox</code></li>
@@ -150,35 +142,27 @@
             <li>Select the <code>manifest.json</code> file from the extracted folder</li>
             <li>The extension will appear in the toolbar &mdash; pin it (puzzle icon)</li>
           </ol>
-
           <div class="note note-amber">
             <strong>Temporary extension</strong>
             In Firefox, the extension is loaded as "temporary" &mdash; it will be removed when Firefox restarts.
             After restarting, you need to load it again via <code>about:debugging</code>.
           </div>
-
           <h3>Setting up permissions (first time)</h3>
           <p>On first install, a <strong>setup page</strong> will open automatically. Follow these 2 steps:</p>
-
           <h3 style="margin-top:16px;">Step 1. Microphone</h3>
           <p>Click <strong>"Allow microphone"</strong> &rarr; grant permission in the browser dialog. After that, a level indicator will appear &mdash; say something, the bar should respond.</p>
           <img src="static/guide/firefox-setup-mic.png" alt="Microphone setup in Firefox" class="guide-screenshot guide-screenshot-sm">
-
           <h3>Step 2. Screen recording (macOS)</h3>
           <p>macOS requires a separate permission for Firefox to record the screen.</p>
           <img src="static/guide/firefox-setup-step2.png" alt="Step 2: screen recording" class="guide-screenshot guide-screenshot-sm">
-
           <p>Open <strong>System Settings &rarr; Privacy & Security &rarr; Screen Recording</strong> and enable the toggle for Firefox:</p>
           <img src="static/guide/firefox-macos-screen-recording.png" alt="macOS: Screen Recording — enable Firefox" class="guide-screenshot guide-screenshot-sm">
-
           <p>macOS will ask to restart Firefox &mdash; click <strong>"Restart"</strong>:</p>
           <img src="static/guide/firefox-macos-restart.png" alt="macOS: Restart Firefox" class="guide-screenshot guide-screenshot-sm">
-
           <div class="note note-green">
             <strong>This is a one-time setup</strong>
             After restarting Firefox, permissions will be saved. No need to set up again.
           </div>
-
           <h3>Differences from Chrome</h3>
           <ul>
             <li><strong>A "Recorder" tab opens during recording</strong> &mdash; do not close it while recording is in progress. It automatically goes to the background.</li>
@@ -190,9 +174,7 @@
         <h3>Pre-flight check</h3>
         <p>Make a <strong>short test recording</strong> (5-10 sec) with audio and verify that your voice was captured. This helps avoid losing your first real recording.</p>
 
-        <!-- 2 -->
         <h2 id="record"><span class="sn">2</span>Recording</h2>
-
         <ol>
           <li>Open the page you are testing</li>
           <li>Click the <span class="brand-name">BugReel</span> icon in the browser toolbar</li>
@@ -203,7 +185,6 @@
           <li><strong>Speak aloud</strong> what you are doing and what you see</li>
           <li>Click <strong>Stop</strong> &mdash; the video will upload automatically</li>
         </ol>
-
         <div class="note note-blue">
           <strong>Golden rule: narrate out loud</strong>
           AI creates the description from your voice. The more specific you are &mdash; the more accurate the card.<br><br>
@@ -211,54 +192,41 @@
           <em>"I click Save in the employee form, expecting it to save, but the form freezes"</em> &mdash; good
         </div>
 
-        <!-- 3 -->
         <h2 id="link"><span class="sn">3</span>Link to an issue</h2>
-
         <p>Right after uploading, <strong>without waiting for processing</strong>:</p>
-
         <ol>
           <li>Click the <strong>Issue Tracker</strong> button (blue, top right)</li>
           <li>Find the issue &mdash; filter by user, project, status</li>
           <li>Or enter an ID (e.g. <code>BUG-42</code>) in the search</li>
           <li>Click on an issue &rarr; confirm</li>
         </ol>
-
         <p>The link is saved as a <strong>draft</strong>. Nothing is sent to the tracker until you click "Send" in step 4.</p>
-
         <div class="note note-green">
           <strong>No need to wait</strong>
           Link it &rarr; move to the next task &rarr; record &rarr; link. Come back later and send them all.
         </div>
 
-        <!-- 4 -->
         <h2 id="review"><span class="sn">4</span>Review and send</h2>
-
         <p>When processing is complete (30-60 sec), an AI-generated card will appear on the page.</p>
-
         <h3>Checklist before sending</h3>
         <ol>
           <li>Is the title clear? &rarr; click <strong>Edit</strong></li>
           <li>Do the screenshots show the problem? &rarr; add by clicking on the timeline</li>
           <li>Did AI describe the bug correctly?</li>
         </ol>
-
         <h3>Sending</h3>
         <p><strong>Linked to an issue</strong> (yellow badge): click <strong>Send</strong></p>
         <p><strong>New bug</strong>: Issue Tracker &rarr; Create new issue (bottom of the list)</p>
 
-        <!-- BATCH -->
         <h2 id="batch">Batch testing</h2>
-
         <ol>
           <li>Record #1 &rarr; link &rarr; next</li>
           <li>Record #2 &rarr; link &rarr; next</li>
           <li>Open the dashboard &rarr; filter <strong>"Not sent to tracker"</strong></li>
           <li>Review and send one by one</li>
         </ol>
-
         <p>In the extension (RECENT): <code>...</code> processing &bull; <code>review</code> awaiting review &bull; <code>BUG-14</code> sent</p>
 
-        <!-- TIPS -->
         <h2 id="tips">Tips</h2>
         <ul>
           <li><strong>1 recording = 1 issue.</strong> Three short videos are better than one long one.</li>
@@ -267,9 +235,7 @@
           <li><strong>You can add screenshots.</strong> Click on the timeline at the right moment.</li>
         </ul>
 
-        <!-- FAQ -->
         <h2 id="faq">FAQ</h2>
-
         <h3>No audio in the recording</h3>
         <ol>
           <li>Is Microphone enabled in the extension? Is the level indicator (bar) moving?</li>
@@ -277,21 +243,183 @@
           <li><strong>Firefox:</strong> Open the extension setup (link "Firefox Setup" at the bottom of the popup) and complete step 1.</li>
           <li><strong>Windows:</strong> Chrome may not prompt for the microphone automatically. After restarting the extension, open it again and enable Microphone &mdash; a prompt should appear.</li>
         </ol>
-
         <h3>Processing takes longer than 3 minutes</h3>
         <p>Refresh the page. If the status is "error" &mdash; record again.</p>
-
         <h3>Can't find an issue</h3>
         <p>Reset filters: All users + All projects + All (incl. resolved). Or enter the ID in search.</p>
-
         <h3>Can I edit the card?</h3>
         <p>Yes, click the Edit button &mdash; title, type, description.</p>
-
         <h3>Firefox: why is there a Recorder tab?</h3>
         <p>Firefox does not support the offscreen API (unlike Chrome). Screen recording can only work in an active tab. The "Recorder" tab automatically goes to the background after recording starts. <strong>Do not close it</strong> &mdash; the recording will stop.</p>
-
         <h3>Firefox: extension disappeared after restart</h3>
         <p>Temporary extensions in Firefox are reset on restart. Load it again: <code>about:debugging</code> &rarr; "Load Temporary Add-on" &rarr; select <code>manifest.json</code>.</p>
+
+        <div style="height: 48px;"></div>
+      </div>
+
+      <!-- CONTENT (Russian) -->
+      <div class="guide" id="guide-ru" style="display:none">
+
+        <h1 class="brand-name">BugReel</h1>
+        <p class="intro">
+          Записывайте экран, комментируйте голосом &mdash; AI создаст карточку.
+          Проверьте и отправьте в трекер задач.
+        </p>
+
+        <h2 id="install-ru"><span class="sn">1</span>Установка расширения</h2>
+        <p>Расширение работает в <strong>Chrome</strong> и <strong>Firefox</strong>. Выберите браузер:</p>
+
+        <div class="browser-tabs">
+          <div class="browser-tab active" data-browser="chrome">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+            Chrome
+          </div>
+          <div class="browser-tab" data-browser="firefox">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            Firefox
+          </div>
+        </div>
+
+        <div class="browser-content" id="chrome-install-ru">
+          <p><a href="static/bugreel-extension.zip" class="dl-btn" download>Скачать для Chrome (ZIP)</a></p>
+          <ol>
+            <li><strong>Распакуйте архив</strong> в любую папку</li>
+            <li>Откройте в Chrome: <code>chrome://extensions</code></li>
+            <li>Включите <strong>Режим разработчика</strong> (справа вверху)</li>
+            <li>Нажмите <strong>&laquo;Загрузить распакованное расширение&raquo;</strong></li>
+            <li>Выберите папку <code>extension</code> из архива</li>
+            <li>Закрепите расширение: иконка пазла &rarr; закрепить <span class="brand-name">BugReel</span></li>
+          </ol>
+          <div class="note note-amber">
+            <strong>Микрофон &mdash; проверьте сразу после установки!</strong>
+            После установки откройте расширение, включите <strong>Микрофон</strong> и убедитесь, что Chrome запросил разрешение.
+            Если запроса не было (особенно на <strong>Windows</strong>) &mdash; перезапустите расширение:
+            <code>chrome://extensions</code> &rarr; выключите <span class="brand-name">BugReel</span> &rarr; включите снова.
+            <br><br>
+            <em>Перезапуск браузера не поможет &mdash; нужно перезапустить именно расширение (выкл/вкл).</em>
+          </div>
+        </div>
+
+        <div class="browser-content hidden" id="firefox-install-ru">
+          <p><a href="static/bugreel-firefox.zip" class="dl-btn" download>Скачать для Firefox (ZIP)</a></p>
+          <ol>
+            <li><strong>Распакуйте архив</strong> в любую папку</li>
+            <li>Откройте в Firefox: <code>about:debugging#/runtime/this-firefox</code></li>
+            <li>Нажмите <strong>&laquo;Загрузить временное дополнение&raquo;</strong></li>
+            <li>Выберите файл <code>manifest.json</code> из распакованной папки</li>
+            <li>Расширение появится на панели &mdash; закрепите его (иконка пазла)</li>
+          </ol>
+          <div class="note note-amber">
+            <strong>Временное расширение</strong>
+            В Firefox расширение загружается как &laquo;временное&raquo; &mdash; оно будет удалено при перезапуске Firefox.
+            После перезапуска нужно загрузить его снова через <code>about:debugging</code>.
+          </div>
+          <h3>Настройка разрешений (первый раз)</h3>
+          <p>При первой установке автоматически откроется <strong>страница настройки</strong>. Выполните 2 шага:</p>
+          <h3 style="margin-top:16px;">Шаг 1. Микрофон</h3>
+          <p>Нажмите <strong>&laquo;Разрешить микрофон&raquo;</strong> &rarr; дайте разрешение в диалоге браузера. После этого появится индикатор уровня &mdash; скажите что-нибудь, полоска должна реагировать.</p>
+          <img src="static/guide/firefox-setup-mic.png" alt="Настройка микрофона в Firefox" class="guide-screenshot guide-screenshot-sm">
+          <h3>Шаг 2. Запись экрана (macOS)</h3>
+          <p>macOS требует отдельное разрешение для Firefox на запись экрана.</p>
+          <img src="static/guide/firefox-setup-step2.png" alt="Шаг 2: запись экрана" class="guide-screenshot guide-screenshot-sm">
+          <p>Откройте <strong>Системные настройки &rarr; Конфиденциальность и безопасность &rarr; Запись экрана</strong> и включите переключатель для Firefox:</p>
+          <img src="static/guide/firefox-macos-screen-recording.png" alt="macOS: Запись экрана — включить Firefox" class="guide-screenshot guide-screenshot-sm">
+          <p>macOS попросит перезапустить Firefox &mdash; нажмите <strong>&laquo;Перезапустить&raquo;</strong>:</p>
+          <img src="static/guide/firefox-macos-restart.png" alt="macOS: Перезапуск Firefox" class="guide-screenshot guide-screenshot-sm">
+          <div class="note note-green">
+            <strong>Это настраивается один раз</strong>
+            После перезапуска Firefox разрешения сохранятся. Повторная настройка не потребуется.
+          </div>
+          <h3>Отличия от Chrome</h3>
+          <ul>
+            <li><strong>Во время записи открывается вкладка &laquo;Recorder&raquo;</strong> &mdash; не закрывайте её, пока идёт запись. Она автоматически уходит на задний план.</li>
+            <li><strong>Firefox показывает системный выбор источника</strong> (вкладка / окно / весь экран) &mdash; это нормально.</li>
+            <li><strong>Захват вкладки</strong> работает через общий диалог выбора (в Chrome это происходит автоматически).</li>
+          </ul>
+        </div>
+
+        <h3>Проверка перед работой</h3>
+        <p>Сделайте <strong>короткую тестовую запись</strong> (5-10 сек) со звуком и убедитесь, что голос записался. Это поможет не потерять первую рабочую запись.</p>
+
+        <h2 id="record-ru"><span class="sn">2</span>Запись</h2>
+        <ol>
+          <li>Откройте страницу, которую тестируете</li>
+          <li>Нажмите на иконку <span class="brand-name">BugReel</span> в панели браузера</li>
+          <li>Выберите <strong>своё имя</strong> (Автор)</li>
+          <li>Источник: <strong>Вкладка</strong> или <strong>Экран</strong></li>
+          <li>Убедитесь, что <strong>Микрофон</strong> включён</li>
+          <li>Нажмите <strong>Начать запись</strong></li>
+          <li><strong>Комментируйте вслух</strong>, что делаете и что видите</li>
+          <li>Нажмите <strong>Стоп</strong> &mdash; видео загрузится автоматически</li>
+        </ol>
+        <div class="note note-blue">
+          <strong>Главное правило: комментируйте вслух</strong>
+          AI создаёт описание из вашего голоса. Чем конкретнее вы говорите &mdash; тем точнее карточка.<br><br>
+          <em>&laquo;Нажимаю сюда, не работает&raquo;</em> &mdash; плохо<br>
+          <em>&laquo;Нажимаю Сохранить в форме сотрудника, ожидаю сохранения, но форма зависает&raquo;</em> &mdash; хорошо
+        </div>
+
+        <h2 id="link-ru"><span class="sn">3</span>Привязка к задаче</h2>
+        <p>Сразу после загрузки, <strong>не дожидаясь обработки</strong>:</p>
+        <ol>
+          <li>Нажмите кнопку <strong>Трекер задач</strong> (синяя, справа вверху)</li>
+          <li>Найдите задачу &mdash; фильтр по пользователю, проекту, статусу</li>
+          <li>Или введите ID (напр. <code>BUG-42</code>) в поиске</li>
+          <li>Нажмите на задачу &rarr; подтвердите</li>
+        </ol>
+        <p>Привязка сохраняется как <strong>черновик</strong>. Ничего не отправляется в трекер, пока вы не нажмёте &laquo;Отправить&raquo; на шаге 4.</p>
+        <div class="note note-green">
+          <strong>Не нужно ждать</strong>
+          Привязали &rarr; перешли к следующей задаче &rarr; записали &rarr; привязали. Вернётесь позже и отправите всё разом.
+        </div>
+
+        <h2 id="review-ru"><span class="sn">4</span>Проверка и отправка</h2>
+        <p>Когда обработка завершена (30-60 сек), на странице появится AI-карточка.</p>
+        <h3>Чек-лист перед отправкой</h3>
+        <ol>
+          <li>Заголовок понятный? &rarr; нажмите <strong>Редактировать</strong></li>
+          <li>Скриншоты показывают проблему? &rarr; добавьте кликом по таймлайну</li>
+          <li>AI правильно описал баг?</li>
+        </ol>
+        <h3>Отправка</h3>
+        <p><strong>Привязана к задаче</strong> (жёлтый бейдж): нажмите <strong>Отправить</strong></p>
+        <p><strong>Новый баг</strong>: Трекер задач &rarr; Создать новую задачу (внизу списка)</p>
+
+        <h2 id="batch-ru">Пакетное тестирование</h2>
+        <ol>
+          <li>Запись #1 &rarr; привязка &rarr; следующая</li>
+          <li>Запись #2 &rarr; привязка &rarr; следующая</li>
+          <li>Откройте дашборд &rarr; фильтр <strong>&laquo;Не отправлено в трекер&raquo;</strong></li>
+          <li>Проверьте и отправьте по очереди</li>
+        </ol>
+        <p>В расширении (RECENT): <code>...</code> обработка &bull; <code>review</code> ожидает проверки &bull; <code>BUG-14</code> отправлено</p>
+
+        <h2 id="tips-ru">Советы</h2>
+        <ul>
+          <li><strong>1 запись = 1 задача.</strong> Три коротких видео лучше одного длинного.</li>
+          <li><strong>Показывайте путь.</strong> AI зафиксирует URL и навигацию.</li>
+          <li><strong>Ошибки консоли записываются автоматически.</strong> Не нужно открывать DevTools.</li>
+          <li><strong>Можно добавить скриншоты.</strong> Кликните по таймлайну в нужный момент.</li>
+        </ul>
+
+        <h2 id="faq-ru">FAQ</h2>
+        <h3>Нет звука в записи</h3>
+        <ol>
+          <li>Включён ли Микрофон в расширении? Двигается ли индикатор уровня (полоска)?</li>
+          <li><strong>Chrome:</strong> Chrome дал разрешение на микрофон? Если нет &mdash; перезапустите расширение: <code>chrome://extensions</code> &rarr; выкл/вкл <span class="brand-name">BugReel</span></li>
+          <li><strong>Firefox:</strong> Откройте настройку расширения (ссылка &laquo;Firefox Setup&raquo; внизу попапа) и пройдите шаг 1.</li>
+          <li><strong>Windows:</strong> Chrome может не запросить микрофон автоматически. После перезапуска расширения откройте его снова и включите Микрофон &mdash; должен появиться запрос.</li>
+        </ol>
+        <h3>Обработка длится больше 3 минут</h3>
+        <p>Обновите страницу. Если статус &laquo;error&raquo; &mdash; запишите заново.</p>
+        <h3>Не могу найти задачу</h3>
+        <p>Сбросьте фильтры: Все пользователи + Все проекты + Все (вкл. решённые). Или введите ID в поиске.</p>
+        <h3>Можно редактировать карточку?</h3>
+        <p>Да, нажмите Редактировать &mdash; заголовок, тип, описание.</p>
+        <h3>Firefox: зачем вкладка Recorder?</h3>
+        <p>Firefox не поддерживает offscreen API (в отличие от Chrome). Запись экрана может работать только в активной вкладке. Вкладка &laquo;Recorder&raquo; автоматически уходит на задний план после начала записи. <strong>Не закрывайте её</strong> &mdash; запись остановится.</p>
+        <h3>Firefox: расширение пропало после перезапуска</h3>
+        <p>Временные расширения в Firefox сбрасываются при перезапуске. Загрузите снова: <code>about:debugging</code> &rarr; &laquo;Загрузить временное дополнение&raquo; &rarr; выберите <code>manifest.json</code>.</p>
 
         <div style="height: 48px;"></div>
       </div>
@@ -304,10 +432,17 @@
     document.getElementById('header').innerHTML = renderHeader('guide');
     initQuotaWidget();
 
-    // Browser tab switching
-    const tabs = document.querySelectorAll('.browser-tab');
-    const chromeContent = document.getElementById('chrome-install');
-    const firefoxContent = document.getElementById('firefox-install');
+    // Show correct language version
+    const lang = window.__dashboardI18n?.lang || 'en';
+    const suffix = lang === 'en' ? '' : '-ru';
+    document.getElementById('guide-en').style.display = lang === 'en' ? '' : 'none';
+    document.getElementById('guide-ru').style.display = lang === 'ru' ? '' : 'none';
+
+    // Browser tab switching (works for both language versions)
+    const activeGuide = document.getElementById(lang === 'ru' ? 'guide-ru' : 'guide-en');
+    const tabs = activeGuide.querySelectorAll('.browser-tab');
+    const chromeContent = document.getElementById('chrome-install' + suffix);
+    const firefoxContent = document.getElementById('firefox-install' + suffix);
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
@@ -327,24 +462,43 @@
     const isFirefox = navigator.userAgent.includes('Firefox');
     if (isFirefox) {
       tabs.forEach(t => t.classList.remove('active'));
-      document.querySelector('[data-browser="firefox"]')?.classList.add('active');
+      activeGuide.querySelector('[data-browser="firefox"]')?.classList.add('active');
       chromeContent?.classList.add('hidden');
       firefoxContent?.classList.remove('hidden');
     }
 
     // Highlight active section in sidebar
-    const sections = document.querySelectorAll('.guide h2[id]');
+    const sections = activeGuide.querySelectorAll('h2[id]');
     const navLinks = document.querySelectorAll('.guide-nav a');
+    // Map ru section IDs to sidebar anchors
+    const idMap = { 'install-ru': 'install', 'record-ru': 'record', 'link-ru': 'link',
+      'review-ru': 'review', 'batch-ru': 'batch', 'tips-ru': 'tips', 'faq-ru': 'faq' };
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           navLinks.forEach(a => a.classList.remove('active'));
-          const link = document.querySelector(`.guide-nav a[href="#${entry.target.id}"]`);
+          const sid = idMap[entry.target.id] || entry.target.id;
+          const link = document.querySelector(`.guide-nav a[href="#${sid}"]`);
           if (link) link.classList.add('active');
         }
       });
     }, { rootMargin: '-72px 0px -70% 0px' });
     sections.forEach(s => observer.observe(s));
+
+    // Sidebar links: scroll to correct section in active language
+    if (lang === 'ru') {
+      navLinks.forEach(a => {
+        a.addEventListener('click', (e) => {
+          const hash = a.getAttribute('href').replace('#', '');
+          const ruId = hash + '-ru';
+          const target = document.getElementById(ruId);
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+    }
   </script>
 </body>
 </html>
