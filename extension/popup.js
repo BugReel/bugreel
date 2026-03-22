@@ -167,18 +167,19 @@ let timerPausedElapsed = 0;
 /* --- User info / Auth --- */
 
 function showUserInfo(name) {
+  if (!name) { showSetupPrompt(); return; }
   const connected = $('user-connected');
   const notConnected = $('user-not-connected');
   const displayName = $('user-display-name');
-  if (connected) { connected.classList.remove('hidden'); connected.style.display = ''; }
-  if (notConnected) notConnected.classList.add('hidden');
+  if (connected) { connected.classList.remove('hidden'); connected.style.display = 'flex'; }
+  if (notConnected) { notConnected.classList.add('hidden'); notConnected.style.display = 'none'; }
   if (displayName) displayName.textContent = name;
 }
 
 function showSetupPrompt() {
   const connected = $('user-connected');
   const notConnected = $('user-not-connected');
-  if (connected) connected.classList.add('hidden');
+  if (connected) { connected.classList.add('hidden'); connected.style.display = 'none'; }
   if (notConnected) { notConnected.classList.remove('hidden'); notConnected.style.display = ''; }
 
   // Wire up the setup link
