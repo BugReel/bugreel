@@ -225,10 +225,14 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
 
     if (hasAudioInput) {
       try {
-        micStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-          video: false
-        });
+        // Firefox extension tabs may block getUserMedia silently — add timeout
+        micStream = await Promise.race([
+          navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+            video: false
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Mic request timeout')), 3000))
+        ]);
         hasMic = micStream.getAudioTracks().length > 0;
       } catch (e) {
         console.error('Mic capture failed:', e.message);
