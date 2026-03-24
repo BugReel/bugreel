@@ -364,8 +364,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.runtime.sendMessage({ type: 'offscreen-finish', target: 'offscreen' }).catch(() => {});
     (async () => {
       await setState('ready');
-      // Auto-open review page
-      chrome.tabs.create({ url: chrome.runtime.getURL('review.html'), active: true }).catch(() => {});
+      // Review page will open when blob-saved is received (avoids race condition)
       sendResponse({ success: true });
     })();
     return true;
@@ -390,8 +389,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Default: save blob and go to review screen
         chrome.runtime.sendMessage({ type: 'offscreen-finish', target: 'offscreen' }).catch(() => {});
         await setState('ready');
-        // Auto-open review page so user doesn't have to guess
-        chrome.tabs.create({ url: chrome.runtime.getURL('review.html'), active: true }).catch(() => {});
+        // Review page will open when blob-saved is received (avoids race condition)
       }
       sendResponse({ success: true });
     })();
@@ -496,11 +494,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       setState('ready');
     }
     if (message.type === 'blob-saved') {
-      closeRecorderContext();
-      if (state === 'uploading') {
+      if (state === 'ready') {
+        // Blob is now in IDB — open review page first, THEN close recorder tab.
+        // Firefox: closing the recorder tab too early can lose IDB data that hasn't flushed.
+        chrome.tabs.create({ url: chrome.runtime.getURL('review.html'), active: true }).catch(() => {});
+        // Delay tab cleanup so IDB has time to fully persist
+        setTimeout(() => closeRecorderContext(), IS_FIREFOX ? 1500 : 0);
+      } else if (state === 'uploading') {
+        closeRecorderContext();
         ensureRecorderContext().then(() => {
           chrome.runtime.sendMessage({ type: 'offscreen-upload', target: 'offscreen', ...buildUploadExtras() }).catch(() => {});
         });
+      } else {
+        closeRecorderContext();
       }
     }
     chrome.runtime.sendMessage(message).catch(() => {});

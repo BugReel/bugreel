@@ -280,7 +280,11 @@ async function checkMicHardware() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter(d => d.kind === 'audioinput');
-    micHardwareAvailable = audioInputs.length > 0 && audioInputs.some(d => d.deviceId !== '');
+    // Firefox returns empty deviceId in popup context even when permission was granted
+    // in settings page, so also check stored permission as proof hardware exists
+    const stored = await chrome.storage.local.get(['micPermissionGranted']);
+    micHardwareAvailable = audioInputs.length > 0 &&
+      (audioInputs.some(d => d.deviceId !== '') || stored.micPermissionGranted);
   } catch {
     micHardwareAvailable = true; // Assume available if we can't check
   }

@@ -20,7 +20,13 @@ let previewInterval = null;
   const stored = await chrome.storage.local.get('serverUrl');
   SERVER_URL = stored.serverUrl || '';
 
-  const data = await loadRecordingBlob();
+  // Retry a few times — blob may still be saving to IDB when review page opens
+  let data = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    data = await loadRecordingBlob();
+    if (data && data.blob) break;
+    await new Promise(r => setTimeout(r, 500));
+  }
   if (!data || !data.blob) {
     content.innerHTML = `<div class="empty"><p>${t('review_notFound', 'Recording not found.')}<br>${t('review_notFoundHint', 'Record a video and try again.')}</p></div>`;
     return;

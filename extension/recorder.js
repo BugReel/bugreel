@@ -216,10 +216,11 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
   // If mic wasn't reused from preview, try to get it fresh
   if (micEnabled && !hasMic) {
     // Check if any audio input device exists before requesting getUserMedia
+    // Note: Firefox returns empty deviceId in non-primary contexts, so just check count
     let hasAudioInput = true;
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      hasAudioInput = devices.some(d => d.kind === 'audioinput' && d.deviceId !== '');
+      hasAudioInput = devices.some(d => d.kind === 'audioinput');
     } catch { /* assume available */ }
 
     if (hasAudioInput) {
@@ -681,6 +682,13 @@ async function doUpload(extras = {}) {
 
   chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
 
+  // Read token before entering Promise constructor (can't use await inside non-async callback)
+  let token = pendingExtensionToken;
+  if (!token) {
+    const stored = await chrome.storage.local.get('extensionToken');
+    token = stored.extensionToken || '';
+  }
+
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
@@ -718,8 +726,8 @@ async function doUpload(extras = {}) {
     };
 
     xhr.open('POST', `${serverUrl}/api/upload`);
-    if (uploadToken) {
-      xhr.setRequestHeader('Authorization', `Bearer ${uploadToken}`);
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     }
     xhr.send(formData);
   });
@@ -877,6 +885,8 @@ chrome.runtime.sendMessage({ type: 'recorder-ready' }).catch(() => {});
     console.error('[BugReel] Firefox auto-start failed:', e.message, '— showing fallback button');
     if (label) label.textContent = 'Screen access needed';
     if (hint) { hint.textContent = getScreenCaptureErrorHint(e.message); hint.style.whiteSpace = 'pre-line'; }
+    // Notify background so state resets from 'starting' to 'idle'
+    chrome.runtime.sendMessage({ type: 'recording-failed' }).catch(() => {});
     showFallbackButton(params, label, hint);
   }
 })();
