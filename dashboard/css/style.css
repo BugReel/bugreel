@@ -278,6 +278,20 @@ h4 { font-size: 0.95rem; font-weight: 600; }
 .quota-bar-fill.amber { background: var(--amber); }
 .quota-bar-fill.red { background: var(--red); }
 
+.quota-plan-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text3);
+}
+.quota-plan-standard { background: var(--green-dim); color: var(--green); }
+.quota-plan-pro { background: var(--blue-dim, rgba(59,130,246,0.15)); color: var(--blue, #3b82f6); }
+.quota-plan-business { background: var(--violet-dim, rgba(139,92,246,0.15)); color: var(--violet, #8b5cf6); }
+
 @media (max-width: 768px) {
   #quota-widget .quota-text { display: none; }
   .quota-bar { width: 32px; }

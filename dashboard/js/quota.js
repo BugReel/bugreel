@@ -80,14 +80,19 @@ function _renderHeaderWidget(data) {
   const usedStr = formatBytes(used);
   const limitStr = limit > 0 ? formatBytes(limit) : '∞';
 
+  const plan = data.plan || 'free';
+  const planLabels = { free: 'Free', standard: 'Standard', pro: 'Pro', business: 'Business' };
+  const planLabel = planLabels[plan] || plan;
+
   el.innerHTML = `
+    <span class="quota-plan-badge quota-plan-${plan}">${planLabel}</span>
     <span class="quota-text">${usedStr} / ${limitStr}</span>
     <div class="quota-bar">
       <div class="quota-bar-fill ${color}" style="width:${Math.round(percent * 100)}%"></div>
     </div>
   `;
   el.style.display = 'flex';
-  el.title = t('quota_storage', 'Storage') + ': ' + usedStr + ' / ' + limitStr;
+  el.title = planLabel + ' — ' + t('quota_storage', 'Storage') + ': ' + usedStr + ' / ' + limitStr;
   el.onclick = () => { window.location.href = `${basePath}/settings-page`; };
 }
 

@@ -324,8 +324,8 @@
           <div class="settings-section-body" id="quotaSectionBody"></div>
         </div>
 
-        <!-- Tracker Integration Section -->
-        <div class="settings-section">
+        <!-- Tracker Integration Section (hidden in SaaS for non-admins) -->
+        <div class="settings-section" id="trackerSection">
           <div class="settings-section-header">
             <div>
               <div class="settings-section-title" id="trackerTitle"></div>
@@ -452,8 +452,8 @@
           </div>
         </div>
 
-        <!-- Branding -->
-        <div class="settings-section">
+        <!-- Branding (hidden in SaaS for non-admins) -->
+        <div class="settings-section" id="brandingSection">
           <div class="settings-section-header">
             <div>
               <div class="settings-section-title">
@@ -904,6 +904,14 @@
       const data = await getQuotaDataAsync();
       if (!data) return;
 
+      // SaaS mode detected — hide admin-only sections for non-admins
+      if (!data.is_admin) {
+        const trackerEl = document.getElementById('trackerSection');
+        const brandingEl = document.getElementById('brandingSection');
+        if (trackerEl) trackerEl.style.display = 'none';
+        if (brandingEl) brandingEl.style.display = 'none';
+      }
+
       const section = document.getElementById('quotaSection');
       const badge = document.getElementById('quotaPlanBadge');
       const body_ = document.getElementById('quotaSectionBody');
@@ -1000,9 +1008,39 @@
 
       html += '</div>';
 
-      // Upgrade button for free/standard
+      // Subscription status (expiry, renewal)
+      const sub = data.subscription;
+      if (sub && sub.expires_at) {
+        const expires = new Date(sub.expires_at);
+        const now = new Date();
+        const daysLeft = Math.ceil((expires - now) / 86400000);
+        const expiresStr = expires.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+        let statusHtml = '';
+        if (daysLeft <= 0) {
+          statusHtml = `<span style="color:var(--red);">${t('quota_expired', 'Expired')}</span>`;
+        } else if (daysLeft <= 7) {
+          statusHtml = `<span style="color:var(--amber);">${t('quota_expires_soon', 'Expires in {n} days').replace('{n}', daysLeft)}</span>`;
+        } else {
+          statusHtml = `<span style="color:var(--text3);">${t('quota_active_until', 'Active until {date}').replace('{date}', expiresStr)}</span>`;
+        }
+
+        const periodLabel = sub.period === '12m' ? t('quota_period_yearly', 'Yearly') : t('quota_period_monthly', 'Monthly');
+        html += `<div style="margin-top:14px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);font-size:0.82rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div>
+              <span style="color:var(--text2);font-weight:600;">${periodLabel}</span>
+              <span style="margin-left:8px;">${statusHtml}</span>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      // Upgrade / manage buttons
       if (plan === 'free' || plan === 'standard') {
-        html += `<div style="margin-top:16px;"><a href="${basePath}/pricing" class="quota-upgrade-btn">${t('quota_upgrade', 'Upgrade plan')}</a></div>`;
+        html += `<div style="margin-top:16px;"><a href="/pricing" class="quota-upgrade-btn" target="_blank">${t('quota_upgrade', 'Upgrade plan')}</a></div>`;
+      } else if (sub && sub.expires_at) {
+        html += `<div style="margin-top:16px;"><a href="/pricing" class="quota-upgrade-btn" style="background:var(--surface2);color:var(--text2);" target="_blank">${t('quota_manage', 'Manage subscription')}</a></div>`;
       }
 
       body_.innerHTML = html;
