@@ -1036,15 +1036,43 @@
         </div>`;
       }
 
-      // Upgrade / manage buttons
-      if (plan === 'free' || plan === 'standard') {
+      // Upgrade / manage / cancel buttons
+      if (plan === 'free') {
         html += `<div style="margin-top:16px;"><a href="/pricing" class="quota-upgrade-btn" target="_blank">${t('quota_upgrade', 'Upgrade plan')}</a></div>`;
-      } else if (sub && sub.expires_at) {
-        html += `<div style="margin-top:16px;"><a href="/pricing" class="quota-upgrade-btn" style="background:var(--surface2);color:var(--text2);" target="_blank">${t('quota_manage', 'Manage subscription')}</a></div>`;
+      } else if (sub && sub.status === 'cancelled') {
+        html += `<div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">`;
+        html += `<a href="/pricing" class="quota-upgrade-btn" target="_blank">${t('quota_upgrade', 'Upgrade plan')}</a>`;
+        html += `<span style="font-size:12px;color:var(--text3);">${t('quota_cancelled', 'Subscription cancelled')}</span>`;
+        html += `</div>`;
+      } else if (plan !== 'free') {
+        html += `<div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">`;
+        html += `<a href="/pricing" class="quota-upgrade-btn" target="_blank">${t('quota_upgrade', 'Upgrade plan')}</a>`;
+        html += `<button id="cancel-sub-btn" class="quota-upgrade-btn" style="background:transparent;color:var(--danger,#ef4444);border:1px solid var(--danger,#ef4444);">${t('quota_cancel', 'Cancel subscription')}</button>`;
+        html += `</div>`;
       }
 
       body_.innerHTML = html;
       section.style.display = 'block';
+
+      // Cancel button handler
+      const cancelBtn = document.getElementById('cancel-sub-btn');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', async () => {
+          if (!confirm(t('quota_cancel_confirm', 'Cancel subscription? Access continues until end of billing period.'))) return;
+          cancelBtn.disabled = true;
+          cancelBtn.textContent = '...';
+          try {
+            const res = await request('/api/subscription/cancel', { method: 'POST' });
+            cancelBtn.textContent = t('quota_cancelled', 'Cancelled');
+            cancelBtn.style.color = 'var(--text3)';
+            cancelBtn.style.borderColor = 'var(--text3)';
+          } catch (err) {
+            alert(err.message);
+            cancelBtn.disabled = false;
+            cancelBtn.textContent = t('quota_cancel', 'Cancel subscription');
+          }
+        });
+      }
     })();
   </script>
 </body>
