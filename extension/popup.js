@@ -71,7 +71,8 @@ let timerPausedElapsed = 0;
     'webcamEnabled', 'webcamDeviceId',
     'extensionState', 'recordingStartedAt', 'pausedElapsed', 'serverUrl',
     'extensionToken', 'userName', 'userEmail',
-    'maxDuration', 'videoQuality', 'afterRecording'
+    'maxDuration', 'videoQuality', 'afterRecording',
+    'serverMaxDurationMin', 'serverPlan'
   ]);
   SERVER_URL = stored.serverUrl || '';
 
@@ -85,11 +86,17 @@ let timerPausedElapsed = 0;
     populateWebcamDevices(stored.webcamDeviceId || '');
   }
 
-  // Settings
-  const selMaxDur = $('setting-max-duration');
+  // Settings — max duration badge (read-only, shows plan limit)
+  const maxDurLabel = $('max-duration-label');
   const selQuality = $('setting-quality');
   const selAfterRec = $('setting-after-recording');
-  if (selMaxDur) { selMaxDur.value = stored.maxDuration || '10'; selMaxDur.addEventListener('change', () => chrome.storage.local.set({ maxDuration: parseInt(selMaxDur.value) })); }
+  if (maxDurLabel) {
+    const serverMax = stored.serverMaxDurationMin;
+    const maxMin = serverMax || 10; // Default 10 min for standalone BugReel
+    maxDurLabel.textContent = maxMin >= 60 ? `${maxMin / 60} ${t('popup_settingHour', 'hr')}` : `${maxMin} ${t('popup_settingMin', 'min')}`;
+    // Always store plan limit as maxDuration so background.js uses it
+    chrome.storage.local.set({ maxDuration: maxMin });
+  }
   if (selQuality) { selQuality.value = stored.videoQuality || '720p'; selQuality.addEventListener('change', () => chrome.storage.local.set({ videoQuality: selQuality.value })); }
   if (selAfterRec) { selAfterRec.value = stored.afterRecording || 'review'; selAfterRec.addEventListener('change', () => chrome.storage.local.set({ afterRecording: selAfterRec.value })); }
 
@@ -97,7 +104,9 @@ let timerPausedElapsed = 0;
   if (stored.extensionToken) {
     hasExtensionToken = true;
     currentUserName = stored.userName || stored.userEmail || t('status_connected', 'Connected');
-    showUserInfo(currentUserName);
+    showUserInfo(currentUserName, stored.serverPlan);
+    // Refresh plan from server (non-blocking)
+    refreshPlanFromServer(stored.serverUrl, stored.extensionToken);
     // Hide legacy author dropdown
     const authorField = $('author-field');
     if (authorField) authorField.classList.add('hidden');
@@ -166,7 +175,7 @@ let timerPausedElapsed = 0;
 
 /* --- User info / Auth --- */
 
-function showUserInfo(name) {
+function showUserInfo(name, plan) {
   if (!name) { showSetupPrompt(); return; }
   const connected = $('user-connected');
   const notConnected = $('user-not-connected');
@@ -174,6 +183,49 @@ function showUserInfo(name) {
   if (connected) { connected.classList.remove('hidden'); connected.style.display = 'flex'; }
   if (notConnected) { notConnected.classList.add('hidden'); notConnected.style.display = 'none'; }
   if (displayName) displayName.textContent = name;
+  updatePlanBadge(plan);
+}
+
+function updatePlanBadge(plan) {
+  const badge = $('user-plan-badge');
+  if (!badge) return;
+  const p = (plan || 'free').toLowerCase();
+  const colors = {
+    free: { bg: '#334155', color: '#94a3b8' },
+    standard: { bg: '#1e3a5f', color: '#60a5fa' },
+    pro: { bg: '#3b1f6e', color: '#a78bfa' },
+    business: { bg: '#713f12', color: '#fbbf24' },
+  };
+  const c = colors[p] || colors.free;
+  badge.textContent = p === 'free' ? 'FREE' : p.toUpperCase();
+  badge.style.background = c.bg;
+  badge.style.color = c.color;
+}
+
+async function refreshPlanFromServer(serverUrl, token) {
+  if (!serverUrl || !token) return;
+  try {
+    const res = await fetch(`${serverUrl}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.user?.plan) {
+      const plan = data.user.plan;
+      const maxMin = data.limits?.max_duration_sec ? Math.floor(data.limits.max_duration_sec / 60) : null;
+      updatePlanBadge(plan);
+      const updates = { serverPlan: plan };
+      if (maxMin) {
+        updates.serverMaxDurationMin = maxMin;
+        updates.maxDuration = maxMin;
+        const maxDurLabel = $('max-duration-label');
+        if (maxDurLabel) {
+          maxDurLabel.textContent = maxMin >= 60 ? `${maxMin / 60} ${t('popup_settingHour', 'hr')}` : `${maxMin} ${t('popup_settingMin', 'min')}`;
+        }
+      }
+      chrome.storage.local.set(updates);
+    }
+  } catch { /* silent — popup should not break if server is unreachable */ }
 }
 
 function showSetupPrompt() {
