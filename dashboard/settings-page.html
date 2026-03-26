@@ -1124,7 +1124,7 @@
         { key: 'temporary',    icon: _si('<circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/>'), label: t('cancel_reason_temporary', 'Temporarily don\'t need it') },
       ];
       const reasonBtns = reasons.map(r =>
-        `<button class="ret-reason-btn" data-reason="${r.key}" style="text-align:left;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text1);cursor:pointer;font-size:14px">${r.icon} ${r.label}</button>`
+        `<button class="ret-reason-btn" data-reason="${r.key}" style="display:flex;align-items:center;gap:10px;text-align:left;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text1);cursor:pointer;font-size:14px">${r.icon} ${r.label}</button>`
       ).join('');
 
       return `<div id="retention-modal" class="modal-overlay" style="display:none">
