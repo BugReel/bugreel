@@ -908,7 +908,7 @@
       });
       if (!res.ok) {
         const body = await res.text();
-        throw new Error(`API ${res.status}: ${body}`);
+        try { const j = JSON.parse(body); throw new Error(j.message || j.error || body); } catch (e) { if (e.message) throw e; throw new Error(body); }
       }
       return res.json();
     }
