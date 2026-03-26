@@ -1054,23 +1054,11 @@
       body_.innerHTML = html;
       section.style.display = 'block';
 
-      // Cancel button handler
+      // Cancel button — redirect to full retention flow in /settings
       const cancelBtn = document.getElementById('cancel-sub-btn');
       if (cancelBtn) {
-        cancelBtn.addEventListener('click', async () => {
-          if (!confirm(t('quota_cancel_confirm', 'Cancel subscription? Access continues until end of billing period.'))) return;
-          cancelBtn.disabled = true;
-          cancelBtn.textContent = '...';
-          try {
-            const res = await request('/api/subscription/cancel', { method: 'POST' });
-            cancelBtn.textContent = t('quota_cancelled', 'Cancelled');
-            cancelBtn.style.color = 'var(--text3)';
-            cancelBtn.style.borderColor = 'var(--text3)';
-          } catch (err) {
-            alert(err.message);
-            cancelBtn.disabled = false;
-            cancelBtn.textContent = t('quota_cancel', 'Cancel subscription');
-          }
+        cancelBtn.addEventListener('click', () => {
+          window.open('/settings#cancel', '_blank');
         });
       }
     })();
