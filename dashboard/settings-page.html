@@ -899,6 +899,20 @@
 
     load();
 
+    // Lightweight request() helper (settings-page is standalone, doesn't import api.js)
+    async function request(path, options = {}) {
+      const res = await fetch(path, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+        ...options,
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`API ${res.status}: ${body}`);
+      }
+      return res.json();
+    }
+
     // ---- Quota / Storage section (SaaS only) ----
     (async () => {
       const data = await getQuotaDataAsync();
