@@ -1054,14 +1054,212 @@
       body_.innerHTML = html;
       section.style.display = 'block';
 
-      // Cancel button — redirect to full retention flow in /settings
+      // --- Retention cancellation flow (generic, works with any SaaS wrapper) ---
       const cancelBtn = document.getElementById('cancel-sub-btn');
       if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-          window.open('/settings#cancel', '_blank');
-        });
+        cancelBtn.addEventListener('click', () => showRetentionModal());
       }
     })();
+
+    // --- Retention Modal ---
+    let _retentionData = null;
+    let _cancelReason = '';
+
+    function showRetentionModal() {
+      // Create modal if not exists
+      if (!document.getElementById('retention-modal')) {
+        document.body.insertAdjacentHTML('beforeend', buildRetentionModalHTML());
+        wireRetentionEvents();
+      }
+      // Fetch retention info
+      request('/api/subscription/retention-info').then(d => { _retentionData = d; }).catch(() => { _retentionData = {}; });
+      retentionShowStep('1');
+      document.getElementById('retention-modal').style.display = 'flex';
+    }
+
+    function closeRetentionModal() {
+      const m = document.getElementById('retention-modal');
+      if (m) m.style.display = 'none';
+    }
+
+    function retentionShowStep(n) {
+      ['1','2','3','done','paused'].forEach(s => {
+        const el = document.getElementById('ret-step-' + s);
+        if (el) el.style.display = s === n ? 'block' : 'none';
+      });
+    }
+
+    function fmtB(b) { return b >= 1073741824 ? (b/1073741824).toFixed(0)+' GB' : (b/1048576).toFixed(0)+' MB'; }
+    function fmtD(s) { return s >= 3600 ? (s/3600)+'h' : (s/60)+' min'; }
+
+    function loseRow(icon, label, from, to) {
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-radius:8px;">
+        <span style="font-size:18px">${icon}</span><span style="flex:1;font-size:13px">${label}</span>
+        <span style="color:var(--success,#22c55e);font-weight:600;font-size:13px">${from}</span>
+        <span style="color:var(--text3);font-size:12px">→</span>
+        <span style="color:var(--danger,#ef4444);font-weight:600;font-size:13px">${to}</span></div>`;
+    }
+
+    function buildRetentionModalHTML() {
+      const reasons = [
+        { key: 'too_expensive', icon: '💰', label: t('cancel_reason_expensive', 'Too expensive') },
+        { key: 'not_using',     icon: '📦', label: t('cancel_reason_not_using', 'Not using the service') },
+        { key: 'missing_features', icon: '🔧', label: t('cancel_reason_features', 'Missing features I need') },
+        { key: 'switching',     icon: '🔄', label: t('cancel_reason_switching', 'Switching to another service') },
+        { key: 'temporary',    icon: '⏸️', label: t('cancel_reason_temporary', 'Temporarily don\'t need it') },
+      ];
+      const reasonBtns = reasons.map(r =>
+        `<button class="ret-reason-btn" data-reason="${r.key}" style="text-align:left;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text1);cursor:pointer;font-size:14px">${r.icon} ${r.label}</button>`
+      ).join('');
+
+      return `<div id="retention-modal" class="modal-overlay" style="display:none">
+        <div class="modal-dialog" style="max-width:480px">
+          <!-- Step 1: Reason -->
+          <div id="ret-step-1">
+            <div class="modal-header"><h3>${t('cancel_why', 'Why do you want to cancel?')}</h3><button class="modal-close" onclick="closeRetentionModal()">×</button></div>
+            <div class="modal-body" style="gap:8px">${reasonBtns}</div>
+          </div>
+          <!-- Step 2: Offer -->
+          <div id="ret-step-2" style="display:none">
+            <div class="modal-header"><h3 id="ret-offer-title">${t('cancel_offer', 'We have an offer')}</h3><button class="modal-close" onclick="closeRetentionModal()">×</button></div>
+            <div class="modal-body"><div id="ret-offer-body"></div></div>
+            <div class="modal-footer">
+              <button id="ret-accept" class="btn btn-primary">${t('cancel_accept', 'Accept')}</button>
+              <button id="ret-decline" class="btn btn-secondary">${t('cancel_decline', 'No, cancel subscription')}</button>
+            </div>
+          </div>
+          <!-- Step 3: What you lose -->
+          <div id="ret-step-3" style="display:none">
+            <div class="modal-header"><h3>${t('cancel_losing', 'Here\'s what you\'ll lose')}</h3><button class="modal-close" onclick="closeRetentionModal()">×</button></div>
+            <div class="modal-body">
+              <div id="ret-losing-list"></div>
+              <textarea id="ret-feedback" placeholder="${t('cancel_feedback_placeholder', 'Tell us what we can improve (optional)')}" style="width:100%;margin-top:12px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text1);font-size:13px;resize:vertical;min-height:60px;box-sizing:border-box"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button id="ret-back" class="btn btn-secondary">${t('cancel_back', 'Back')}</button>
+              <button id="ret-confirm" class="btn" style="background:var(--danger,#ef4444);color:white">${t('cancel_confirm', 'Cancel subscription')}</button>
+            </div>
+          </div>
+          <!-- Done -->
+          <div id="ret-step-done" style="display:none">
+            <div class="modal-body" style="text-align:center;padding:32px">
+              <div style="font-size:48px;margin-bottom:12px">✅</div>
+              <h3>${t('cancel_done', 'Subscription cancelled')}</h3>
+              <p id="ret-done-info" style="color:var(--text3);margin:8px 0 0"></p>
+              <button class="btn btn-primary" style="margin-top:20px" onclick="closeRetentionModal();location.reload()">${t('close', 'Close')}</button>
+            </div>
+          </div>
+          <!-- Paused -->
+          <div id="ret-step-paused" style="display:none">
+            <div class="modal-body" style="text-align:center;padding:32px">
+              <div style="font-size:48px;margin-bottom:12px">⏸️</div>
+              <h3>${t('cancel_paused', 'Subscription paused')}</h3>
+              <p id="ret-pause-info" style="color:var(--text3);margin:8px 0 0"></p>
+              <button class="btn btn-primary" style="margin-top:20px" onclick="closeRetentionModal();location.reload()">${t('great', 'Great!')}</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function wireRetentionEvents() {
+      // Overlay click to close
+      document.getElementById('retention-modal').addEventListener('click', e => { if (e.target.id === 'retention-modal') closeRetentionModal(); });
+
+      // Step 1: reason buttons
+      document.querySelectorAll('.ret-reason-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          _cancelReason = this.dataset.reason;
+          const offerBody = document.getElementById('ret-offer-body');
+          const offerTitle = document.getElementById('ret-offer-title');
+          const acceptBtn = document.getElementById('ret-accept');
+
+          if (_cancelReason === 'too_expensive' && _retentionData?.eligible_for_discount) {
+            offerTitle.textContent = t('cancel_special_offer', 'A special offer for you');
+            offerBody.innerHTML = `<div style="padding:16px;background:linear-gradient(135deg,#1e3a5f,#3b1f6e);border-radius:12px;text-align:center">
+              <div style="font-size:32px;font-weight:700;color:#60a5fa">-30%</div>
+              <div style="color:var(--text1);margin-top:4px">${t('cancel_discount_desc', 'on your next month')}</div>
+              <div style="color:var(--text3);font-size:12px;margin-top:8px">${t('cancel_one_time', 'One-time offer')}</div></div>`;
+            acceptBtn.textContent = t('cancel_get_discount', 'Get 30% off');
+            acceptBtn.onclick = async () => {
+              try { await request('/api/subscription/accept-discount', { method: 'POST' }); } catch {}
+              closeRetentionModal(); location.reload();
+            };
+          } else if (_cancelReason === 'not_using' || _cancelReason === 'temporary') {
+            offerTitle.textContent = t('cancel_pause_title', 'Pause your subscription');
+            offerBody.innerHTML = `<p style="margin:0 0 12px">${t('cancel_pause_desc', 'Take a break — your recordings are preserved, billing paused.')}</p>
+              <div style="display:flex;gap:8px">
+                <button class="ret-pause-btn btn btn-secondary" data-months="1">1 ${t('month', 'month')}</button>
+                <button class="ret-pause-btn btn btn-secondary" data-months="2">2 ${t('months', 'months')}</button>
+                <button class="ret-pause-btn btn btn-secondary" data-months="3">3 ${t('months', 'months')}</button>
+              </div>`;
+            acceptBtn.style.display = 'none';
+            setTimeout(() => {
+              document.querySelectorAll('.ret-pause-btn').forEach(pb => {
+                pb.addEventListener('click', async () => {
+                  try {
+                    const d = await request('/api/subscription/pause', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({months: parseInt(pb.dataset.months)}) });
+                    document.getElementById('ret-pause-info').textContent = d.resumes_at ? t('cancel_resumes', 'Resumes') + ' ' + new Date(d.resumes_at).toLocaleDateString() : '';
+                    retentionShowStep('paused');
+                  } catch (err) { alert(err.message); }
+                });
+              });
+            }, 0);
+          } else if (_cancelReason === 'too_expensive') {
+            offerTitle.textContent = t('cancel_downgrade_title', 'Try a more affordable plan');
+            offerBody.innerHTML = `<p>${t('cancel_downgrade_desc', 'Instead of cancelling, switch to a cheaper plan and keep access to your recordings.')}</p>`;
+            acceptBtn.textContent = t('cancel_view_plans', 'View plans');
+            acceptBtn.onclick = () => { closeRetentionModal(); window.open('/pricing', '_blank'); };
+          } else {
+            offerTitle.textContent = t('cancel_feedback_title', 'Tell us more');
+            offerBody.innerHTML = `<p>${t('cancel_feedback_desc', 'We\'re actively improving. Your feedback helps make the product better.')}</p>`;
+            acceptBtn.textContent = t('cancel_stay', 'Stay');
+            acceptBtn.onclick = closeRetentionModal;
+          }
+          acceptBtn.style.display = '';
+          retentionShowStep('2');
+        });
+      });
+
+      // Step 2 → 3: decline offer
+      document.getElementById('ret-decline').addEventListener('click', () => {
+        const d = _retentionData;
+        let html = '';
+        if (d?.losing) {
+          const l = d.losing;
+          html += loseRow('📁', t('storage','Storage'), fmtB(l.storage.from), fmtB(l.storage.to));
+          html += loseRow('⏱️', t('max_duration','Max duration'), fmtD(l.duration.from), fmtD(l.duration.to));
+          html += loseRow('📅', t('retention','Retention'), l.retention.from===-1?'∞':l.retention.from+'d', l.retention.to+'d');
+          html += loseRow('🤖', t('ai_transcription','AI transcription'), l.ai_transcriptions.from===-1?'∞':l.ai_transcriptions.from+'/mo', '—');
+          html += loseRow('🎥', t('recordings','Recordings'), l.recordings.from===-1?'∞':l.recordings.from, l.recordings.to);
+        }
+        if (d?.total_recordings) {
+          html += `<div style="margin-top:8px;padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;color:#fca5a5;font-size:13px">
+            ⚠️ ${t('cancel_data_warning', 'You have')} ${d.total_recordings} ${t('recordings','recordings')} (${fmtB(d.total_storage_bytes)}). ${t('cancel_data_warning2', 'Old recordings will be deleted after downgrade.')}</div>`;
+        }
+        document.getElementById('ret-losing-list').innerHTML = html;
+        retentionShowStep('3');
+      });
+
+      // Step 3: back
+      document.getElementById('ret-back').addEventListener('click', () => retentionShowStep('2'));
+
+      // Step 3: confirm cancel
+      document.getElementById('ret-confirm').addEventListener('click', async function() {
+        this.disabled = true; this.textContent = '...';
+        try {
+          const d = await request('/api/subscription/cancel', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ reason: _cancelReason, feedback: document.getElementById('ret-feedback').value })
+          });
+          document.getElementById('ret-done-info').textContent = d.active_until ? t('cancel_active_until', 'Access continues until') + ' ' + new Date(d.active_until).toLocaleDateString() : '';
+          retentionShowStep('done');
+        } catch (err) {
+          alert(err.message);
+          this.disabled = false; this.textContent = t('cancel_confirm', 'Cancel subscription');
+        }
+      });
+    }
   </script>
 </body>
 </html>
