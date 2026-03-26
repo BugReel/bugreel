@@ -1058,6 +1058,11 @@
         html += `<a href="/pricing" class="quota-upgrade-btn" target="_blank">${t('quota_upgrade', 'Upgrade plan')}</a>`;
         html += `<span style="font-size:12px;color:var(--text3);">${t('quota_cancelled', 'Subscription cancelled')}</span>`;
         html += `</div>`;
+      } else if (sub && sub.status === 'paused') {
+        html += `<div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">`;
+        html += `<button id="resume-sub-btn" class="quota-upgrade-btn">${t('quota_resume', 'Resume subscription')}</button>`;
+        html += `<span style="font-size:12px;color:var(--text3);">${t('quota_paused', 'Subscription paused')}</span>`;
+        html += `</div>`;
       } else if (plan !== 'free') {
         html += `<div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">`;
         html += `<a href="/pricing" class="quota-upgrade-btn" target="_blank">${t('quota_upgrade', 'Upgrade plan')}</a>`;
@@ -1067,6 +1072,19 @@
 
       body_.innerHTML = html;
       section.style.display = 'block';
+
+      // --- Resume paused subscription ---
+      const resumeBtn = document.getElementById('resume-sub-btn');
+      if (resumeBtn) {
+        resumeBtn.addEventListener('click', async () => {
+          if (!confirm(t('quota_resume_confirm', 'Resume your subscription now?'))) return;
+          resumeBtn.disabled = true; resumeBtn.textContent = '...';
+          try {
+            await request('/api/subscription/resume', { method: 'POST' });
+            location.reload();
+          } catch (err) { alert(err.message); resumeBtn.disabled = false; resumeBtn.textContent = t('quota_resume', 'Resume subscription'); }
+        });
+      }
 
       // --- Retention cancellation flow (generic, works with any SaaS wrapper) ---
       const cancelBtn = document.getElementById('cancel-sub-btn');
@@ -1202,21 +1220,30 @@
             };
           } else if (_cancelReason === 'not_using' || _cancelReason === 'temporary') {
             offerTitle.textContent = t('cancel_pause_title', 'Pause your subscription');
-            offerBody.innerHTML = `<p style="margin:0 0 12px">${t('cancel_pause_desc', 'Take a break — your recordings are preserved, billing paused.')}</p>
+            let _selectedPauseDays = 14;
+            offerBody.innerHTML = `<p style="margin:0 0 12px">${t('cancel_pause_desc', 'Take a break — your recordings are preserved, billing paused. You can resume anytime.')}</p>
               <div style="display:flex;gap:8px">
-                <button class="ret-pause-btn btn btn-secondary" data-months="1">1 ${t('month', 'month')}</button>
-                <button class="ret-pause-btn btn btn-secondary" data-months="2">2 ${t('months', 'months')}</button>
-                <button class="ret-pause-btn btn btn-secondary" data-months="3">3 ${t('months', 'months')}</button>
+                <button class="ret-pause-opt btn btn-secondary" data-days="7">7 ${t('days', 'days')}</button>
+                <button class="ret-pause-opt btn btn-primary" data-days="14" style="outline:2px solid var(--accent)">14 ${t('days', 'days')}</button>
+                <button class="ret-pause-opt btn btn-secondary" data-days="30">30 ${t('days', 'days')}</button>
               </div>`;
-            acceptBtn.style.display = 'none';
+            acceptBtn.textContent = t('cancel_pause_confirm', 'Pause for 14 days');
+            acceptBtn.onclick = async () => {
+              acceptBtn.disabled = true; acceptBtn.textContent = '...';
+              try {
+                const d = await request('/api/subscription/pause', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ days: _selectedPauseDays }) });
+                document.getElementById('ret-pause-info').textContent = d.resumes_at ? t('cancel_resumes', 'Resumes') + ' ' + new Date(d.resumes_at).toLocaleDateString() : '';
+                retentionShowStep('paused');
+                  } catch (err) { alert(err.message); acceptBtn.disabled = false; acceptBtn.textContent = t('cancel_pause_confirm', 'Pause'); }
+            };
             setTimeout(() => {
-              document.querySelectorAll('.ret-pause-btn').forEach(pb => {
-                pb.addEventListener('click', async () => {
-                  try {
-                    const d = await request('/api/subscription/pause', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({months: parseInt(pb.dataset.months)}) });
-                    document.getElementById('ret-pause-info').textContent = d.resumes_at ? t('cancel_resumes', 'Resumes') + ' ' + new Date(d.resumes_at).toLocaleDateString() : '';
-                    retentionShowStep('paused');
-                  } catch (err) { alert(err.message); }
+              document.querySelectorAll('.ret-pause-opt').forEach(pb => {
+                pb.addEventListener('click', () => {
+                  _selectedPauseDays = parseInt(pb.dataset.days);
+                  document.querySelectorAll('.ret-pause-opt').forEach(b => { b.className = 'ret-pause-opt btn btn-secondary'; b.style.outline = ''; });
+                  pb.className = 'ret-pause-opt btn btn-primary';
+                  pb.style.outline = '2px solid var(--accent)';
+                  acceptBtn.textContent = t('cancel_pause_confirm', 'Pause for') + ' ' + _selectedPauseDays + ' ' + t('days', 'days');
                 });
               });
             }, 0);
