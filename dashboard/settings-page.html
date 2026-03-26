@@ -1222,7 +1222,7 @@
               try { await request('/api/subscription/accept-discount', { method: 'POST' }); } catch {}
               closeRetentionModal(); location.reload();
             };
-          } else if (_cancelReason === 'not_using' || _cancelReason === 'temporary') {
+          } else if ((_cancelReason === 'not_using' || _cancelReason === 'temporary') && _retentionData?.pause_available) {
             offerTitle.textContent = t('cancel_pause_title', 'Pause your subscription');
             let _selectedPauseDays = 14;
             offerBody.innerHTML = `<p style="margin:0 0 12px">${t('cancel_pause_desc', 'Take a break — your recordings are preserved, billing paused. You can resume anytime.')}</p>
