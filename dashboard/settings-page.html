@@ -1031,7 +1031,11 @@
         const expiresStr = expires.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 
         let statusHtml = '';
-        if (daysLeft <= 0) {
+        if (sub.status === 'paused') {
+          statusHtml = `<span style="color:var(--accent,#60a5fa);">${t('quota_paused_until', 'Paused — resumes {date}').replace('{date}', expiresStr)}</span>`;
+        } else if (sub.status === 'cancelled') {
+          statusHtml = `<span style="color:var(--amber,#f59e0b);">${t('quota_cancelled_until', 'Cancelled — access until {date}').replace('{date}', expiresStr)}</span>`;
+        } else if (daysLeft <= 0) {
           statusHtml = `<span style="color:var(--red);">${t('quota_expired', 'Expired')}</span>`;
         } else if (daysLeft <= 7) {
           statusHtml = `<span style="color:var(--amber);">${t('quota_expires_soon', 'Expires in {n} days').replace('{n}', daysLeft)}</span>`;
@@ -1109,10 +1113,10 @@
       document.getElementById('retention-modal').style.display = 'flex';
     }
 
-    function closeRetentionModal() {
+    window.closeRetentionModal = function() {
       const m = document.getElementById('retention-modal');
       if (m) m.style.display = 'none';
-    }
+    };
 
     function retentionShowStep(n) {
       ['1','2','3','done','paused'].forEach(s => {
