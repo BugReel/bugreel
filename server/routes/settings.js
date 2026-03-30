@@ -47,12 +47,24 @@ function getBrandingConfig() {
 }
 
 /**
+ * Resolve analytics config: DB settings take priority, then env/config fallback.
+ * Same override chain as branding: Database → Environment Variable → empty.
+ */
+function getAnalyticsConfig() {
+  return {
+    yandex_metrika_id: getSetting('analytics_yandex_metrika_id', config.analytics.yandexMetrikaId),
+    gtag_id: getSetting('analytics_gtag_id', config.analytics.gtagId),
+  };
+}
+
+/**
  * GET /api/settings
  * Returns current settings (no token for security).
  */
 router.get('/settings', (req, res) => {
   const tracker = getTrackerConfig();
   const branding = getBrandingConfig();
+  const analytics = getAnalyticsConfig();
   // Mask token: show first 5 + last 2 chars, rest as dots
   let tokenMask = '';
   if (tracker.token && tracker.token.length > 10) {
@@ -69,6 +81,8 @@ router.get('/settings', (req, res) => {
     branding_name: branding.name,
     branding_logo_url: branding.logo_url,
     branding_logo_link: branding.logo_link,
+    analytics_yandex_metrika_id: analytics.yandex_metrika_id,
+    analytics_gtag_id: analytics.gtag_id,
   });
 });
 
@@ -90,6 +104,11 @@ router.put('/settings', (req, res) => {
   if (branding_logo_url !== undefined) setSetting('branding_logo_url', branding_logo_url || '');
   if (branding_logo_link !== undefined) setSetting('branding_logo_link', branding_logo_link || '');
 
+  // Analytics settings
+  const { analytics_yandex_metrika_id, analytics_gtag_id } = req.body;
+  if (analytics_yandex_metrika_id !== undefined) setSetting('analytics_yandex_metrika_id', analytics_yandex_metrika_id || '');
+  if (analytics_gtag_id !== undefined) setSetting('analytics_gtag_id', analytics_gtag_id || '');
+
   // Update in-memory config so youtrack.js picks up changes immediately
   if (tracker_url) config.youtrack.url = tracker_url;
   if (tracker_token) config.youtrack.token = tracker_token;
@@ -104,7 +123,8 @@ router.put('/settings', (req, res) => {
  */
 router.get('/branding', (req, res) => {
   const branding = getBrandingConfig();
-  res.json(branding);
+  const analytics = getAnalyticsConfig();
+  res.json({ ...branding, analytics });
 });
 
 /**
@@ -241,4 +261,4 @@ router.post('/settings/test-connection', async (req, res) => {
 });
 
 export default router;
-export { getTrackerConfig, getBrandingConfig, getSetting, setSetting };
+export { getTrackerConfig, getBrandingConfig, getAnalyticsConfig, getSetting, setSetting };

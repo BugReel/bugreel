@@ -40,4 +40,11 @@ export const config = {
     logoUrl: process.env.BRAND_LOGO_URL || '',
     logoLink: process.env.BRAND_LOGO_LINK || '',
   },
+
+  // Analytics — inject counters into dashboard and embed pages.
+  // DB settings take priority over env vars (same chain as branding).
+  analytics: {
+    yandexMetrikaId: process.env.ANALYTICS_YANDEX_METRIKA_ID || '',
+    gtagId: process.env.ANALYTICS_GTAG_ID || '',
+  },
 };

@@ -361,6 +361,9 @@ function fetchBranding() {
     }
     brandEls.forEach(el => { el.style.opacity = '1'; });
 
+    // Inject analytics counters (once)
+    if (b.analytics) injectAnalytics(b.analytics);
+
     return b;
   }).catch(() => {
     // Fallback: show defaults if API fails
@@ -373,4 +376,36 @@ function fetchBranding() {
     document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
   });
   return _brandingPromise;
+}
+
+/**
+ * Inject analytics scripts (Yandex Metrika, Google Analytics) into <head>.
+ * Called once from fetchBranding() — idempotent (checks for existing scripts).
+ */
+function injectAnalytics(analytics) {
+  if (!analytics) return;
+
+  // Yandex Metrika
+  const ymId = analytics.yandex_metrika_id;
+  if (ymId && !document.getElementById('ym-script')) {
+    const s = document.createElement('script');
+    s.id = 'ym-script';
+    s.textContent = `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(${Number(ymId)},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});`;
+    document.head.appendChild(s);
+  }
+
+  // Google Analytics (gtag.js)
+  const gtagId = analytics.gtag_id;
+  if (gtagId && !document.getElementById('gtag-script')) {
+    const g = document.createElement('script');
+    g.id = 'gtag-script';
+    g.async = true;
+    g.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gtagId)}`;
+    document.head.appendChild(g);
+
+    const s = document.createElement('script');
+    s.id = 'gtag-init';
+    s.textContent = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gtagId.replace(/[^A-Za-z0-9-]/g, '')}');`;
+    document.head.appendChild(s);
+  }
 }

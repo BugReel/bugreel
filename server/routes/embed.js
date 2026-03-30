@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getDB } from '../db.js';
 import { config } from '../config.js';
-import { getBrandingConfig } from './settings.js';
+import { getBrandingConfig, getAnalyticsConfig } from './settings.js';
 
 const router = Router();
 
@@ -54,7 +54,8 @@ router.get('/embed/:id', (req, res) => {
   }
 
   const branding = getBrandingConfig();
-  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id, branding, ctaButtons, transcriptWords }));
+  const analytics = getAnalyticsConfig();
+  res.send(embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId: recording.id, branding, analytics, ctaButtons, transcriptWords }));
 });
 
 /**
@@ -90,8 +91,21 @@ router.get('/embed/:id/code', (req, res) => {
 /**
  * Generate the full embed HTML page with inline CSS and JS.
  */
-function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId, branding = {}, ctaButtons = [], transcriptWords = [] }) {
+function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordingId, branding = {}, analytics = {}, ctaButtons = [], transcriptWords = [] }) {
   const escapedTitle = escapeHTML(title);
+
+  // Build analytics snippets
+  let analyticsHtml = '';
+  const ymId = analytics.yandex_metrika_id;
+  if (ymId) {
+    const id = Number(ymId);
+    analyticsHtml += `<script>(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(${id},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});</script><noscript><div><img src="https://mc.yandex.ru/watch/${id}" style="position:absolute;left:-9999px" alt=""></div></noscript>`;
+  }
+  const gtagId = analytics.gtag_id;
+  if (gtagId) {
+    const safeId = gtagId.replace(/[^A-Za-z0-9-]/g, '');
+    analyticsHtml += `<script async src="https://www.googletagmanager.com/gtag/js?id=${safeId}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${safeId}');</script>`;
+  }
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -99,6 +113,7 @@ function embedPage({ title, videoSrc, autoplay, startTime, showBranding, recordi
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapedTitle} — ${escapeHTML(branding.name || 'BugReel')}</title>
+${analyticsHtml}
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#060a14;color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
