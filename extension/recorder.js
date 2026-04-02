@@ -14,6 +14,7 @@ let mixedStream = null;
 let audioContext = null;
 let maxDurationTimer = null;
 let maxDurationRemaining = 0;
+let recordingStartedAt = 0; // Date.now() when recording started (for duration tracking)
 
 // Webcam PiP
 let webcamStream = null;
@@ -328,6 +329,7 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
 
   mediaRecorder.start(1000);
   maxDurationRemaining = MAX_DURATION_MS;
+  recordingStartedAt = Date.now();
   startMaxDurationTimer();
 
   // Start live mic level monitoring (sends mic-level messages to popup)
@@ -613,8 +615,43 @@ async function handleRecordingFinished() {
   }
 }
 
+const CHUNKED_UPLOAD_THRESHOLD = 50 * 1024 * 1024; // 50 MB — use chunked upload above this
+
 async function directUpload(blob, extras) {
   console.log('[BugReel] directUpload: blob=' + (blob.size / 1048576).toFixed(1) + 'MB, url=' + pendingServerUrl + '/api/upload');
+
+  chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
+  const durationSec = recordingStartedAt ? Math.round((Date.now() - recordingStartedAt) / 1000) : null;
+
+  // Large files: chunked upload with retry/resume
+  if (blob.size > CHUNKED_UPLOAD_THRESHOLD && typeof chunkedUpload === 'function') {
+    console.log('[BugReel] Using chunked upload for large file');
+    try {
+      const result = await chunkedUpload(blob, {
+        serverUrl: pendingServerUrl,
+        author: pendingAuthor || 'unknown',
+        token: pendingExtensionToken,
+        durationSec,
+        metadata: extras,
+        onProgress(percent, loaded, total) {
+          chrome.runtime.sendMessage({ type: 'upload-progress', percent, loaded, total }).catch(() => {});
+          updateRecorderWindowUI('uploading', percent);
+        },
+        onError(err, canResume) {
+          console.error('[BugReel] Chunked upload error:', err.message, 'canResume:', canResume);
+        },
+      });
+      console.log('[BugReel] Chunked upload done:', result.id);
+      chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || 'unknown' }).catch(() => {});
+      return;
+    } catch (err) {
+      console.error('[BugReel] Chunked upload failed:', err.message);
+      chrome.runtime.sendMessage({ type: 'upload-error', error: err.message }).catch(() => {});
+      throw err;
+    }
+  }
+
+  // Small files: single POST (original behavior)
   const formData = new FormData();
   formData.append('video', blob, `recording-${Date.now()}.webm`);
   formData.append('author', pendingAuthor || 'unknown');
@@ -623,8 +660,6 @@ async function directUpload(blob, extras) {
   if (extras.actionEvents) formData.append('action_events', extras.actionEvents);
   if (extras.manualMarkers) formData.append('manual_markers', extras.manualMarkers);
   if (extras.metadata) formData.append('metadata', extras.metadata);
-
-  chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -660,6 +695,9 @@ async function directUpload(blob, extras) {
     if (pendingExtensionToken) {
       xhr.setRequestHeader('Authorization', `Bearer ${pendingExtensionToken}`);
     }
+    if (durationSec) {
+      xhr.setRequestHeader('X-Recording-Duration', String(durationSec));
+    }
     xhr.send(formData);
   });
 }
@@ -674,6 +712,45 @@ async function doUpload(extras = {}) {
   }
 
   const { blob, serverUrl, author } = data;
+
+  chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
+
+  let token = pendingExtensionToken;
+  if (!token) {
+    const stored = await chrome.storage.local.get('extensionToken');
+    token = stored.extensionToken || '';
+  }
+
+  const durationSec = recordingStartedAt ? Math.round((Date.now() - recordingStartedAt) / 1000) : null;
+
+  // Large files: chunked upload with retry/resume
+  if (blob.size > CHUNKED_UPLOAD_THRESHOLD && typeof chunkedUpload === 'function') {
+    console.log('[BugReel] Using chunked upload for large file (' + (blob.size / 1048576).toFixed(1) + 'MB)');
+    // Include segments in metadata for chunked upload
+    const metadata = { ...extras };
+    if (extras.segments) metadata.segments = JSON.stringify(extras.segments);
+
+    try {
+      const result = await chunkedUpload(blob, {
+        serverUrl, author: author || 'unknown', token, durationSec,
+        metadata,
+        onProgress(percent, loaded, total) {
+          chrome.runtime.sendMessage({ type: 'upload-progress', percent, loaded, total }).catch(() => {});
+        },
+        onError(err, canResume) {
+          console.error('[BugReel] Chunked upload error:', err.message, 'canResume:', canResume);
+        },
+      });
+      await deleteRecordingBlob();
+      chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || 'unknown' }).catch(() => {});
+      return;
+    } catch (err) {
+      chrome.runtime.sendMessage({ type: 'upload-error', error: err.message }).catch(() => {});
+      throw err;
+    }
+  }
+
+  // Small files: single POST (original behavior)
   const formData = new FormData();
   formData.append('video', blob, `recording-${Date.now()}.webm`);
   formData.append('author', author || 'unknown');
@@ -683,15 +760,6 @@ async function doUpload(extras = {}) {
   if (extras.manualMarkers) formData.append('manual_markers', extras.manualMarkers);
   if (extras.metadata) formData.append('metadata', extras.metadata);
   if (extras.segments) formData.append('segments', JSON.stringify(extras.segments));
-
-  chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
-
-  // Read token before entering Promise constructor (can't use await inside non-async callback)
-  let token = pendingExtensionToken;
-  if (!token) {
-    const stored = await chrome.storage.local.get('extensionToken');
-    token = stored.extensionToken || '';
-  }
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -732,6 +800,9 @@ async function doUpload(extras = {}) {
     xhr.open('POST', `${serverUrl}/api/upload`);
     if (token) {
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+    if (durationSec) {
+      xhr.setRequestHeader('X-Recording-Duration', String(durationSec));
     }
     xhr.send(formData);
   });
@@ -863,8 +934,8 @@ chrome.runtime.sendMessage({ type: 'recorder-ready' }).catch(() => {});
       params.micEnabled,
       params.systemAudioEnabled,
       params.extensionToken,
-      undefined, // maxDuration — use default
-      undefined, // videoQuality — use default
+      params.maxDuration,
+      params.videoQuality,
       params.webcamEnabled,
       params.webcamDeviceId,
       params.webcamPosition
@@ -914,8 +985,8 @@ function showFallbackButton(params, label, hint) {
         params.micEnabled,
         params.systemAudioEnabled,
         params.extensionToken,
-        undefined, // maxDuration
-        undefined, // videoQuality
+        params.maxDuration,
+        params.videoQuality,
         params.webcamEnabled,
         params.webcamDeviceId,
         params.webcamPosition

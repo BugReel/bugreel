@@ -29,7 +29,25 @@ const upload = multer({
 router.post('/upload', (req, res, next) => {
   req.recordingId = generateRecordingId();
   next();
-}, upload.single('video'), (req, res) => {
+}, (req, res, next) => {
+  upload.single('video')(req, res, (err) => {
+    if (err) {
+      // Clean up the directory if multer created it before failing
+      const dir = path.join(config.dataDir, req.recordingId);
+      fs.rm(dir, { recursive: true, force: true }, () => {});
+
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        const maxMB = Math.round(config.maxVideoSize / (1024 * 1024));
+        return res.status(413).json({
+          error: 'file_too_large',
+          message: `File exceeds maximum size of ${maxMB} MB`,
+        });
+      }
+      return res.status(500).json({ error: 'upload_failed', message: err.message });
+    }
+    next();
+  });
+}, (req, res) => {
   const id = req.recordingId;
   // Prefer user identity from Cloud Layer proxy headers, fall back to form body
   const author = req.headers['x-user-name'] || req.headers['x-user-email'] || req.body.author || 'Unknown';

@@ -24,6 +24,7 @@ COMMON_FILES=(
   content-script-widget.js
   content-script-actions.js
   idb-helper.js
+  chunked-uploader.js
   review.html
   review.js
   mic-permission.html

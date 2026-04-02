@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { initDB, getDB } from './db.js';
 import { config } from './config.js';
 import uploadRouter from './routes/upload.js';
+import chunkedUploadRouter from './routes/chunked-upload.js';
 import recordingsRouter from './routes/recordings.js';
 import cardsRouter from './routes/cards.js';
 import keyframesRouter from './routes/keyframes.js';
@@ -12,6 +13,7 @@ import videoCommentsRouter from './routes/video-comments.js';
 import settingsRouter from './routes/settings.js';
 import embedRouter from './routes/embed.js';
 import { retryStuckRecordings } from './services/pipeline.js';
+import { startCleanupTimer } from './services/chunked-upload.js';
 import { authGuard, authRouter, handleLegacyLogin, handleLogout } from './auth.js';
 import { handleGetLicense } from './license.js';
 import passwordRouter from './routes/password.js';
@@ -55,6 +57,7 @@ app.use(passwordCheckAPI);
 
 // API routes
 app.use('/api', uploadRouter);
+app.use('/api', chunkedUploadRouter);
 app.use('/api', recordingsRouter);
 app.use('/api', cardsRouter);
 app.use('/api', keyframesRouter);
@@ -141,4 +144,6 @@ app.listen(config.port, config.host, () => {
   console.log(`BugReel running on ${config.host}:${config.port}`);
   // Retry any stuck/incomplete recordings from previous runs
   retryStuckRecordings();
+  // Start chunked upload cleanup timer
+  startCleanupTimer();
 });

@@ -163,6 +163,22 @@ export function initDB() {
     CREATE INDEX IF NOT EXISTS idx_video_comments_recording
       ON video_comments (recording_id);
 
+    CREATE TABLE IF NOT EXISTS upload_sessions (
+      id TEXT PRIMARY KEY,
+      author TEXT,
+      filename TEXT NOT NULL,
+      total_size INTEGER NOT NULL,
+      chunk_size INTEGER NOT NULL DEFAULT 5242880,
+      total_chunks INTEGER NOT NULL,
+      uploaded_chunks TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL DEFAULT 'pending',
+      temp_dir TEXT NOT NULL,
+      metadata_json TEXT,
+      error_message TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS cta_buttons (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       recording_id TEXT REFERENCES recordings(id) ON DELETE CASCADE,
