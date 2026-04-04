@@ -155,7 +155,7 @@ async function processPipeline(recordingId) {
     if (recording.action_events_json) actionEvents = JSON.parse(recording.action_events_json);
   } catch {}
 
-  const analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents);
+  const analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents, duration);
   db.prepare('UPDATE recordings SET analysis_json = ?, status = ? WHERE id = ?')
     .run(JSON.stringify(analysis), 'analyzed', recordingId);
   console.log(`[${recordingId}] Analysis complete: type=${analysis.type}, title="${analysis.title}"`);
@@ -173,7 +173,9 @@ async function processPipeline(recordingId) {
 
   // Merge: manual markers take priority, GPT frames within 3s of a manual one are skipped
   const DEDUP_THRESHOLD = 3.0;
-  const gptFrames = (analysis.keyFrames || []).map(f => ({ time: f.time, description: f.description, detail: f.detail || '', isManual: false }));
+  // Clamp timestamps to video duration (GPT can hallucinate times beyond the end)
+  const maxTime = duration > 0 ? Math.max(duration - 0.1, 0) : Infinity;
+  const gptFrames = (analysis.keyFrames || []).map(f => ({ time: Math.min(Math.max(f.time, 0), maxTime), description: f.description, detail: f.detail || '', isManual: false }));
   const mergedFrames = [
     ...manualMarkers.map(m => ({ time: m.ts, description: 'Manual screenshot', isManual: true })),
     ...gptFrames.filter(gpt =>

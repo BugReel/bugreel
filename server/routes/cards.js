@@ -247,8 +247,9 @@ router.post('/recordings/:id/reanalyze', async (req, res) => {
   try { if (recording.console_events_json) consoleEvents = JSON.parse(recording.console_events_json); } catch {}
   try { if (recording.action_events_json) actionEvents = JSON.parse(recording.action_events_json); } catch {}
 
-  console.log(`[${req.params.id}] Reanalyzing with GPT...`);
-  const analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents);
+  const duration = recording.duration_seconds || 0;
+  console.log(`[${req.params.id}] Reanalyzing with GPT (duration=${duration}s)...`);
+  const analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents, duration);
   db.prepare('UPDATE recordings SET analysis_json = ? WHERE id = ?').run(JSON.stringify(analysis), req.params.id);
 
   // Update card if exists
@@ -269,8 +270,10 @@ router.post('/recordings/:id/reanalyze', async (req, res) => {
       // Delete old frames from DB
       db.prepare('DELETE FROM frames WHERE recording_id = ?').run(req.params.id);
       // Extract new frames
+      const maxTime = duration > 0 ? Math.max(duration - 0.1, 0) : Infinity;
       for (let i = 0; i < analysis.keyFrames.length; i++) {
         const kf = analysis.keyFrames[i];
+        kf.time = Math.min(Math.max(kf.time, 0), maxTime);
         const idx = String(i + 1).padStart(3, '0');
         const filename = `${idx}_${kf.time.toFixed(1)}s.jpg`;
         const framePath = path.join(framesDir, filename);

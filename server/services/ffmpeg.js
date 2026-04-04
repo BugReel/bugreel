@@ -85,13 +85,15 @@ export async function compressVideo(videoPath) {
  * @param {string} outputPath - output JPEG path
  */
 export async function extractFrame(videoPath, timeSeconds, outputPath) {
+  // Clamp negative timestamps to 0
+  const seekTime = Math.max(timeSeconds, 0);
   try {
     // -vf scale: fit within 1920px width, keep aspect ratio, only downscale (min)
     await execAsync(
-      `ffmpeg -y -ss ${timeSeconds} -i "${videoPath}" -frames:v 1 -q:v 3 -vf "scale='min(1920,iw)':-1" "${outputPath}"`
+      `ffmpeg -y -ss ${seekTime} -i "${videoPath}" -frames:v 1 -q:v 3 -vf "scale='min(1920,iw)':-1" "${outputPath}"`
     );
   } catch (err) {
-    throw new Error(`ffmpeg extractFrame failed at ${timeSeconds}s: ${err.stderr || err.message}`);
+    throw new Error(`ffmpeg extractFrame failed at ${seekTime}s: ${err.stderr || err.message}`);
   }
 }
 

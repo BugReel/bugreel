@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * @param {Array<{time: number, type: string, message: string, source?: string}>|null} [consoleEvents] - Console errors
  * @returns {{ type: string, title: string, steps: string[], expected?: string, actual?: string, context?: string, keyFrames: Array<{time: number, description: string}>, affected_urls?: string[], error_context?: string }}
  */
-export async function analyzeTranscript(transcript, urlEvents = null, consoleEvents = null, actionEvents = null) {
+export async function analyzeTranscript(transcript, urlEvents = null, consoleEvents = null, actionEvents = null, durationSeconds = null) {
   const systemPrompt = fs.readFileSync(
     path.join(__dirname, '..', 'prompts', 'analyze-transcript.txt'),
     'utf-8'
@@ -24,7 +24,11 @@ export async function analyzeTranscript(transcript, urlEvents = null, consoleEve
     .map(w => `[${w.start.toFixed(1)}s] ${w.word}`)
     .join(' ');
 
-  let userMessage = `Video transcript:\n\n${transcript.text}\n\nWith timestamps:\n${wordsWithTime}`;
+  let userMessage = '';
+  if (durationSeconds != null && durationSeconds > 0) {
+    userMessage += `Video duration: ${durationSeconds} seconds\n\n`;
+  }
+  userMessage += `Video transcript:\n\n${transcript.text}\n\nWith timestamps:\n${wordsWithTime}`;
 
   // Append URL events if present
   if (urlEvents && urlEvents.length > 0) {

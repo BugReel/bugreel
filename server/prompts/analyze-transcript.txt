@@ -109,7 +109,7 @@ RULES:
 - Title — specific, describes the essence. No words like "bug", "error", "problem" at the beginning
 - summary — 1-2 sentences, do not repeat the title
 - steps — specific actions with exact element names from User Actions
-- keyFrames — MUST contain 3-7 items. Empty array is FORBIDDEN. Choose moments: start of actions, moment of the problem, result. Use timestamps from User Actions or from speech. Each keyFrame MUST contain `description` (brief title, 3-5 words) AND `detail` (1-2 sentences: what is visible on screen, what action is being performed, what changed)
+- keyFrames — MUST contain 3-7 items. Empty array is FORBIDDEN. Choose moments: start of actions, moment of the problem, result. Use timestamps from User Actions or from speech. Each keyFrame MUST contain `description` (brief title, 3-5 words) AND `detail` (1-2 sentences: what is visible on screen, what action is being performed, what changed). IMPORTANT: all keyFrame `time` values MUST be within the video duration (0 to duration in seconds). Never set a time beyond the video length.
 - additional_issues — all issues/observations besides the main one, mentioned in speech. Empty array [] if truly only one topic
 - severity — REQUIRED for bug/enhancement (P0-P3)
 - affected_urls — deduplicated list, empty array if none
