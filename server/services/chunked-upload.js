@@ -4,6 +4,7 @@ import path from 'path';
 import { getDB, generateRecordingId } from '../db.js';
 import { config } from '../config.js';
 import { enqueuePipeline } from './pipeline.js';
+import { concatRecorderSegments } from './ffmpeg.js';
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB
 const SESSION_TTL_HOURS = 24;
@@ -101,7 +102,7 @@ export function uploadChunk(uploadId, chunkIndex, chunkBuffer) {
 /**
  * Merge all chunks into the final video file, create a recording, and enqueue pipeline.
  */
-export function completeUpload(uploadId) {
+export async function completeUpload(uploadId) {
   const db = getDB();
   const session = db.prepare('SELECT * FROM upload_sessions WHERE id = ?').get(uploadId);
   if (!session) throw Object.assign(new Error('Upload session not found'), { statusCode: 404 });
@@ -137,6 +138,12 @@ export function completeUpload(uploadId) {
   }
   writeStream.end();
 
+  // Wait for stream to flush before we try to concat or stat the file
+  await new Promise((resolve, reject) => {
+    writeStream.on('finish', resolve);
+    writeStream.on('error', reject);
+  });
+
   // Verify size
   if (totalBytesWritten !== session.total_size) {
     // Cleanup on mismatch
@@ -149,28 +156,52 @@ export function completeUpload(uploadId) {
     );
   }
 
+  // Parse session metadata once — we need recorderSegmentSizes BEFORE inserting
+  // the recording so file_size_bytes reflects the post-concat size.
+  let sessionMeta = null;
+  if (session.metadata_json) {
+    try { sessionMeta = JSON.parse(session.metadata_json); } catch { /* ignore */ }
+  }
+
+  // Stitch multi-segment recordings (encoder auto-restarted mid-capture) into
+  // a single valid WebM. No-op for single-segment uploads.
+  const segSizes = sessionMeta && Array.isArray(sessionMeta.recorderSegmentSizes)
+    ? sessionMeta.recorderSegmentSizes
+    : null;
+  let finalBytes = totalBytesWritten;
+  if (segSizes && segSizes.length > 1) {
+    console.log(`[chunked-upload ${recordingId}] concat ${segSizes.length} recorder segments, sizes=`, segSizes);
+    try {
+      await concatRecorderSegments(finalPath, segSizes);
+      finalBytes = fs.statSync(finalPath).size;
+    } catch (err) {
+      fs.rmSync(recordingDir, { recursive: true, force: true });
+      db.prepare("UPDATE upload_sessions SET status = 'failed', error_message = ? WHERE id = ?")
+        .run(`concat failed: ${err.message}`, uploadId);
+      throw Object.assign(new Error(`concat failed: ${err.message}`), { statusCode: 500 });
+    }
+  }
+
   // Create recording in DB
   const shareToken = crypto.randomUUID();
   db.prepare(`
     INSERT INTO recordings (id, author, video_filename, file_size_bytes, status, share_token)
     VALUES (?, ?, 'video.webm', ?, 'uploaded', ?)
-  `).run(recordingId, session.author, totalBytesWritten, shareToken);
+  `).run(recordingId, session.author, finalBytes, shareToken);
 
   // Save metadata (url_events, console_events, etc.)
-  if (session.metadata_json) {
-    try {
-      const meta = JSON.parse(session.metadata_json);
-      db.prepare(`UPDATE recordings SET url_events_json = ?, metadata_json = ?, console_events_json = ?, action_events_json = ?, manual_markers_json = ?, trim_start = ?, trim_end = ?, segments_json = ? WHERE id = ?`)
-        .run(
-          meta.url_events || null, meta.metadata || null,
-          meta.console_events || null, meta.action_events || null,
-          meta.manual_markers || null,
-          meta.trim_start ? parseFloat(meta.trim_start) : null,
-          meta.trim_end ? parseFloat(meta.trim_end) : null,
-          meta.segments || null,
-          recordingId,
-        );
-    } catch { /* ignore parse errors */ }
+  if (sessionMeta) {
+    const meta = sessionMeta;
+    db.prepare(`UPDATE recordings SET url_events_json = ?, metadata_json = ?, console_events_json = ?, action_events_json = ?, manual_markers_json = ?, trim_start = ?, trim_end = ?, segments_json = ? WHERE id = ?`)
+      .run(
+        meta.url_events || null, meta.metadata || null,
+        meta.console_events || null, meta.action_events || null,
+        meta.manual_markers || null,
+        meta.trim_start ? parseFloat(meta.trim_start) : null,
+        meta.trim_end ? parseFloat(meta.trim_end) : null,
+        meta.segments || null,
+        recordingId,
+      );
   }
 
   // Mark session completed

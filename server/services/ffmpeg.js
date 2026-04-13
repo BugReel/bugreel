@@ -143,6 +143,78 @@ export async function trimVideo(videoPath, startSec, endSec) {
 }
 
 /**
+ * Stitch a multi-segment recording emitted by the extension's segmented
+ * MediaRecorder. The client uploads the raw concatenation of N independent
+ * WebM documents (each with its own EBML header) as a single file; most
+ * players read the first segment's duration and ignore the rest. This
+ * splits the file back by byte offsets, runs ffmpeg's concat demuxer with
+ * stream-copy (no re-encode), and replaces the original with a single
+ * conformant WebM.
+ *
+ * No-op for single-segment uploads.
+ *
+ * @param {string} videoPath - path to raw uploaded WebM
+ * @param {number[]} segmentSizes - byte size of each segment, in order
+ */
+export async function concatRecorderSegments(videoPath, segmentSizes) {
+  if (!Array.isArray(segmentSizes) || segmentSizes.length < 2) return;
+
+  const totalExpected = segmentSizes.reduce((a, b) => a + b, 0);
+  const actualSize = fs.statSync(videoPath).size;
+  if (totalExpected !== actualSize) {
+    throw new Error(
+      `concatRecorderSegments: segment sizes sum to ${totalExpected} but file is ${actualSize} bytes`
+    );
+  }
+
+  const dir = path.dirname(videoPath);
+  const segFiles = [];
+  const listPath = path.join(dir, 'recorder_concat_list.txt');
+  const outPath = videoPath.replace(/\.webm$/, '.recjoined.webm');
+
+  try {
+    // Split the raw upload into per-segment files so ffmpeg sees N valid
+    // WebM documents instead of one malformed one.
+    const fd = fs.openSync(videoPath, 'r');
+    try {
+      let offset = 0;
+      for (let i = 0; i < segmentSizes.length; i++) {
+        const size = segmentSizes[i];
+        const segPath = path.join(dir, `recseg_${i}.webm`);
+        const buf = Buffer.allocUnsafe(size);
+        let read = 0;
+        while (read < size) {
+          const n = fs.readSync(fd, buf, read, size - read, offset + read);
+          if (n === 0) throw new Error(`unexpected EOF at segment ${i}`);
+          read += n;
+        }
+        fs.writeFileSync(segPath, buf);
+        segFiles.push(segPath);
+        offset += size;
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+
+    fs.writeFileSync(listPath, segFiles.map(f => `file '${f}'`).join('\n'));
+
+    // Stream copy — all segments share codec settings (same MediaRecorder opts).
+    await execAsync(
+      `ffmpeg -y -f concat -safe 0 -i "${listPath}" -c copy "${outPath}"`,
+      { timeout: 300000 }
+    );
+
+    fs.renameSync(outPath, videoPath);
+  } catch (err) {
+    try { fs.unlinkSync(outPath); } catch {}
+    throw new Error(`concatRecorderSegments failed: ${err.stderr || err.message}`);
+  } finally {
+    for (const f of segFiles) { try { fs.unlinkSync(f); } catch {} }
+    try { fs.unlinkSync(listPath); } catch {}
+  }
+}
+
+/**
  * Extract multiple segments and concatenate them (stream copy, no re-encoding).
  * Used for trim + middle cuts. Replaces original file.
  * @param {string} videoPath - path to source video

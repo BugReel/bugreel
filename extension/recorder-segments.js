@@ -124,15 +124,18 @@
       stopWatchdog();
       if (!onFinalize) return;
       const chunks = [];
-      let nonEmpty = 0;
+      const segmentSizes = [];
       for (const seg of state.segments) {
-        if (seg.length > 0) nonEmpty++;
-        for (const c of seg) chunks.push(c);
+        if (seg.length === 0) continue;
+        let segSize = 0;
+        for (const c of seg) { chunks.push(c); segSize += c.size; }
+        segmentSizes.push(segSize);
       }
       try {
         onFinalize({
           chunks,
-          segmentCount: nonEmpty,
+          segmentCount: segmentSizes.length,
+          segmentSizes,  // byte size of each non-empty segment, in order
           mimeType: (state.recorder && state.recorder.mimeType) || mimeType,
         });
       } catch (e) {

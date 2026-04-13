@@ -9,6 +9,7 @@
 let segmentCtl = null;               // SegmentController from recorder-segments.js
 let recordedChunks = [];              // populated at finalize time by the controller
 let recordedSegmentCount = 0;          // how many MediaRecorder lifecycles contributed
+let recordedSegmentSizes = [];         // byte size of each segment (for server-side concat demux)
 let recordedMimeType = '';            // captured from the final recorder for the output Blob
 let captureStream = null;
 let micStream = null;
@@ -340,6 +341,7 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
   // recording. See docs/recording-resilience.md.
   recordedChunks = [];
   recordedSegmentCount = 0;
+  recordedSegmentSizes = [];
   recordedMimeType = '';
   segmentCtl = createSegmentController({
     mimeType: getSupportedMimeType(),
@@ -351,9 +353,10 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
       console.warn('[BugReel] MediaRecorder auto-restarted — segment', segIdx);
       chrome.runtime.sendMessage({ type: 'recorder-restarted', segment: segIdx }).catch(() => {});
     },
-    onFinalize: ({ chunks, segmentCount, mimeType }) => {
+    onFinalize: ({ chunks, segmentCount, segmentSizes, mimeType }) => {
       recordedChunks = chunks;
       recordedSegmentCount = segmentCount;
+      recordedSegmentSizes = segmentSizes || [];
       recordedMimeType = mimeType || 'video/webm';
       handleRecordingFinished();
     },
@@ -616,11 +619,13 @@ async function handleRecordingFinished() {
 
   const blob = new Blob(recordedChunks, { type: recordedMimeType || 'video/webm' });
   const segmentCount = recordedSegmentCount;
+  const segmentSizes = recordedSegmentSizes.slice();
   recordedChunks = [];
   recordedSegmentCount = 0;
+  recordedSegmentSizes = [];
   console.log('[BugReel] Blob created: ' + (blob.size / 1048576).toFixed(1) + 'MB, segments=' + segmentCount);
   if (segmentCount > 1) {
-    console.warn('[BugReel] Multi-segment recording (' + segmentCount + ' segments) — encoder was auto-restarted during capture');
+    console.warn('[BugReel] Multi-segment recording (' + segmentCount + ' segments) — encoder was auto-restarted during capture. Sizes:', segmentSizes);
   }
 
   try {
@@ -630,6 +635,7 @@ async function handleRecordingFinished() {
       const extras = pendingAutoUpload;
       pendingAutoUpload = null;
       extras.segmentCount = segmentCount;
+      extras.recorderSegmentSizes = segmentSizes;
       await directUpload(blob, extras);
     } else {
       try {
@@ -638,6 +644,8 @@ async function handleRecordingFinished() {
           author: pendingAuthor,
           timestamp: Date.now(),
           size: blob.size,
+          segmentCount,
+          segmentSizes,
         });
         console.log('[BugReel] Blob saved to IDB OK');
         chrome.runtime.sendMessage({ type: 'blob-saved', fileSize: blob.size }).catch(() => {});
@@ -715,6 +723,9 @@ async function directUpload(blob, extras) {
   if (extras.actionEvents) formData.append('action_events', extras.actionEvents);
   if (extras.manualMarkers) formData.append('manual_markers', extras.manualMarkers);
   if (extras.metadata) formData.append('metadata', extras.metadata);
+  if (extras.recorderSegmentSizes && extras.recorderSegmentSizes.length > 1) {
+    formData.append('recorder_segment_sizes', JSON.stringify(extras.recorderSegmentSizes));
+  }
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -770,6 +781,8 @@ async function doUpload(extras = {}) {
   }
 
   const { blob, serverUrl, author } = data;
+  const segmentCount = data.segmentCount || 1;
+  const segmentSizes = Array.isArray(data.segmentSizes) ? data.segmentSizes : [];
 
   chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
 
@@ -785,6 +798,7 @@ async function doUpload(extras = {}) {
     // Include segments in metadata for chunked upload
     const metadata = { ...extras };
     if (extras.segments) metadata.segments = JSON.stringify(extras.segments);
+    if (segmentSizes.length > 1) metadata.recorderSegmentSizes = segmentSizes;
 
     const ctl = resetUploadController();
     chrome.runtime.sendMessage({ type: 'upload-chunked-started' }).catch(() => {});
@@ -828,6 +842,7 @@ async function doUpload(extras = {}) {
   if (extras.manualMarkers) formData.append('manual_markers', extras.manualMarkers);
   if (extras.metadata) formData.append('metadata', extras.metadata);
   if (extras.segments) formData.append('segments', JSON.stringify(extras.segments));
+  if (segmentSizes.length > 1) formData.append('recorder_segment_sizes', JSON.stringify(segmentSizes));
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -872,6 +887,9 @@ async function doUpload(extras = {}) {
     if (durationSec) {
       xhr.setRequestHeader('X-Recording-Duration', String(durationSec));
     }
+    if (segmentCount > 1) {
+      xhr.setRequestHeader('X-Recording-Segments', String(segmentCount));
+    }
     xhr.send(formData);
   });
 }
@@ -883,6 +901,7 @@ async function doDiscard() {
   segmentCtl = null;
   recordedChunks = [];
   recordedSegmentCount = 0;
+  recordedSegmentSizes = [];
   releaseStreams();
   await deleteRecordingBlob();
 }
@@ -1077,4 +1096,24 @@ function showFallbackButton(params, label, hint) {
   wrapper.style.textAlign = 'center';
   wrapper.appendChild(btn);
   hint?.parentNode?.appendChild(wrapper);
+}
+
+// Dev-only: force the segment watchdog to restart the encoder RIGHT NOW.
+// Use from the offscreen document's devtools console during an active
+// recording to reproduce the Chromium truncation bug's recovery path
+// without waiting for (or inducing) a real 15-second stall.
+if (typeof self !== 'undefined') {
+  self.__bugreelForceRestart = function () {
+    if (!segmentCtl) { console.warn('[BugReel/dev] No active recording'); return false; }
+    const s = segmentCtl._state;
+    if (!s || !s.recorder || s.recorder.state !== 'recording') {
+      console.warn('[BugReel/dev] Recorder not in "recording" state');
+      return false;
+    }
+    console.warn('[BugReel/dev] Forcing encoder restart (simulating Chromium stall)');
+    s.lastRestartAt = 0;
+    s.lastDataTs = 0;
+    segmentCtl._tickWatchdog();
+    return true;
+  };
 }

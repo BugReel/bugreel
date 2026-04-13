@@ -42,9 +42,9 @@ router.put('/upload/:id/chunk/:index', (req, res) => {
 });
 
 // POST /api/upload/:id/complete — merge chunks into final file
-router.post('/upload/:id/complete', (req, res) => {
+router.post('/upload/:id/complete', async (req, res) => {
   try {
-    const result = completeUpload(req.params.id);
+    const result = await completeUpload(req.params.id);
     res.json({ success: true, id: result.recording_id, status: result.status });
   } catch (err) {
     res.status(err.statusCode || 500).json({ success: false, error: err.message });

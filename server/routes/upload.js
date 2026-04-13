@@ -6,6 +6,7 @@ import fs from 'fs';
 import { config } from '../config.js';
 import { getDB, generateRecordingId } from '../db.js';
 import { enqueuePipeline, getQueueStatus } from '../services/pipeline.js';
+import { concatRecorderSegments } from '../services/ffmpeg.js';
 
 const router = Router();
 
@@ -47,8 +48,26 @@ router.post('/upload', (req, res, next) => {
     }
     next();
   });
-}, (req, res) => {
+}, async (req, res) => {
   const id = req.recordingId;
+
+  // Stitch multi-segment uploads (encoder auto-restarted mid-recording) into
+  // a single valid WebM before the pipeline touches the file. Must run before
+  // the DB insert's file_size_bytes is finalized.
+  const rawSizes = req.body.recorder_segment_sizes;
+  if (rawSizes) {
+    try {
+      const sizes = JSON.parse(rawSizes);
+      if (Array.isArray(sizes) && sizes.length > 1) {
+        console.log(`[upload ${id}] concat ${sizes.length} recorder segments, sizes=`, sizes);
+        await concatRecorderSegments(req.file.path, sizes);
+        req.file.size = fs.statSync(req.file.path).size;
+      }
+    } catch (err) {
+      console.error(`[upload ${id}] concat failed:`, err.message);
+      return res.status(500).json({ error: 'concat_failed', message: err.message });
+    }
+  }
   // Prefer user identity from Cloud Layer proxy headers, fall back to form body
   const author = req.headers['x-user-name'] || req.headers['x-user-email'] || req.body.author || 'Unknown';
 
