@@ -709,7 +709,12 @@ chrome.runtime.onMessage.addListener((msg) => {
     showState('ready');
   }
   if (msg.type === 'upload-started') setStatus('working', t('status_uploading', 'Uploading...'));
-  if (msg.type === 'upload-progress') setStatus('working', t('status_uploadingPercent', 'Uploading') + ` ${msg.percent}%`);
+  if (msg.type === 'upload-progress') {
+    let label;
+    try { label = chrome.i18n.getMessage('status_uploadingPercent', [String(msg.percent)]); } catch { label = ''; }
+    if (!label) label = `Uploading ${msg.percent}%`;
+    setStatus('working', label);
+  }
   if (msg.type === 'upload-done') {
     showState('idle');
     $('status-bar-wrap').classList.remove('hidden');

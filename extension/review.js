@@ -396,7 +396,7 @@ function setupButtons() {
   btnUpload.addEventListener('click', async () => {
     btnUpload.disabled = true;
     btnDiscard.disabled = true;
-    progressContainer.style.display = '';
+    progressContainer.style.display = 'block';
     statusEl.textContent = t('review_uploading', 'Uploading... Link will be copied to clipboard when done.');
     statusEl.className = 'status';
 
