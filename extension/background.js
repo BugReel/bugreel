@@ -31,6 +31,9 @@ let capturedTabId = null;
 let screenInfo = null;
 let crmProfile = null;
 let recorderTabId = null; // Firefox: tab ID for recorder page
+let offscreenLifecycleLock = Promise.resolve(); // serialize create/close to avoid the
+                                                 // "closed before fully loading" race when
+                                                 // the user double-taps Start
 
 // Restore state from storage on service worker wake-up
 async function ensureStateLoaded() {
@@ -231,19 +234,21 @@ function waitForRecorderReady() {
 
 async function ensureRecorderContext() {
   if (HAS_OFFSCREEN) {
-    // Chrome: offscreen document
-    try {
-      const ctx = await chrome.runtime.getContexts({
-        contextTypes: ['OFFSCREEN_DOCUMENT'],
-        documentUrls: [chrome.runtime.getURL('recorder.html')]
+    offscreenLifecycleLock = offscreenLifecycleLock.then(async () => {
+      try {
+        const ctx = await chrome.runtime.getContexts({
+          contextTypes: ['OFFSCREEN_DOCUMENT'],
+          documentUrls: [chrome.runtime.getURL('recorder.html')]
+        });
+        if (ctx.length > 0) return;
+      } catch {}
+      await chrome.offscreen.createDocument({
+        url: 'recorder.html',
+        reasons: ['USER_MEDIA', 'DISPLAY_MEDIA'],
+        justification: 'Recording capture stream with MediaRecorder'
       });
-      if (ctx.length > 0) return;
-    } catch {}
-    await chrome.offscreen.createDocument({
-      url: 'recorder.html',
-      reasons: ['USER_MEDIA', 'DISPLAY_MEDIA'],
-      justification: 'Recording capture stream with MediaRecorder'
     });
+    return offscreenLifecycleLock;
   } else {
     // Firefox: background tab with recorder page
     if (recorderTabId) {
@@ -273,7 +278,10 @@ async function closeRecorderContext() {
     recorderTabId = null;
   } else if (HAS_OFFSCREEN) {
     // Chrome: close offscreen document to release mic/streams
-    try { await chrome.offscreen.closeDocument(); } catch {}
+    offscreenLifecycleLock = offscreenLifecycleLock.then(async () => {
+      try { await chrome.offscreen.closeDocument(); } catch {}
+    });
+    return offscreenLifecycleLock;
   }
 }
 
@@ -643,19 +651,22 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
 
   // Create recorder context
   if (HAS_OFFSCREEN) {
-    // Chrome: close existing offscreen first, then create new one
-    try {
-      await chrome.offscreen.closeDocument();
-      await new Promise(r => setTimeout(r, 100)); // Wait for cleanup
-    } catch {}
+    // Chrome: close existing offscreen first, then create new one.
+    // Serialized via offscreenLifecycleLock so a second start-click can't
+    // interleave its close+create with ours and trigger
+    // "Offscreen document closed before fully loading".
     const reasons = (mode === 'desktop' || !streamId)
       ? ['USER_MEDIA', 'DISPLAY_MEDIA']
       : ['USER_MEDIA'];
-    await chrome.offscreen.createDocument({
-      url: 'recorder.html',
-      reasons,
-      justification: 'Recording capture stream with MediaRecorder'
+    offscreenLifecycleLock = offscreenLifecycleLock.then(async () => {
+      try { await chrome.offscreen.closeDocument(); } catch {}
+      await chrome.offscreen.createDocument({
+        url: 'recorder.html',
+        reasons,
+        justification: 'Recording capture stream with MediaRecorder'
+      });
     });
+    await offscreenLifecycleLock;
   } else {
     // Firefox: create recorder tab (active: true for getDisplayMedia permission)
     if (recorderTabId) {

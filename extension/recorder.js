@@ -6,8 +6,10 @@
  * Firefox (all modes): getDisplayMedia() — user selects source via browser picker
  */
 
-let mediaRecorder = null;
-let recordedChunks = [];
+let segmentCtl = null;               // SegmentController from recorder-segments.js
+let recordedChunks = [];              // populated at finalize time by the controller
+let recordedSegmentCount = 0;          // how many MediaRecorder lifecycles contributed
+let recordedMimeType = '';            // captured from the final recorder for the output Blob
 let captureStream = null;
 let micStream = null;
 let mixedStream = null;
@@ -49,6 +51,10 @@ let recorderTimerInterval = null;
 let MAX_DURATION_MS = 10 * 60 * 1000;
 let MAX_VIDEO_WIDTH = 1280;
 
+// Segment controller tunables — see docs/recording-resilience.md.
+const SEGMENT_TIMESLICE_MS = 5000;
+const SEGMENT_STALL_MS = 15000;
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.target !== 'offscreen') return;
 
@@ -70,7 +76,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
 
     case 'offscreen-finish':
-      console.log('[BugReel] Received offscreen-finish, autoUpload=' + !!message.autoUpload, 'mediaRecorder state=' + mediaRecorder?.state);
+      console.log('[BugReel] Received offscreen-finish, autoUpload=' + !!message.autoUpload, 'recorder state=' + (segmentCtl && segmentCtl.state()));
       if (message.autoUpload) {
         pendingAutoUpload = {
           urlEvents: message.urlEvents,
@@ -329,20 +335,30 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     combinedStream = new MediaStream([finalVideoTrack]);
   }
 
-  // MediaRecorder — higher bitrate when webcam compositing is active (canvas re-encodes)
+  // Segmented MediaRecorder — detects encoder stalls and auto-restarts on the
+  // same MediaStream, so a Chromium-bug-killed encoder doesn't truncate the
+  // recording. See docs/recording-resilience.md.
   recordedChunks = [];
-  mediaRecorder = new MediaRecorder(combinedStream, {
+  recordedSegmentCount = 0;
+  recordedMimeType = '';
+  segmentCtl = createSegmentController({
     mimeType: getSupportedMimeType(),
-    videoBitsPerSecond: hasWebcam ? 4_000_000 : 1_500_000
+    videoBitsPerSecond: hasWebcam ? 4_000_000 : 1_500_000,
+    timesliceMs: SEGMENT_TIMESLICE_MS,
+    stallMs: SEGMENT_STALL_MS,
+    log: (...args) => console.log('[BugReel/seg]', ...args),
+    onRestart: (segIdx) => {
+      console.warn('[BugReel] MediaRecorder auto-restarted — segment', segIdx);
+      chrome.runtime.sendMessage({ type: 'recorder-restarted', segment: segIdx }).catch(() => {});
+    },
+    onFinalize: ({ chunks, segmentCount, mimeType }) => {
+      recordedChunks = chunks;
+      recordedSegmentCount = segmentCount;
+      recordedMimeType = mimeType || 'video/webm';
+      handleRecordingFinished();
+    },
   });
-
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data && e.data.size > 0) recordedChunks.push(e.data);
-  };
-
-  mediaRecorder.onstop = () => handleRecordingFinished();
-
-  mediaRecorder.start(1000);
+  segmentCtl.start(combinedStream);
   maxDurationRemaining = MAX_DURATION_MS;
   recordingStartedAt = Date.now();
   startMaxDurationTimer();
@@ -504,8 +520,8 @@ function stopWebcamPiP() {
 }
 
 function pauseRecording() {
-  if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
-  mediaRecorder.pause();
+  if (!segmentCtl || segmentCtl.state() !== 'recording') return;
+  segmentCtl.pause();
   clearMaxDurationTimer();
   stopMicLevelMonitor();
   stopRecorderWindowTimer();
@@ -513,8 +529,8 @@ function pauseRecording() {
 }
 
 function resumeRecording() {
-  if (!mediaRecorder || mediaRecorder.state !== 'paused') return;
-  mediaRecorder.resume();
+  if (!segmentCtl || segmentCtl.state() !== 'paused') return;
+  segmentCtl.resume();
   startMaxDurationTimer();
   if (micStream) startMicLevelMonitor(micStream);
   startRecorderWindowTimer();
@@ -525,8 +541,8 @@ function finishRecording() {
   clearMaxDurationTimer();
   stopMicLevelMonitor();
   stopRecorderWindowTimer();
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
+  if (segmentCtl && segmentCtl.state() !== 'inactive') {
+    segmentCtl.finish();   // triggers onFinalize → handleRecordingFinished
   } else {
     releaseStreams();
   }
@@ -577,7 +593,7 @@ function releaseStreams() {
 function startMaxDurationTimer() {
   clearMaxDurationTimer();
   maxDurationTimer = setTimeout(() => {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
+    if (segmentCtl && segmentCtl.state() === 'recording') {
       finishRecording();
       chrome.runtime.sendMessage({ type: 'recording-stopped-max' }).catch(() => {});
     }
@@ -589,7 +605,7 @@ function clearMaxDurationTimer() {
 }
 
 async function handleRecordingFinished() {
-  console.log('[BugReel] handleRecordingFinished: chunks=' + recordedChunks.length);
+  console.log('[BugReel] handleRecordingFinished: chunks=' + recordedChunks.length + ' segments=' + recordedSegmentCount);
   updateRecorderWindowUI('saving');
 
   if (recordedChunks.length === 0) {
@@ -598,9 +614,14 @@ async function handleRecordingFinished() {
     return;
   }
 
-  const blob = new Blob(recordedChunks, { type: 'video/webm' });
+  const blob = new Blob(recordedChunks, { type: recordedMimeType || 'video/webm' });
+  const segmentCount = recordedSegmentCount;
   recordedChunks = [];
-  console.log('[BugReel] Blob created: ' + (blob.size / 1048576).toFixed(1) + 'MB');
+  recordedSegmentCount = 0;
+  console.log('[BugReel] Blob created: ' + (blob.size / 1048576).toFixed(1) + 'MB, segments=' + segmentCount);
+  if (segmentCount > 1) {
+    console.warn('[BugReel] Multi-segment recording (' + segmentCount + ' segments) — encoder was auto-restarted during capture');
+  }
 
   try {
     if (pendingAutoUpload) {
@@ -608,6 +629,7 @@ async function handleRecordingFinished() {
       updateRecorderWindowUI('uploading');
       const extras = pendingAutoUpload;
       pendingAutoUpload = null;
+      extras.segmentCount = segmentCount;
       await directUpload(blob, extras);
     } else {
       try {
@@ -625,7 +647,7 @@ async function handleRecordingFinished() {
       }
     }
   } finally {
-    mediaRecorder = null;
+    segmentCtl = null;
     releaseStreams();
   }
 }
@@ -730,6 +752,9 @@ async function directUpload(blob, extras) {
     }
     if (durationSec) {
       xhr.setRequestHeader('X-Recording-Duration', String(durationSec));
+    }
+    if (extras.segmentCount && extras.segmentCount > 1) {
+      xhr.setRequestHeader('X-Recording-Segments', String(extras.segmentCount));
     }
     xhr.send(formData);
   });
@@ -854,11 +879,10 @@ async function doUpload(extras = {}) {
 async function doDiscard() {
   clearMaxDurationTimer();
   stopRecorderWindowTimer();
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-  }
-  mediaRecorder = null;
+  if (segmentCtl) segmentCtl.discard();
+  segmentCtl = null;
   recordedChunks = [];
+  recordedSegmentCount = 0;
   releaseStreams();
   await deleteRecordingBlob();
 }
