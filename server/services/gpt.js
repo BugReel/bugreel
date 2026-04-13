@@ -67,9 +67,14 @@ export async function analyzeTranscript(transcript, urlEvents = null, consoleEve
     userMessage += `\n\n--- User Actions (UI events, not user speech) ---\n${actionLines}`;
   }
 
-  let res;
-  try {
-    res = await fetch(config.gpt.url, {
+  const callGpt = async (extraNudge) => {
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ];
+    if (extraNudge) messages.push({ role: 'user', content: extraNudge });
+
+    const res = await fetch(config.gpt.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,34 +82,62 @@ export async function analyzeTranscript(transcript, urlEvents = null, consoleEve
       },
       body: JSON.stringify({
         model: config.gpt.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
-        ],
+        messages,
         response_format: { type: 'json_object' },
       }),
     });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`GPT error ${res.status}: ${body}`);
+    }
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    try {
+      return JSON.parse(content);
+    } catch {
+      return null;
+    }
+  };
+
+  let analysis;
+  try {
+    analysis = await callGpt();
   } catch (err) {
     throw new Error(`GPT request failed: ${err.message}`);
   }
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`GPT error ${res.status}: ${body}`);
+  if (!analysis) {
+    return { type: 'bug', title: transcript.title || 'Untitled', steps: [], keyFrames: [] };
   }
 
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content;
-
-  try {
-    return JSON.parse(content);
-  } catch {
-    // Fallback if GPT returned non-JSON
-    return {
-      type: 'bug',
-      title: transcript.title || 'Untitled',
-      steps: [],
-      keyFrames: [],
-    };
+  // Retry once if GPT ignored the "keyFrames MUST contain 3-7 items" rule.
+  const hasKeyFrames = Array.isArray(analysis.keyFrames) && analysis.keyFrames.length > 0;
+  if (!hasKeyFrames) {
+    try {
+      const retry = await callGpt(
+        'Your previous response was missing the required `keyFrames` field. Return the SAME analysis again as strict JSON, this time including `keyFrames` with 3-7 items. Each item must have `time` (seconds, within the video duration), `description` (3-5 words), and `detail` (1-2 sentences). Do not change anything else.'
+      );
+      if (retry && Array.isArray(retry.keyFrames) && retry.keyFrames.length > 0) {
+        analysis.keyFrames = retry.keyFrames;
+      }
+    } catch {
+      // Retry failed — fall through to deterministic fallback below.
+    }
   }
+
+  // Deterministic fallback: evenly-spaced timestamps so the card always has frames.
+  if (!Array.isArray(analysis.keyFrames) || analysis.keyFrames.length === 0) {
+    const dur = Number(durationSeconds) || 0;
+    if (dur > 0) {
+      const count = dur < 30 ? 3 : dur < 180 ? 4 : 5;
+      analysis.keyFrames = Array.from({ length: count }, (_, i) => {
+        const time = Math.max(0, Math.min(dur - 0.1, (dur * (i + 1)) / (count + 1)));
+        return { time, description: `Момент ${i + 1}`, detail: '' };
+      });
+    } else {
+      analysis.keyFrames = [];
+    }
+  }
+
+  return analysis;
 }
