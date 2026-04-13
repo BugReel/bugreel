@@ -20,6 +20,8 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 /* ── State ── */
 let state = 'idle';
+let uploadChunked = false; // true while a chunked upload is in progress (for UI re-hydration)
+let uploadPaused = false;
 let urlEvents = [];
 let consoleEvents = [];
 let actionEvents = [];
@@ -496,6 +498,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         pausedElapsed: s.pausedElapsed || 0,
         pausedAt: s.pausedAt,
         isFirefox: IS_FIREFOX,
+        uploadChunked,
+        uploadPaused,
       });
     });
     return true;
@@ -560,6 +564,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     if (message.type === 'upload-error' && state === 'uploading') {
       setState('ready');
+    }
+    if (message.type === 'upload-chunked-started') {
+      uploadChunked = true;
+      uploadPaused = false;
+    }
+    if (message.type === 'upload-pause-state') {
+      uploadPaused = !!message.paused;
+    }
+    if (message.type === 'upload-done' || message.type === 'upload-error' || message.type === 'upload-cancelled') {
+      uploadChunked = false;
+      uploadPaused = false;
     }
     if (message.type === 'upload-cancelled') {
       setState('idle');

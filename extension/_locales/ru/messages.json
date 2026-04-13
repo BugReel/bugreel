@@ -329,6 +329,12 @@
       "PERCENT": { "content": "$1", "example": "42" }
     }
   },
+  "status_uploadPaused": {
+    "message": "Загрузка на паузе"
+  },
+  "status_uploadCancelled": {
+    "message": "Загрузка отменена"
+  },
   "status_saving": {
     "message": "Сохранение записи..."
   },

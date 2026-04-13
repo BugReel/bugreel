@@ -157,7 +157,19 @@ let timerPausedElapsed = 0;
   } else if (st === 'uploading') {
     showState('idle');
     $('status-bar-wrap').classList.remove('hidden');
-    setStatus('working', t('status_uploadingToServer', 'Uploading to server...'));
+    setStatus('working', status.uploadPaused
+      ? t('status_uploadPaused', 'Загрузка на паузе')
+      : t('status_uploadingToServer', 'Uploading to server...'));
+    if (status.uploadChunked) {
+      $('upload-ctl').classList.remove('hidden');
+      if (status.uploadPaused) {
+        $('ctl-pause').classList.add('hidden');
+        $('ctl-resume').classList.remove('hidden');
+      } else {
+        $('ctl-resume').classList.add('hidden');
+        $('ctl-pause').classList.remove('hidden');
+      }
+    }
   } else if (st === 'ready') {
     showState('ready');
   } else {
@@ -665,6 +677,22 @@ $('btn-discard').addEventListener('click', async () => {
   showState('idle');
 });
 
+$('ctl-pause').addEventListener('click', () => {
+  $('ctl-pause').disabled = true;
+  chrome.runtime.sendMessage({ type: 'upload-pause' });
+});
+$('ctl-resume').addEventListener('click', () => {
+  $('ctl-resume').disabled = true;
+  chrome.runtime.sendMessage({ type: 'upload-resume' });
+});
+$('ctl-cancel').addEventListener('click', () => {
+  if (!confirm(t('review_confirmCancelUpload', 'Отменить загрузку? Часть уже загруженных данных будет потеряна.'))) return;
+  $('ctl-cancel').disabled = true;
+  $('ctl-pause').disabled = true;
+  $('ctl-resume').disabled = true;
+  chrome.runtime.sendMessage({ type: 'upload-cancel' });
+});
+
 /* --- Messages --- */
 
 chrome.runtime.onMessage.addListener((msg) => {
@@ -715,7 +743,33 @@ chrome.runtime.onMessage.addListener((msg) => {
     if (!label) label = `Uploading ${msg.percent}%`;
     setStatus('working', label);
   }
+  if (msg.type === 'upload-chunked-started') {
+    $('upload-ctl').classList.remove('hidden');
+    $('ctl-pause').classList.remove('hidden');
+    $('ctl-resume').classList.add('hidden');
+    $('ctl-pause').disabled = false;
+    $('ctl-resume').disabled = false;
+    $('ctl-cancel').disabled = false;
+  }
+  if (msg.type === 'upload-pause-state') {
+    if (msg.paused) {
+      $('ctl-pause').classList.add('hidden');
+      $('ctl-resume').classList.remove('hidden');
+      $('ctl-resume').disabled = false;
+      setStatus('working', t('status_uploadPaused', 'Загрузка на паузе'));
+    } else {
+      $('ctl-resume').classList.add('hidden');
+      $('ctl-pause').classList.remove('hidden');
+      $('ctl-pause').disabled = false;
+    }
+  }
+  if (msg.type === 'upload-cancelled') {
+    $('upload-ctl').classList.add('hidden');
+    setStatus('working', t('status_uploadCancelled', 'Загрузка отменена'));
+    setTimeout(() => $('status-bar-wrap').classList.add('hidden'), 2000);
+  }
   if (msg.type === 'upload-done') {
+    $('upload-ctl').classList.add('hidden');
     showState('idle');
     $('status-bar-wrap').classList.remove('hidden');
     const recUrl = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(msg.recordingId)}`;
@@ -723,7 +777,10 @@ chrome.runtime.onMessage.addListener((msg) => {
     setStatusWithLink('done', t('status_linkCopied', 'Link copied!'), msg.recordingId);
     loadRecentRecordings();
   }
-  if (msg.type === 'upload-error') setStatus('error', msg.error);
+  if (msg.type === 'upload-error') {
+    $('upload-ctl').classList.add('hidden');
+    setStatus('error', msg.error);
+  }
   if (msg.type === 'recording-stopped-max') {
     stopTimer();
     showState('ready');

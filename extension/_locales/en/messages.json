@@ -344,6 +344,12 @@
       "PERCENT": { "content": "$1", "example": "42" }
     }
   },
+  "status_uploadPaused": {
+    "message": "Upload paused"
+  },
+  "status_uploadCancelled": {
+    "message": "Upload cancelled"
+  },
   "status_saving": {
     "message": "Saving recording..."
   },
