@@ -54,18 +54,27 @@ on stop:
 
 ### Failure detection
 
-Three independent signals, any of which triggers a restart:
+Two independent signals trigger a restart; a third is observed for
+diagnostic logging only.
 
-1. **`videoTrack.onmute`** — Chromium fires this when screen capture
-   pauses (window occluded, mute-on-inactivity, GPU hiccup). The track is
-   still `live`, but we won't get useful video until it unmutes. Rather
-   than gamble on unmute, we treat mute as a restart trigger.
-2. **`videoTrack.onended`** — user stopped the system share (Chrome's
+1. **`videoTrack.onended`** — user stopped the system share (Chrome's
    "Stop sharing" button). No recovery possible; finalize with what we
    have.
-3. **Data watchdog** — track wall-clock time since the last
+2. **Data watchdog** — track wall-clock time since the last
    `ondataavailable` that contained non-trivial bytes. If > `STALL_MS`
    (15000) we assume the encoder is stuck even though no event fired.
+3. **`videoTrack.onmute` / `onunmute`** — *logged but not actioned.*
+   Originally we treated mute as a restart trigger (first draft of this
+   doc). That turned out to fragment every recording where the user
+   alt-tabs or the window gets occluded, because Chrome fires mute/unmute
+   many times per session. Each restart produces a fresh WebM EBML
+   header, and a naive concat produces a Blob where the player reads the
+   first segment's duration and ignores the rest — we saw 6-second
+   "recordings" out of 6-minute captures. The watchdog catches the only
+   scenario we actually care about (mute that persists long enough to
+   stall the encoder), so onmute is no longer a trigger. The unmute
+   handler resets `lastDataTs` so the watchdog's clock starts fresh from
+   the moment frames can flow again.
 
 ### Restart flow
 

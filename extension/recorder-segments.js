@@ -60,7 +60,15 @@
       state.stream = stream;
       state.videoTrack = (stream.getVideoTracks && stream.getVideoTracks()[0]) || null;
       if (state.videoTrack && typeof state.videoTrack.addEventListener === 'function') {
-        state.videoTrack.addEventListener('mute', onTrackMute);
+        // NOTE: we intentionally do NOT listen to 'mute' as a restart trigger.
+        // Chromium fires mute on normal occlusions (alt-tab, window behind
+        // another window, brief GPU contention), often many times per minute.
+        // Restarting on each mute would fragment the recording into tiny
+        // segments and naive WebM concat would show only the first segment's
+        // duration in players. The watchdog (no-data-for-stallMs) already
+        // catches mutes that are long enough to actually stall the encoder.
+        state.videoTrack.addEventListener('mute', onTrackMuteLog);
+        state.videoTrack.addEventListener('unmute', onTrackUnmuteLog);
         state.videoTrack.addEventListener('ended', onTrackEnded);
       }
       openSegment();
@@ -132,7 +140,18 @@
       }
     }
 
-    function onTrackMute() { scheduleRestart('mute'); }
+    function onTrackMuteLog() {
+      // Don't restart — the watchdog will catch it if the mute actually
+      // stalls the encoder (> stallMs). Unmutes typically come back fast
+      // enough that no frames are lost to player-visible truncation.
+      log('track muted (not restarting; watchdog will handle genuine stalls)');
+    }
+    function onTrackUnmuteLog() {
+      log('track unmuted');
+      // Reset data watchdog — the clock on "no data" should start from
+      // unmute, not from the last pre-mute frame.
+      state.lastDataTs = now();
+    }
     function onTrackEnded() {
       log('track ended');
       if (!state.recorder || state.recorder.state === 'inactive') { finalize(); return; }

@@ -124,7 +124,7 @@ describe('createSegmentController — segmented MediaRecorder with auto-restart'
     expect(ctl.state()).toBe('inactive');
   });
 
-  it('track mute restarts the recorder on the same stream', () => {
+  it('track mute does NOT restart (it fires too often; watchdog handles genuine stalls)', () => {
     const finalized = [];
     const restarts = [];
     const ctl = createSegmentController(baseOpts({
@@ -136,19 +136,21 @@ describe('createSegmentController — segmented MediaRecorder with auto-restart'
 
     instances[0].emit(2048);
     track.triggerMute();
+    track.triggerMute();
+    track.triggerMute();
 
-    // Controller saw mute → stopped old recorder → restart intent → opened a new one.
-    expect(instances).toHaveLength(2);
-    expect(instances[0].state).toBe('inactive');
-    expect(instances[1].state).toBe('recording');
-    expect(restarts).toEqual([2]);
+    // Mute alone must never fragment the recording — otherwise every
+    // alt-tab / window-occlusion event would split the file into a tiny
+    // segment that naive WebM concat can't stitch back together.
+    expect(instances).toHaveLength(1);
+    expect(instances[0].state).toBe('recording');
+    expect(restarts).toHaveLength(0);
 
-    instances[1].emit(4096);
-    clock += 10_000;
+    instances[0].emit(4096);
     ctl.finish();
 
     expect(finalized).toHaveLength(1);
-    expect(finalized[0].segmentCount).toBe(2);
+    expect(finalized[0].segmentCount).toBe(1);
     expect(finalized[0].chunks).toHaveLength(2);
   });
 
