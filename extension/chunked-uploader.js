@@ -38,8 +38,10 @@ const XHR_TIMEOUT = 30000; // 30s per chunk
 async function chunkedUpload(blob, options = {}) {
   const {
     serverUrl, author, token, durationSec, metadata,
+    controller = { paused: false, cancelled: false },
     onProgress = () => {},
     onChunkComplete = () => {},
+    onPauseStateChange = () => {},
     onError = () => {},
   } = options;
 
@@ -84,10 +86,20 @@ async function chunkedUpload(blob, options = {}) {
       await uploadAllChunks(blob, {
         apiBase, upload_id, token, durationSec,
         totalSize, totalChunks,
-        onProgress, onChunkComplete,
+        controller,
+        serverUrl, author,
+        onProgress, onChunkComplete, onPauseStateChange,
       });
       break; // success
     } catch (err) {
+      if (err && err.__cancelled) {
+        // User cancelled — tell server to discard the partial upload, don't auto-retry
+        try {
+          await apiRequest(`${apiBase}/${upload_id}`, { method: 'DELETE', token });
+        } catch {}
+        await clearState(upload_id);
+        throw err;
+      }
       autoRetryCount++;
       if (autoRetryCount > AUTO_RETRY_MAX) {
         onError(err, true); // canResume=true
@@ -119,7 +131,8 @@ async function chunkedUpload(blob, options = {}) {
  * Upload all remaining chunks for a session.
  */
 async function uploadAllChunks(blob, opts) {
-  const { apiBase, upload_id, token, durationSec, totalSize, totalChunks, onProgress, onChunkComplete } = opts;
+  const { apiBase, upload_id, token, durationSec, totalSize, totalChunks,
+          controller, onProgress, onChunkComplete, onPauseStateChange } = opts;
 
   // Fetch server status to get already-uploaded chunks (for resume)
   let uploadedChunks = [];
@@ -133,8 +146,25 @@ async function uploadAllChunks(blob, opts) {
     }
   } catch { /* start from scratch */ }
 
+  // Emit initial progress so the UI bar doesn't sit at 0% during the init round-trip
+  onProgress(Math.round((bytesUploaded / totalSize) * 100), bytesUploaded, totalSize);
+
+  let wasPaused = false;
+
   for (let i = 0; i < totalChunks; i++) {
     if (uploadedChunks.includes(i)) continue; // already uploaded
+
+    // Honor cancel/pause between chunks
+    if (controller.cancelled) throw cancelledError();
+    if (controller.paused) {
+      if (!wasPaused) { wasPaused = true; onPauseStateChange(true); }
+      while (controller.paused && !controller.cancelled) {
+        await sleep(300);
+      }
+      if (controller.cancelled) throw cancelledError();
+      wasPaused = false;
+      onPauseStateChange(false);
+    }
 
     const start = i * CHUNK_SIZE;
     const end = Math.min(start + CHUNK_SIZE, totalSize);
@@ -145,6 +175,7 @@ async function uploadAllChunks(blob, opts) {
     const result = await uploadChunkWithRetry(chunkBlob, {
       apiBase, upload_id, chunkIndex: i, token, durationSec,
       bytesUploaded, chunkSize, totalSize,
+      controller,
       onProgress,
     });
 
@@ -164,19 +195,27 @@ async function uploadAllChunks(blob, opts) {
   }
 }
 
+function cancelledError() {
+  const e = new Error('Upload cancelled by user');
+  e.__cancelled = true;
+  return e;
+}
+
 /**
  * Upload a single chunk with retry logic (exponential backoff).
  */
 async function uploadChunkWithRetry(chunkBlob, opts) {
-  const { apiBase, upload_id, chunkIndex, token, durationSec, bytesUploaded, chunkSize, totalSize, onProgress } = opts;
+  const { apiBase, upload_id, chunkIndex, token, durationSec, bytesUploaded, chunkSize, totalSize, controller, onProgress } = opts;
   let lastError = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    if (controller && controller.cancelled) throw cancelledError();
     try {
       const result = await uploadSingleChunk(chunkBlob, {
         url: `${apiBase}/${upload_id}/chunk/${chunkIndex}`,
         token,
         durationSec,
+        controller,
         onChunkProgress: (loaded, total) => {
           const overallBytes = bytesUploaded + (chunkSize * (loaded / total));
           const overallPercent = Math.round((overallBytes / totalSize) * 100);
@@ -187,6 +226,7 @@ async function uploadChunkWithRetry(chunkBlob, opts) {
       if (result.success) return result;
       lastError = new Error(result.error || 'Chunk upload failed');
     } catch (err) {
+      if (err && err.__cancelled) throw err;
       lastError = err;
     }
 
@@ -202,9 +242,10 @@ async function uploadChunkWithRetry(chunkBlob, opts) {
 /**
  * Upload a single chunk via XHR (supports progress tracking).
  */
-function uploadSingleChunk(chunkBlob, { url, token, durationSec, onChunkProgress }) {
+function uploadSingleChunk(chunkBlob, { url, token, durationSec, controller, onChunkProgress }) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    let cancelWatcher = null;
 
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && onChunkProgress) {
@@ -212,7 +253,10 @@ function uploadSingleChunk(chunkBlob, { url, token, durationSec, onChunkProgress
       }
     });
 
+    const cleanup = () => { if (cancelWatcher) clearInterval(cancelWatcher); };
+
     xhr.addEventListener('load', () => {
+      cleanup();
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           resolve(JSON.parse(xhr.responseText));
@@ -224,9 +268,13 @@ function uploadSingleChunk(chunkBlob, { url, token, durationSec, onChunkProgress
       }
     });
 
-    xhr.addEventListener('error', () => reject(new Error('Network error')));
-    xhr.addEventListener('timeout', () => reject(new Error('Chunk upload timeout (30s)')));
-    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+    xhr.addEventListener('error', () => { cleanup(); reject(new Error('Network error')); });
+    xhr.addEventListener('timeout', () => { cleanup(); reject(new Error('Chunk upload timeout (30s)')); });
+    xhr.addEventListener('abort', () => {
+      cleanup();
+      if (controller && controller.cancelled) return reject(cancelledError());
+      reject(new Error('Upload aborted'));
+    });
 
     xhr.open('PUT', url);
     xhr.timeout = XHR_TIMEOUT;
@@ -235,6 +283,14 @@ function uploadSingleChunk(chunkBlob, { url, token, durationSec, onChunkProgress
     if (durationSec) xhr.setRequestHeader('X-Recording-Duration', String(durationSec));
 
     xhr.send(chunkBlob);
+
+    // Cancel watcher: if user hits Cancel mid-chunk, abort the XHR so we stop
+    // wasting bandwidth and exit fast instead of waiting for the chunk to finish.
+    if (controller) {
+      cancelWatcher = setInterval(() => {
+        if (controller.cancelled) { try { xhr.abort(); } catch {} }
+      }, 250);
+    }
   });
 }
 

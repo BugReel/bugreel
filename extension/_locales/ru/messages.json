@@ -235,6 +235,24 @@
   "review_uploading": {
     "message": "Загрузка... Ссылка будет скопирована по завершении."
   },
+  "review_uploadPaused": {
+    "message": "Загрузка на паузе — нажмите «Продолжить»"
+  },
+  "review_uploadCancelled": {
+    "message": "Загрузка отменена. Запись удалена."
+  },
+  "review_pauseUpload": {
+    "message": "Пауза"
+  },
+  "review_resumeUpload": {
+    "message": "Продолжить"
+  },
+  "review_cancelUpload": {
+    "message": "Отмена"
+  },
+  "review_confirmCancelUpload": {
+    "message": "Отменить загрузку? Часть уже загруженных данных будет потеряна."
+  },
   "review_uploadDone": {
     "message": "Видео загружено — ссылка скопирована"
   },
@@ -543,14 +561,11 @@
   "popup_settingAfterRec": {
     "message": "После зап."
   },
-  "popup_setting5min": {
-    "message": "5 мин"
+  "popup_settingMin": {
+    "message": "мин"
   },
-  "popup_setting10min": {
-    "message": "10 мин"
-  },
-  "popup_setting15min": {
-    "message": "15 мин"
+  "popup_settingHour": {
+    "message": "ч"
   },
   "popup_settingReview": {
     "message": "Просмотр"

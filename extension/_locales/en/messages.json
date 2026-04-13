@@ -250,6 +250,24 @@
   "review_uploading": {
     "message": "Uploading... Link will be copied to clipboard when done."
   },
+  "review_uploadPaused": {
+    "message": "Upload paused \u2014 click Resume to continue"
+  },
+  "review_uploadCancelled": {
+    "message": "Upload cancelled. Recording discarded."
+  },
+  "review_pauseUpload": {
+    "message": "Pause"
+  },
+  "review_resumeUpload": {
+    "message": "Resume"
+  },
+  "review_cancelUpload": {
+    "message": "Cancel"
+  },
+  "review_confirmCancelUpload": {
+    "message": "Cancel the upload? Already-uploaded data will be lost."
+  },
   "review_uploadDone": {
     "message": "Video uploaded \u2014 link copied to clipboard"
   },
@@ -558,14 +576,11 @@
   "popup_settingAfterRec": {
     "message": "After rec"
   },
-  "popup_setting5min": {
-    "message": "5 min"
+  "popup_settingMin": {
+    "message": "min"
   },
-  "popup_setting10min": {
-    "message": "10 min"
-  },
-  "popup_setting15min": {
-    "message": "15 min"
+  "popup_settingHour": {
+    "message": "hr"
   },
   "popup_settingReview": {
     "message": "Review"

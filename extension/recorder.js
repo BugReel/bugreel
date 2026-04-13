@@ -87,7 +87,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
 
     case 'offscreen-upload':
-      doUpload({ urlEvents: message.urlEvents, consoleEvents: message.consoleEvents, actionEvents: message.actionEvents, manualMarkers: message.manualMarkers, metadata: message.metadata, segments: message.segments })
+      doUpload({ urlEvents: message.urlEvents, consoleEvents: message.consoleEvents, actionEvents: message.actionEvents, manualMarkers: message.manualMarkers, metadata: message.metadata, segments: message.segments, extensionToken: message.extensionToken, serverUrl: message.serverUrl })
         .then(() => sendResponse({ success: true }))
         .catch((err) => sendResponse({ success: false, error: err.message }));
       return true;
@@ -97,6 +97,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .then(() => sendResponse({ success: true }))
         .catch((err) => sendResponse({ success: false, error: err.message }));
       return true;
+
+    case 'offscreen-upload-pause':
+      if (uploadController) uploadController.paused = true;
+      sendResponse({ success: true });
+      return false;
+
+    case 'offscreen-upload-resume':
+      if (uploadController) uploadController.paused = false;
+      sendResponse({ success: true });
+      return false;
+
+    case 'offscreen-upload-cancel':
+      if (uploadController) { uploadController.cancelled = true; uploadController.paused = false; }
+      sendResponse({ success: true });
+      return false;
 
     case 'mic-preview-start':
       startMicPreview()
@@ -615,7 +630,15 @@ async function handleRecordingFinished() {
   }
 }
 
-const CHUNKED_UPLOAD_THRESHOLD = 50 * 1024 * 1024; // 50 MB — use chunked upload above this
+const CHUNKED_UPLOAD_THRESHOLD = 5 * 1024 * 1024; // 5 MB — above this use chunked upload (resumable, pausable)
+
+// Upload control state — mutable reference shared with chunked-uploader.js
+// so Pause/Resume/Cancel messages from review page can influence the running upload.
+let uploadController = null;
+function resetUploadController() {
+  uploadController = { paused: false, cancelled: false };
+  return uploadController;
+}
 
 async function directUpload(blob, extras) {
   console.log('[BugReel] directUpload: blob=' + (blob.size / 1048576).toFixed(1) + 'MB, url=' + pendingServerUrl + '/api/upload');
@@ -623,9 +646,11 @@ async function directUpload(blob, extras) {
   chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
   const durationSec = recordingStartedAt ? Math.round((Date.now() - recordingStartedAt) / 1000) : null;
 
-  // Large files: chunked upload with retry/resume
+  // Large files: chunked upload with retry/resume/pause
   if (blob.size > CHUNKED_UPLOAD_THRESHOLD && typeof chunkedUpload === 'function') {
     console.log('[BugReel] Using chunked upload for large file');
+    const ctl = resetUploadController();
+    chrome.runtime.sendMessage({ type: 'upload-chunked-started' }).catch(() => {});
     try {
       const result = await chunkedUpload(blob, {
         serverUrl: pendingServerUrl,
@@ -633,9 +658,13 @@ async function directUpload(blob, extras) {
         token: pendingExtensionToken,
         durationSec,
         metadata: extras,
+        controller: ctl,
         onProgress(percent, loaded, total) {
           chrome.runtime.sendMessage({ type: 'upload-progress', percent, loaded, total }).catch(() => {});
           updateRecorderWindowUI('uploading', percent);
+        },
+        onPauseStateChange(paused) {
+          chrome.runtime.sendMessage({ type: 'upload-pause-state', paused }).catch(() => {});
         },
         onError(err, canResume) {
           console.error('[BugReel] Chunked upload error:', err.message, 'canResume:', canResume);
@@ -645,6 +674,10 @@ async function directUpload(blob, extras) {
       chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || 'unknown' }).catch(() => {});
       return;
     } catch (err) {
+      if (ctl.cancelled) {
+        chrome.runtime.sendMessage({ type: 'upload-cancelled' }).catch(() => {});
+        return;
+      }
       console.error('[BugReel] Chunked upload failed:', err.message);
       chrome.runtime.sendMessage({ type: 'upload-error', error: err.message }).catch(() => {});
       throw err;
@@ -715,27 +748,32 @@ async function doUpload(extras = {}) {
 
   chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
 
-  let token = pendingExtensionToken;
-  if (!token) {
-    const stored = await chrome.storage.local.get('extensionToken');
-    token = stored.extensionToken || '';
-  }
+  // Token: prefer from message extras (offscreen can't access chrome.storage),
+  // fall back to pending variable (set during recording in same context)
+  let token = extras.extensionToken || pendingExtensionToken || '';
 
   const durationSec = recordingStartedAt ? Math.round((Date.now() - recordingStartedAt) / 1000) : null;
 
-  // Large files: chunked upload with retry/resume
+  // Large files: chunked upload with retry/resume/pause
   if (blob.size > CHUNKED_UPLOAD_THRESHOLD && typeof chunkedUpload === 'function') {
     console.log('[BugReel] Using chunked upload for large file (' + (blob.size / 1048576).toFixed(1) + 'MB)');
     // Include segments in metadata for chunked upload
     const metadata = { ...extras };
     if (extras.segments) metadata.segments = JSON.stringify(extras.segments);
 
+    const ctl = resetUploadController();
+    chrome.runtime.sendMessage({ type: 'upload-chunked-started' }).catch(() => {});
+
     try {
       const result = await chunkedUpload(blob, {
         serverUrl, author: author || 'unknown', token, durationSec,
         metadata,
+        controller: ctl,
         onProgress(percent, loaded, total) {
           chrome.runtime.sendMessage({ type: 'upload-progress', percent, loaded, total }).catch(() => {});
+        },
+        onPauseStateChange(paused) {
+          chrome.runtime.sendMessage({ type: 'upload-pause-state', paused }).catch(() => {});
         },
         onError(err, canResume) {
           console.error('[BugReel] Chunked upload error:', err.message, 'canResume:', canResume);
@@ -745,6 +783,11 @@ async function doUpload(extras = {}) {
       chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || 'unknown' }).catch(() => {});
       return;
     } catch (err) {
+      if (ctl.cancelled) {
+        await deleteRecordingBlob();
+        chrome.runtime.sendMessage({ type: 'upload-cancelled' }).catch(() => {});
+        return;
+      }
       chrome.runtime.sendMessage({ type: 'upload-error', error: err.message }).catch(() => {});
       throw err;
     }

@@ -95,6 +95,51 @@ function elapsedSeconds() {
   return recordingStartTime ? (Date.now() - recordingStartTime) / 1000 : 0;
 }
 
+/* ── Server-managed limits (plan-based duration, etc.) ── */
+
+let lastLimitsSync = 0;
+const LIMITS_SYNC_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+async function syncServerLimits() {
+  try {
+    const { extensionToken, serverUrl } = await chrome.storage.local.get(['extensionToken', 'serverUrl']);
+    if (!extensionToken || !serverUrl) return;
+
+    // Throttle: don't sync more than once per hour
+    if (Date.now() - lastLimitsSync < LIMITS_SYNC_INTERVAL) return;
+
+    const res = await fetch(`${serverUrl}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${extensionToken}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok || !data.limits) return;
+
+    const update = {};
+    if (data.limits.max_duration_sec) {
+      update.serverMaxDurationMin = Math.floor(data.limits.max_duration_sec / 60);
+    }
+    if (data.user?.plan) {
+      update.serverPlan = data.user.plan;
+    }
+    if (Object.keys(update).length) {
+      await chrome.storage.local.set(update);
+    }
+    lastLimitsSync = Date.now();
+    console.log('[BugReel] Server limits synced:', update);
+  } catch (e) {
+    console.log('[BugReel] Server limits sync failed (non-fatal):', e.message);
+  }
+}
+
+// Sync on service worker startup
+syncServerLimits();
+
+/** Resolve effective max duration (minutes): plan limit or user setting */
+async function getEffectiveMaxDuration(storage) {
+  return storage.serverMaxDurationMin || storage.maxDuration || 10;
+}
+
 /* ── URL/request tracking ── */
 
 function onTabActivated({ tabId }) {
@@ -397,18 +442,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'start-upload') {
-    if (state !== 'ready') return sendResponse({ success: false, error: 'No recording ready' });
-    const segments = message.segments; // [{start, end}, ...] or undefined
-    ensureRecorderContext().then(() => {
+    // Must await state restore — service worker may have restarted since recording
+    (async () => {
+      await ensureStateLoaded();
+      if (state !== 'ready') {
+        console.warn('[BugReel] start-upload rejected: state=' + state);
+        sendResponse({ success: false, error: 'No recording ready' });
+        return;
+      }
+      const segments = message.segments; // [{start, end}, ...] or undefined
+      // Read token from storage here — offscreen documents can't access chrome.storage
+      const tokenData = await chrome.storage.local.get(['extensionToken', 'serverUrl']);
+      await ensureRecorderContext();
       chrome.runtime.sendMessage({
         type: 'offscreen-upload', target: 'offscreen',
         ...buildUploadExtras(),
-        segments
+        segments,
+        extensionToken: tokenData.extensionToken || '',
+        serverUrl: tokenData.serverUrl || '',
       }).catch(() => {});
       setState('uploading');
-    });
-    sendResponse({ success: true });
-    return false;
+      sendResponse({ success: true });
+    })();
+    return true; // async sendResponse
   }
 
   if (message.type === 'discard-recording') {
@@ -417,6 +473,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       setState('idle');
       closeRecorderContext();
     });
+    sendResponse({ success: true });
+    return false;
+  }
+
+  // Relay upload control messages from review page → offscreen recorder
+  if (message.type === 'upload-pause' || message.type === 'upload-resume' || message.type === 'upload-cancel') {
+    const targetType =
+      message.type === 'upload-pause'  ? 'offscreen-upload-pause'  :
+      message.type === 'upload-resume' ? 'offscreen-upload-resume' :
+                                         'offscreen-upload-cancel';
+    chrome.runtime.sendMessage({ type: targetType, target: 'offscreen' }).catch(() => {});
     sendResponse({ success: true });
     return false;
   }
@@ -473,6 +540,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // --- Relay from recorder to popup/review ---
   if ([
     'upload-started', 'upload-done', 'upload-error', 'upload-progress',
+    'upload-chunked-started', 'upload-pause-state', 'upload-cancelled',
     'recording-stopped-max', 'audio-status', 'mic-level', 'blob-saved',
     'firefox-recording-started'
   ].includes(message.type)) {
@@ -492,6 +560,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     if (message.type === 'upload-error' && state === 'uploading') {
       setState('ready');
+    }
+    if (message.type === 'upload-cancelled') {
+      setState('idle');
+      closeRecorderContext();
     }
     if (message.type === 'blob-saved') {
       if (state === 'ready') {
@@ -575,16 +647,23 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
       try { await chrome.tabs.remove(recorderTabId); } catch {}
       recorderTabId = null;
     }
+    // Sync server limits before recording (Firefox path)
+    await syncServerLimits();
+
     // Save params to storage — recorder tab reads them and handles capture with user gesture
     const serverUrl_ = await getServerUrl();
-    const storage_ = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'userEmail']);
+    const storage_ = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'userEmail', 'maxDuration', 'videoQuality', 'webcamPosition', 'serverMaxDurationMin']);
+    const effectiveMaxDuration_ = await getEffectiveMaxDuration(storage_);
     await chrome.storage.local.set({
       recorderParams: {
         serverUrl: serverUrl_,
         author: storage_.extensionToken ? (storage_.userName || storage_.userEmail || 'unknown') : (storage_.author || 'unknown'),
         mode, micEnabled, systemAudioEnabled, streamId,
         webcamEnabled, webcamDeviceId,
-        extensionToken: storage_.extensionToken || ''
+        webcamPosition: storage_.webcamPosition || null,
+        extensionToken: storage_.extensionToken || '',
+        maxDuration: effectiveMaxDuration_,
+        videoQuality: storage_.videoQuality || '720p',
       }
     });
     console.log('[BugReel] Creating recorder tab (active)...');
@@ -600,9 +679,13 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
     return { success: true };
   }
 
+  // Sync server limits before recording (non-blocking if recently synced)
+  await syncServerLimits();
+
   const serverUrl = await getServerUrl();
-  const storage = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'userEmail', 'maxDuration', 'videoQuality', 'webcamPosition']);
+  const storage = await chrome.storage.local.get(['author', 'extensionToken', 'userName', 'userEmail', 'maxDuration', 'videoQuality', 'webcamPosition', 'serverMaxDurationMin']);
   const author = storage.extensionToken ? (storage.userName || storage.userEmail || 'unknown') : (storage.author || 'unknown');
+  const effectiveMaxDuration = await getEffectiveMaxDuration(storage);
 
   console.log('[BugReel] Sending offscreen-start to recorder...');
   const offscreenResult = await chrome.runtime.sendMessage({
@@ -618,7 +701,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
     webcamDeviceId,
     webcamPosition: storage.webcamPosition || null,
     extensionToken: storage.extensionToken || '',
-    maxDuration: storage.maxDuration || 10,
+    maxDuration: effectiveMaxDuration,
     videoQuality: storage.videoQuality || '720p',
   });
 

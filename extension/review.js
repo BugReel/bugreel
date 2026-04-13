@@ -83,6 +83,11 @@ let previewInterval = null;
     <div class="progress-container" id="progress-container">
       <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <div class="progress-text" id="progress-text">0%</div>
+      <div class="upload-controls hidden" id="upload-controls" style="gap:8px; justify-content:center; margin-top:10px;">
+        <button class="btn-sm btn-preview" id="btn-upload-pause">${t('review_pauseUpload', 'Пауза')}</button>
+        <button class="btn-sm btn-preview hidden" id="btn-upload-resume">${t('review_resumeUpload', 'Продолжить')}</button>
+        <button class="btn-sm btn-reset" id="btn-upload-cancel">${t('review_cancelUpload', 'Отмена')}</button>
+      </div>
     </div>
 
     <div class="status" id="status"></div>
@@ -320,6 +325,26 @@ function setupButtons() {
   const progressFill = document.getElementById('progress-fill');
   const progressText = document.getElementById('progress-text');
   const statusEl = document.getElementById('status');
+  const uploadControls = document.getElementById('upload-controls');
+  const btnUploadPause = document.getElementById('btn-upload-pause');
+  const btnUploadResume = document.getElementById('btn-upload-resume');
+  const btnUploadCancel = document.getElementById('btn-upload-cancel');
+
+  btnUploadPause.addEventListener('click', () => {
+    btnUploadPause.disabled = true;
+    chrome.runtime.sendMessage({ type: 'upload-pause' });
+  });
+  btnUploadResume.addEventListener('click', () => {
+    btnUploadResume.disabled = true;
+    chrome.runtime.sendMessage({ type: 'upload-resume' });
+  });
+  btnUploadCancel.addEventListener('click', () => {
+    if (!confirm(t('review_confirmCancelUpload', 'Отменить загрузку? Часть уже загруженных данных будет потеряна.'))) return;
+    btnUploadCancel.disabled = true;
+    btnUploadPause.disabled = true;
+    btnUploadResume.disabled = true;
+    chrome.runtime.sendMessage({ type: 'upload-cancel' });
+  });
 
   // Add cut
   btnAddCut.addEventListener('click', () => addCut());
@@ -385,7 +410,16 @@ function setupButtons() {
         end: Math.round(s.end * 10) / 10
       }));
     }
-    chrome.runtime.sendMessage(msg);
+    chrome.runtime.sendMessage(msg, (response) => {
+      const err = chrome.runtime.lastError;
+      if (err || (response && !response.success)) {
+        statusEl.textContent = t('error_generic', 'Error') + ': ' + (err?.message || response?.error || t('error_upload_failed', 'Upload failed'));
+        statusEl.className = 'status error';
+        btnUpload.disabled = false;
+        btnDiscard.disabled = false;
+        progressContainer.style.display = 'none';
+      }
+    });
   });
 
   // Discard
@@ -402,6 +436,39 @@ function setupButtons() {
 
   // Listen for progress/done messages
   chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'upload-chunked-started') {
+      uploadControls.classList.remove('hidden');
+    }
+
+    if (msg.type === 'upload-pause-state') {
+      if (msg.paused) {
+        btnUploadPause.classList.add('hidden');
+        btnUploadResume.classList.remove('hidden');
+        btnUploadResume.disabled = false;
+        statusEl.textContent = t('review_uploadPaused', 'Загрузка на паузе — нажмите «Продолжить»');
+        statusEl.className = 'status';
+      } else {
+        btnUploadResume.classList.add('hidden');
+        btnUploadPause.classList.remove('hidden');
+        btnUploadPause.disabled = false;
+        statusEl.textContent = t('review_uploading', 'Загрузка... Ссылка будет скопирована по завершении.');
+        statusEl.className = 'status';
+      }
+    }
+
+    if (msg.type === 'upload-cancelled') {
+      progressContainer.style.display = 'none';
+      uploadControls.classList.add('hidden');
+      statusEl.textContent = t('review_uploadCancelled', 'Загрузка отменена. Запись удалена.');
+      statusEl.className = 'status';
+      btnUpload.disabled = true;
+      btnDiscard.disabled = true;
+      btnUpload.style.display = 'none';
+      btnDiscard.style.display = 'none';
+      document.getElementById('trim-section').style.display = 'none';
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    }
+
     if (msg.type === 'upload-progress') {
       progressFill.style.width = msg.percent + '%';
       progressText.textContent = `${msg.percent}% (${(msg.loaded / 1048576).toFixed(1)} / ${(msg.total / 1048576).toFixed(1)} MB)`;
@@ -410,6 +477,7 @@ function setupButtons() {
     if (msg.type === 'upload-done') {
       progressFill.style.width = '100%';
       progressText.textContent = '100%';
+      uploadControls.classList.add('hidden');
       const url = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(msg.recordingId)}`;
 
       // Auto-copy link to clipboard
@@ -445,6 +513,7 @@ function setupButtons() {
       statusEl.className = 'status error';
       btnUpload.disabled = false;
       btnDiscard.disabled = false;
+      uploadControls.classList.add('hidden');
     }
   });
 }
