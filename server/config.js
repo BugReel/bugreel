@@ -47,4 +47,10 @@ export const config = {
     yandexMetrikaId: process.env.ANALYTICS_YANDEX_METRIKA_ID || '',
     gtagId: process.env.ANALYTICS_GTAG_ID || '',
   },
+
+  // Feedback — "Report a problem" button in the dashboard.
+  // Button is hidden when no webhook is configured.
+  feedback: {
+    webhookUrl: process.env.FEEDBACK_WEBHOOK_URL || '',
+  },
 };

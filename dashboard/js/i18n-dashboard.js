@@ -212,6 +212,21 @@
       env_console: 'Console',
       env_actions: 'Actions',
 
+      // Feedback
+      feedback_button: 'Report a problem',
+      feedback_title: 'Send feedback',
+      feedback_type_label: 'Type',
+      feedback_type_bug: 'Bug',
+      feedback_type_idea: 'Idea',
+      feedback_type_question: 'Question',
+      feedback_type_other: 'Other',
+      feedback_message_label: 'Message',
+      feedback_message_placeholder: 'Describe the problem, steps to reproduce, expected result…',
+      feedback_submit: 'Send',
+      feedback_sending: 'Sending…',
+      feedback_sent: 'Thanks! Your feedback has been sent.',
+      feedback_error: 'Failed to send. Please try again.',
+
       // Settings page
       nav_settings: 'Settings',
       settings_title: 'Settings',
@@ -585,6 +600,21 @@
       env_pages_visited: 'Посещённые страницы',
       env_console: 'Консоль',
       env_actions: 'Действия',
+
+      // Feedback
+      feedback_button: 'Сообщить о проблеме',
+      feedback_title: 'Отправить отзыв',
+      feedback_type_label: 'Тип',
+      feedback_type_bug: 'Баг',
+      feedback_type_idea: 'Идея',
+      feedback_type_question: 'Вопрос',
+      feedback_type_other: 'Другое',
+      feedback_message_label: 'Сообщение',
+      feedback_message_placeholder: 'Опишите проблему, шаги для воспроизведения, ожидаемый результат…',
+      feedback_submit: 'Отправить',
+      feedback_sending: 'Отправка…',
+      feedback_sent: 'Спасибо! Отзыв отправлен.',
+      feedback_error: 'Не удалось отправить. Попробуйте ещё раз.',
 
       // Settings page
       nav_settings: 'Настройки',

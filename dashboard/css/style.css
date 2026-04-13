@@ -300,6 +300,35 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   #quota-widget { display: none !important; }
 }
 
+.feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text3);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.feedback-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.feedback-btn:hover {
+  color: var(--text);
+  border-color: var(--text3);
+  background: var(--surface2);
+}
+@media (max-width: 860px) {
+  .feedback-btn span { display: none; }
+  .feedback-btn { padding: 6px 8px; }
+}
+
 .lang-switcher {
   display: flex;
   gap: 0;

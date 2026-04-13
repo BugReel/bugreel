@@ -124,7 +124,8 @@ router.put('/settings', (req, res) => {
 router.get('/branding', (req, res) => {
   const branding = getBrandingConfig();
   const analytics = getAnalyticsConfig();
-  res.json({ ...branding, analytics });
+  const feedback_enabled = !!config.feedback?.webhookUrl;
+  res.json({ ...branding, analytics, feedback_enabled });
 });
 
 /**

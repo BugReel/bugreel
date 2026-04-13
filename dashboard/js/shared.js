@@ -315,6 +315,10 @@ export function renderHeader(activePage) {
           `).join('')}
         </nav>
         <div id="quota-widget" style="display:none"></div>
+        <button id="feedback-btn" class="feedback-btn" style="display:none" title="${t('feedback_button', 'Report a problem')}" aria-label="${t('feedback_button', 'Report a problem')}">
+          ${icons.messageCircle}
+          <span>${t('feedback_button', 'Report a problem')}</span>
+        </button>
         <div class="lang-switcher">
           <button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
           <button class="lang-btn ${currentLang === 'ru' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>
@@ -364,6 +368,9 @@ function fetchBranding() {
     // Inject analytics counters (once)
     if (b.analytics) injectAnalytics(b.analytics);
 
+    // Feedback button — visible only when backend has a destination configured
+    if (b.feedback_enabled) initFeedback();
+
     return b;
   }).catch(() => {
     // Fallback: show defaults if API fails
@@ -408,4 +415,101 @@ function injectAnalytics(analytics) {
     s.textContent = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gtagId.replace(/[^A-Za-z0-9-]/g, '')}');`;
     document.head.appendChild(s);
   }
+}
+
+/**
+ * Feedback modal — reveals header button, opens modal, POSTs to /api/feedback.
+ * Idempotent: safe to call multiple times.
+ */
+let _feedbackInited = false;
+function initFeedback() {
+  if (_feedbackInited) return;
+  _feedbackInited = true;
+
+  const btn = document.getElementById('feedback-btn');
+  if (!btn) return;
+  btn.style.display = '';
+  btn.addEventListener('click', openFeedbackModal);
+}
+
+function openFeedbackModal() {
+  let overlay = document.getElementById('feedback-modal');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    overlay.querySelector('textarea')?.focus();
+    return;
+  }
+
+  overlay = document.createElement('div');
+  overlay.id = 'feedback-modal';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-dialog" style="max-width:520px">
+      <div class="modal-header">
+        <h3>${icons.messageCircle}<span>${t('feedback_title', 'Send feedback')}</span></h3>
+        <button class="modal-close" data-feedback-close aria-label="Close">${icons.x}</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field">
+          <label>${t('feedback_type_label', 'Type')}</label>
+          <select class="edit-field" id="feedback-type">
+            <option value="bug">${t('feedback_type_bug', 'Bug')}</option>
+            <option value="idea">${t('feedback_type_idea', 'Idea')}</option>
+            <option value="question">${t('feedback_type_question', 'Question')}</option>
+            <option value="other">${t('feedback_type_other', 'Other')}</option>
+          </select>
+        </div>
+        <div class="modal-field" style="margin-top:12px">
+          <label>${t('feedback_message_label', 'Message')}</label>
+          <textarea class="edit-field" id="feedback-message" rows="6" placeholder="${t('feedback_message_placeholder', 'Describe the problem…')}" maxlength="4000"></textarea>
+        </div>
+        <div id="feedback-status" style="margin-top:8px;font-size:.9rem;color:var(--text3)"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-edit-cancel" data-feedback-close>${t('cancel', 'Cancel')}</button>
+        <button class="btn-edit-save" id="feedback-submit">${t('feedback_submit', 'Send')}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.classList.add('hidden');
+  overlay.querySelectorAll('[data-feedback-close]').forEach(el => el.addEventListener('click', close));
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+  const submitBtn = overlay.querySelector('#feedback-submit');
+  const statusEl = overlay.querySelector('#feedback-status');
+  submitBtn.addEventListener('click', async () => {
+    const type = overlay.querySelector('#feedback-type').value;
+    const message = overlay.querySelector('#feedback-message').value.trim();
+    if (message.length < 3) {
+      statusEl.textContent = t('feedback_message_label', 'Message') + ' *';
+      statusEl.style.color = 'var(--danger, #ef4444)';
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = t('feedback_sending', 'Sending…');
+    statusEl.textContent = '';
+    try {
+      const res = await fetch(`${basePath}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, message, page_url: location.href }),
+      });
+      if (!res.ok) throw new Error('http ' + res.status);
+      statusEl.textContent = t('feedback_sent', 'Thanks! Feedback sent.');
+      statusEl.style.color = 'var(--success, #10b981)';
+      overlay.querySelector('#feedback-message').value = '';
+      setTimeout(close, 1500);
+    } catch (err) {
+      statusEl.textContent = t('feedback_error', 'Failed to send. Try again.');
+      statusEl.style.color = 'var(--danger, #ef4444)';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = t('feedback_submit', 'Send');
+    }
+  });
+
+  overlay.querySelector('#feedback-message').focus();
 }
