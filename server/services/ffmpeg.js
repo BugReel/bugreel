@@ -87,13 +87,34 @@ export async function compressVideo(videoPath) {
 export async function extractFrame(videoPath, timeSeconds, outputPath) {
   // Clamp negative timestamps to 0
   const seekTime = Math.max(timeSeconds, 0);
+  const vf = `scale='min(1920,iw)':-1`;
+
+  // Fast seek: -ss BEFORE -i jumps to the nearest prior keyframe (cheap but
+  // fails on WebM recordings with sparse keyframes — ffmpeg exits 0 with an
+  // empty file, which we must detect explicitly).
   try {
-    // -vf scale: fit within 1920px width, keep aspect ratio, only downscale (min)
     await execAsync(
-      `ffmpeg -y -ss ${seekTime} -i "${videoPath}" -frames:v 1 -q:v 3 -vf "scale='min(1920,iw)':-1" "${outputPath}"`
+      `ffmpeg -y -ss ${seekTime} -i "${videoPath}" -frames:v 1 -q:v 3 -vf "${vf}" "${outputPath}"`
+    );
+    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) return;
+  } catch {
+    // Fall through to slow seek
+  }
+
+  // Slow seek: -ss AFTER -i decodes from the start to the requested position.
+  // Slower but frame-accurate — required for Chrome MediaRecorder WebM files.
+  try {
+    try { fs.unlinkSync(outputPath); } catch {}
+    await execAsync(
+      `ffmpeg -y -i "${videoPath}" -ss ${seekTime} -frames:v 1 -q:v 3 -vf "${vf}" "${outputPath}"`,
+      { timeout: 120000 }
     );
   } catch (err) {
     throw new Error(`ffmpeg extractFrame failed at ${seekTime}s: ${err.stderr || err.message}`);
+  }
+
+  if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size === 0) {
+    throw new Error(`ffmpeg extractFrame produced empty output at ${seekTime}s`);
   }
 }
 

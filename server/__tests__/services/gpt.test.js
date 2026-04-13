@@ -53,7 +53,7 @@ describe('analyzeTranscript — keyFrames safety net', () => {
     expect(out.keyFrames[0].description).toBe('fix');
   });
 
-  it('falls back to evenly spaced frames when GPT never returns keyFrames', async () => {
+  it('returns empty keyFrames when both the initial call and the retry omit them', async () => {
     fetchSpy
       .mockResolvedValueOnce(ok({ type: 'bug', title: 't' }))
       .mockResolvedValueOnce(ok({ type: 'bug', title: 't', keyFrames: [] }));
@@ -61,19 +61,7 @@ describe('analyzeTranscript — keyFrames safety net', () => {
     const out = await analyzeTranscript(transcript, null, null, null, 120);
 
     expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(out.keyFrames.length).toBeGreaterThanOrEqual(3);
-    expect(out.keyFrames.every(f => f.time >= 0 && f.time <= 120)).toBe(true);
-    const times = out.keyFrames.map(f => f.time);
-    expect([...times].sort((a, b) => a - b)).toEqual(times);
-  });
-
-  it('returns empty keyFrames when duration is unknown and GPT omits them', async () => {
-    fetchSpy
-      .mockResolvedValueOnce(ok({ type: 'bug', title: 't' }))
-      .mockResolvedValueOnce(ok({ type: 'bug', title: 't' }));
-
-    const out = await analyzeTranscript(transcript, null, null, null, 0);
-
     expect(out.keyFrames).toEqual([]);
+    expect(out.type).toBe('bug');
   });
 });

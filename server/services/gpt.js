@@ -111,6 +111,8 @@ export async function analyzeTranscript(transcript, urlEvents = null, consoleEve
   }
 
   // Retry once if GPT ignored the "keyFrames MUST contain 3-7 items" rule.
+  // If the retry also fails, leave keyFrames empty so the UI surfaces the gap
+  // (synthetic equi-spaced frames would hide the failure behind noise).
   const hasKeyFrames = Array.isArray(analysis.keyFrames) && analysis.keyFrames.length > 0;
   if (!hasKeyFrames) {
     try {
@@ -119,23 +121,11 @@ export async function analyzeTranscript(transcript, urlEvents = null, consoleEve
       );
       if (retry && Array.isArray(retry.keyFrames) && retry.keyFrames.length > 0) {
         analysis.keyFrames = retry.keyFrames;
+      } else if (!Array.isArray(analysis.keyFrames)) {
+        analysis.keyFrames = [];
       }
     } catch {
-      // Retry failed — fall through to deterministic fallback below.
-    }
-  }
-
-  // Deterministic fallback: evenly-spaced timestamps so the card always has frames.
-  if (!Array.isArray(analysis.keyFrames) || analysis.keyFrames.length === 0) {
-    const dur = Number(durationSeconds) || 0;
-    if (dur > 0) {
-      const count = dur < 30 ? 3 : dur < 180 ? 4 : 5;
-      analysis.keyFrames = Array.from({ length: count }, (_, i) => {
-        const time = Math.max(0, Math.min(dur - 0.1, (dur * (i + 1)) / (count + 1)));
-        return { time, description: `Момент ${i + 1}`, detail: '' };
-      });
-    } else {
-      analysis.keyFrames = [];
+      if (!Array.isArray(analysis.keyFrames)) analysis.keyFrames = [];
     }
   }
 
