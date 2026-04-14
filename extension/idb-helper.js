@@ -16,16 +16,22 @@ function openIDB() {
 }
 
 async function saveRecordingBlob(blob, metadata) {
-  // Convert Blob → ArrayBuffer for storage.
-  // Firefox extension contexts can lose Blob data in IDB across tabs;
-  // ArrayBuffer is reliably stored via structured clone.
-  const arrayBuffer = await blob.arrayBuffer();
+  // Chrome: store the Blob directly. Converting to ArrayBuffer doubles peak
+  // memory (offscreen doc OOMs on >1 GB recordings) and Chrome's structured
+  // clone handles Blobs in IDB just fine.
+  // Firefox: extension contexts lose Blob data across tabs, so we fall back
+  // to ArrayBuffer there — pay the memory cost to keep the data alive.
+  const isFirefox = typeof browser !== 'undefined' && !!browser.runtime;
   const mimeType = blob.type || 'video/webm';
+
+  const payload = isFirefox
+    ? { arrayBuffer: await blob.arrayBuffer(), mimeType, ...metadata }
+    : { blob, mimeType, ...metadata };
 
   const db = await openIDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put({ arrayBuffer, mimeType, ...metadata }, IDB_KEY);
+    tx.objectStore(IDB_STORE).put(payload, IDB_KEY);
     tx.oncomplete = () => { db.close(); resolve(); };
     tx.onerror = () => { db.close(); reject(tx.error); };
   });
@@ -41,12 +47,13 @@ async function loadRecordingBlob() {
       const data = req.result;
       if (!data) { resolve(null); return; }
 
-      // Reconstruct Blob from stored ArrayBuffer
-      if (data.arrayBuffer) {
+      // Reconstruct Blob from stored ArrayBuffer (Firefox path).
+      // Chrome path stores the Blob directly — just keep it.
+      if (data.arrayBuffer && !data.blob) {
         data.blob = new Blob([data.arrayBuffer], { type: data.mimeType || 'video/webm' });
         delete data.arrayBuffer;
-        delete data.mimeType;
       }
+      delete data.mimeType;
       resolve(data);
     };
     req.onerror = () => { db.close(); reject(req.error); };

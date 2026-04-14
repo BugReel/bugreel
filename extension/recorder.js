@@ -173,6 +173,13 @@ function stopMicPreview() {
 /* --- Recording --- */
 
 async function startRecording(streamId, serverUrl, author, mode, micEnabled, systemAudioEnabled, extensionToken, maxDuration, videoQuality, webcamEnabled, webcamDeviceId, webcamPosition) {
+  // Clear any stale blob from a previous recording that the user didn't
+  // finish uploading. Keeping it would let the popup show a "Preview"
+  // button for the OLD recording while the new one is still capturing —
+  // then if the new save fails, user sees stale data instead of an honest
+  // error. Purge upfront so the IDB state always reflects reality.
+  try { await deleteRecordingBlob(); } catch (e) { console.warn('[BugReel] Pre-start IDB purge failed:', e && e.message); }
+
   pendingServerUrl = serverUrl;
   pendingAuthor = author;
   pendingExtensionToken = extensionToken || '';
@@ -659,9 +666,15 @@ async function handleRecordingFinished() {
           console.log('[BugReel] Staged stitched blob received: ' +
             (blobForReview.size / 1048576).toFixed(1) + 'MB, id=' + stagedInfo.recordingId);
         } catch (e) {
-          console.error('[BugReel] Staging failed, falling back to raw blob:', e);
-          chrome.runtime.sendMessage({ type: 'upload-error', error: 'Ошибка обработки: ' + e.message }).catch(() => {});
-          return;
+          // Fall back to saving the raw multi-WebM blob: preview will be
+          // broken (shows only the first segment) but at least the user
+          // can retry upload — server concat is run again on upload.
+          console.error('[BugReel] Staging failed, saving raw blob to IDB so data is not lost:', e);
+          chrome.runtime.sendMessage({
+            type: 'upload-error',
+            error: 'Сбой обработки записи, восстановлен исходник. Попробуйте выгрузить из превью.',
+          }).catch(() => {});
+          blobForReview = blob;
         }
       }
 
