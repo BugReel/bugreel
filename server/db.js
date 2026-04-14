@@ -208,6 +208,11 @@ export function initDB() {
   try { db.exec('ALTER TABLE recordings ADD COLUMN segments_json TEXT'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN password_hash TEXT'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN share_token TEXT'); } catch {}
+  // Observability for the recorder auto-restart fix (docs/recording-resilience.md
+  // §Observability). NULL or 1 = single-segment normal recording. >1 means the
+  // encoder stalled during capture and the segment controller restarted it
+  // N times. Used to decide if Phase 1.5 (staged preview) is worth keeping.
+  try { db.exec('ALTER TABLE recordings ADD COLUMN recorder_segment_count INTEGER'); } catch {}
 
   // Backfill share_token for existing recordings that don't have one
   const noToken = db.prepare('SELECT id FROM recordings WHERE share_token IS NULL').all();

@@ -100,6 +100,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case 'offscreen-discard':
+      if (message.extensionToken) pendingExtensionToken = message.extensionToken;
+      if (message.serverUrl) pendingServerUrl = message.serverUrl;
       doDiscard()
         .then(() => sendResponse({ success: true }))
         .catch((err) => sendResponse({ success: false, error: err.message }));
@@ -226,9 +228,14 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
       const controller = new CaptureController();
       displayMediaOptions.controller = controller;
       captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
-      // Must call setFocusBehavior synchronously after getDisplayMedia resolves
-      try { controller.setFocusBehavior('no-focus-change'); } catch (e) {
-        console.warn('[BugReel] setFocusBehavior not supported:', e.message);
+      // setFocusBehavior only works for tab/window captures. Monitor (full-screen)
+      // throws by design — check surface first to avoid noise in Sentry.
+      const [vTrack] = captureStream.getVideoTracks();
+      const surface = vTrack && vTrack.getSettings ? vTrack.getSettings().displaySurface : null;
+      if (surface === 'browser' || surface === 'window') {
+        try { controller.setFocusBehavior('no-focus-change'); } catch (e) {
+          console.debug('[BugReel] setFocusBehavior:', e.message);
+        }
       }
     } else {
       captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
@@ -638,17 +645,39 @@ async function handleRecordingFinished() {
       extras.recorderSegmentSizes = segmentSizes;
       await directUpload(blob, extras);
     } else {
+      // Multi-segment recordings: the raw Blob is N concatenated WebM
+      // documents — review.html's <video> reads only the first one's
+      // duration, so the user would see a broken preview. Round-trip
+      // through the server: upload staged, download the ffmpeg-stitched
+      // blob, hand that to review. Single-segment recordings skip this.
+      let blobForReview = blob;
+      let stagedInfo = null;
+      if (segmentCount > 1) {
+        try {
+          stagedInfo = await stageMultiSegmentRecording(blob, segmentSizes);
+          blobForReview = stagedInfo.blob;
+          console.log('[BugReel] Staged stitched blob received: ' +
+            (blobForReview.size / 1048576).toFixed(1) + 'MB, id=' + stagedInfo.recordingId);
+        } catch (e) {
+          console.error('[BugReel] Staging failed, falling back to raw blob:', e);
+          chrome.runtime.sendMessage({ type: 'upload-error', error: 'Ошибка обработки: ' + e.message }).catch(() => {});
+          return;
+        }
+      }
+
       try {
-        await saveRecordingBlob(blob, {
+        await saveRecordingBlob(blobForReview, {
           serverUrl: pendingServerUrl,
           author: pendingAuthor,
           timestamp: Date.now(),
-          size: blob.size,
+          size: blobForReview.size,
           segmentCount,
           segmentSizes,
+          stagedRecordingId: stagedInfo ? stagedInfo.recordingId : null,
+          stagedShareToken: stagedInfo ? stagedInfo.shareToken : null,
         });
         console.log('[BugReel] Blob saved to IDB OK');
-        chrome.runtime.sendMessage({ type: 'blob-saved', fileSize: blob.size }).catch(() => {});
+        chrome.runtime.sendMessage({ type: 'blob-saved', fileSize: blobForReview.size }).catch(() => {});
       } catch (e) {
         console.error('[BugReel] Failed to save blob:', e);
         chrome.runtime.sendMessage({ type: 'upload-error', error: 'Failed to save: ' + e.message }).catch(() => {});
@@ -771,6 +800,77 @@ async function directUpload(blob, extras) {
   });
 }
 
+/* --- Stage multi-segment recording on the server ---
+ * Upload raw multi-WebM blob with stage_only=1, server concatenates via
+ * ffmpeg into a single valid WebM, we download it back for local preview.
+ * Returns { blob, recordingId, shareToken } on success.
+ */
+async function stageMultiSegmentRecording(blob, segmentSizes) {
+  updateRecorderWindowUI('stitching');
+  chrome.runtime.sendMessage({ type: 'stage-started' }).catch(() => {});
+
+  const uploadResult = await stageUpload(blob, segmentSizes);
+  const videoUrl = uploadResult.video_url || `/api/recordings/${uploadResult.share_token}/video`;
+  const absoluteUrl = videoUrl.startsWith('http') ? videoUrl : pendingServerUrl + videoUrl;
+
+  updateRecorderWindowUI('stitching', 95);
+  const resp = await fetch(absoluteUrl);
+  if (!resp.ok) throw new Error(`Stitched download failed: ${resp.status}`);
+  const stitchedBlob = await resp.blob();
+  if (stitchedBlob.size === 0) throw new Error('Stitched blob is empty');
+
+  chrome.runtime.sendMessage({ type: 'stage-done' }).catch(() => {});
+  return { blob: stitchedBlob, recordingId: uploadResult.id, shareToken: uploadResult.share_token };
+}
+
+async function stageUpload(blob, segmentSizes) {
+  const usingChunked = blob.size > CHUNKED_UPLOAD_THRESHOLD && typeof chunkedUpload === 'function';
+  const durationSec = recordingStartedAt ? Math.round((Date.now() - recordingStartedAt) / 1000) : null;
+
+  if (usingChunked) {
+    const ctl = resetUploadController();
+    return chunkedUpload(blob, {
+      serverUrl: pendingServerUrl,
+      author: pendingAuthor || 'unknown',
+      token: pendingExtensionToken,
+      durationSec,
+      metadata: { recorderSegmentSizes: segmentSizes, stage_only: '1' },
+      controller: ctl,
+      onProgress(percent) { updateRecorderWindowUI('stitching', Math.min(90, percent)); },
+    });
+  }
+
+  const formData = new FormData();
+  formData.append('video', blob, `recording-${Date.now()}.webm`);
+  formData.append('author', pendingAuthor || 'unknown');
+  formData.append('recorder_segment_sizes', JSON.stringify(segmentSizes));
+  formData.append('stage_only', '1');
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 90);
+        updateRecorderWindowUI('stitching', percent);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch { reject(new Error('Invalid server response')); }
+      } else {
+        reject(new Error(`Server error ${xhr.status}: ${xhr.responseText?.slice(0, 200)}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.open('POST', `${pendingServerUrl}/api/upload`);
+    if (pendingExtensionToken) xhr.setRequestHeader('Authorization', `Bearer ${pendingExtensionToken}`);
+    if (durationSec) xhr.setRequestHeader('X-Recording-Duration', String(durationSec));
+    xhr.setRequestHeader('X-Recording-Segments', String(segmentSizes.length));
+    xhr.send(formData);
+  });
+}
+
 /* --- Upload with progress --- */
 
 async function doUpload(extras = {}) {
@@ -783,6 +883,7 @@ async function doUpload(extras = {}) {
   const { blob, serverUrl, author } = data;
   const segmentCount = data.segmentCount || 1;
   const segmentSizes = Array.isArray(data.segmentSizes) ? data.segmentSizes : [];
+  const stagedRecordingId = data.stagedRecordingId || null;
 
   chrome.runtime.sendMessage({ type: 'upload-started' }).catch(() => {});
 
@@ -791,6 +892,39 @@ async function doUpload(extras = {}) {
   let token = extras.extensionToken || pendingExtensionToken || '';
 
   const durationSec = recordingStartedAt ? Math.round((Date.now() - recordingStartedAt) / 1000) : null;
+
+  // Staged recordings: bytes are already on the server. Send only trim/metadata
+  // and flip status from 'staged' → 'uploaded' to kick off the pipeline.
+  if (stagedRecordingId) {
+    try {
+      const payload = {
+        url_events: extras.urlEvents || null,
+        console_events: extras.consoleEvents || null,
+        action_events: extras.actionEvents || null,
+        manual_markers: extras.manualMarkers || null,
+        metadata: extras.metadata || null,
+        segments: extras.segments ? JSON.stringify(extras.segments) : null,
+        trim_start: extras.trimStart != null ? extras.trimStart : null,
+        trim_end: extras.trimEnd != null ? extras.trimEnd : null,
+      };
+      const resp = await fetch(`${serverUrl}/api/recordings/${stagedRecordingId}/finalize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) throw new Error(`Finalize failed: ${resp.status} ${await resp.text()}`);
+      const result = await resp.json();
+      await deleteRecordingBlob();
+      chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || stagedRecordingId }).catch(() => {});
+      return;
+    } catch (err) {
+      chrome.runtime.sendMessage({ type: 'upload-error', error: err.message }).catch(() => {});
+      throw err;
+    }
+  }
 
   // Large files: chunked upload with retry/resume/pause
   if (blob.size > CHUNKED_UPLOAD_THRESHOLD && typeof chunkedUpload === 'function') {
@@ -903,6 +1037,22 @@ async function doDiscard() {
   recordedSegmentCount = 0;
   recordedSegmentSizes = [];
   releaseStreams();
+
+  // If there's a staged recording on the server, delete it too — fire-and-forget.
+  try {
+    const existing = await loadRecordingBlob();
+    if (existing && existing.stagedRecordingId) {
+      const token = pendingExtensionToken || '';
+      const serverUrl = existing.serverUrl || pendingServerUrl;
+      fetch(`${serverUrl}/api/recordings/${existing.stagedRecordingId}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }).catch((e) => console.warn('[BugReel] Staged delete failed:', e && e.message));
+    }
+  } catch (e) {
+    console.warn('[BugReel] Could not check staged recording before discard:', e && e.message);
+  }
+
   await deleteRecordingBlob();
 }
 
@@ -950,6 +1100,11 @@ function updateRecorderWindowUI(status, percent) {
       break;
     case 'waiting':
       label.textContent = 'Preparing...';
+      label.className = 'label';
+      if (dot) dot.className = 'dot waiting';
+      break;
+    case 'stitching':
+      label.textContent = percent ? `Восстанавливаем запись ${percent}%` : 'Восстанавливаем запись…';
       label.className = 'label';
       if (dot) dot.className = 'dot waiting';
       break;

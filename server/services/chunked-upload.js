@@ -182,12 +182,20 @@ export async function completeUpload(uploadId) {
     }
   }
 
+  // stage_only: client wants the stitched blob back for local preview; don't
+  // start the pipeline here — a later /finalize call will.
+  const stageOnly = !!(sessionMeta && (sessionMeta.stage_only === '1' || sessionMeta.stage_only === true));
+
   // Create recording in DB
   const shareToken = crypto.randomUUID();
+  const initialStatus = stageOnly ? 'staged' : 'uploaded';
+  // Observability: number of MediaRecorder lifecycles that contributed to this
+  // recording. >1 means the watchdog had to restart the encoder mid-capture.
+  const recorderSegmentCount = Array.isArray(segSizes) ? segSizes.length : null;
   db.prepare(`
-    INSERT INTO recordings (id, author, video_filename, file_size_bytes, status, share_token)
-    VALUES (?, ?, 'video.webm', ?, 'uploaded', ?)
-  `).run(recordingId, session.author, finalBytes, shareToken);
+    INSERT INTO recordings (id, author, video_filename, file_size_bytes, status, share_token, recorder_segment_count)
+    VALUES (?, ?, 'video.webm', ?, ?, ?, ?)
+  `).run(recordingId, session.author, finalBytes, initialStatus, shareToken, recorderSegmentCount);
 
   // Save metadata (url_events, console_events, etc.)
   if (sessionMeta) {
@@ -209,6 +217,16 @@ export async function completeUpload(uploadId) {
 
   // Cleanup temp chunks (fire and forget)
   fs.rm(session.temp_dir, { recursive: true, force: true }, () => {});
+
+  if (stageOnly) {
+    return {
+      upload_id: uploadId,
+      recording_id: recordingId,
+      status: 'staged',
+      share_token: shareToken,
+      video_url: `/api/recordings/${shareToken}/video`,
+    };
+  }
 
   // Enqueue pipeline
   enqueuePipeline(recordingId).catch(err => {

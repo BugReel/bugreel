@@ -45,7 +45,10 @@ router.put('/upload/:id/chunk/:index', (req, res) => {
 router.post('/upload/:id/complete', async (req, res) => {
   try {
     const result = await completeUpload(req.params.id);
-    res.json({ success: true, id: result.recording_id, status: result.status });
+    const body = { success: true, id: result.recording_id, status: result.status };
+    if (result.share_token) body.share_token = result.share_token;
+    if (result.video_url) body.video_url = result.video_url;
+    res.json(body);
   } catch (err) {
     res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }

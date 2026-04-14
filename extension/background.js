@@ -478,11 +478,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'discard-recording') {
-    ensureRecorderContext().then(() => {
-      chrome.runtime.sendMessage({ type: 'offscreen-discard', target: 'offscreen' }).catch(() => {});
+    (async () => {
+      const tokenData = await chrome.storage.local.get(['extensionToken', 'serverUrl']);
+      await ensureRecorderContext();
+      chrome.runtime.sendMessage({
+        type: 'offscreen-discard', target: 'offscreen',
+        extensionToken: tokenData.extensionToken || '',
+        serverUrl: tokenData.serverUrl || '',
+      }).catch(() => {});
       setState('idle');
       closeRecorderContext();
-    });
+    })();
     sendResponse({ success: true });
     return false;
   }

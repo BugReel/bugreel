@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config.js';
 import { getDB } from '../db.js';
-import { getQueueStatus } from '../services/pipeline.js';
+import { getQueueStatus, enqueuePipeline } from '../services/pipeline.js';
 import { getTrackerConfig } from './settings.js';
 
 /**
@@ -371,6 +371,55 @@ router.get('/recordings/:id/frames/:filename', (req, res) => {
       res.status(404).json({ error: 'Frame not found' });
     }
   });
+});
+
+// Finalize a staged recording: apply trim/metadata, flip status, start pipeline.
+// Used when the extension staged a multi-segment recording for local preview
+// (encoder auto-restarted during capture) and the user is now hitting Upload
+// from the review page. The video bytes are already on disk — this just
+// records the trim/metadata and kicks off processing.
+router.post('/recordings/:id/finalize', (req, res) => {
+  const db = getDB();
+  const rec = db.prepare('SELECT id, status FROM recordings WHERE id = ?').get(req.params.id);
+  if (!rec) return res.status(404).json({ error: 'Not found' });
+  if (rec.status !== 'staged') {
+    return res.status(409).json({ error: 'not_staged', status: rec.status });
+  }
+
+  const urlEvents = req.body.url_events || null;
+  const metadata = req.body.metadata || null;
+  const consoleEvents = req.body.console_events || null;
+  const actionEvents = req.body.action_events || null;
+  const manualMarkers = req.body.manual_markers || null;
+  const trimStart = req.body.trim_start != null && req.body.trim_start !== ''
+    ? parseFloat(req.body.trim_start) : null;
+  const trimEnd = req.body.trim_end != null && req.body.trim_end !== ''
+    ? parseFloat(req.body.trim_end) : null;
+  const segments = req.body.segments
+    ? (typeof req.body.segments === 'string' ? req.body.segments : JSON.stringify(req.body.segments))
+    : null;
+
+  db.prepare(`UPDATE recordings SET
+    url_events_json = COALESCE(?, url_events_json),
+    metadata_json = COALESCE(?, metadata_json),
+    console_events_json = COALESCE(?, console_events_json),
+    action_events_json = COALESCE(?, action_events_json),
+    manual_markers_json = COALESCE(?, manual_markers_json),
+    trim_start = ?, trim_end = ?,
+    segments_json = COALESCE(?, segments_json),
+    status = 'uploaded'
+  WHERE id = ?`).run(
+    urlEvents, metadata, consoleEvents, actionEvents, manualMarkers,
+    trimStart, trimEnd, segments, rec.id,
+  );
+
+  enqueuePipeline(rec.id).catch(err => {
+    console.error(`Pipeline error for ${rec.id}:`, err);
+    db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('error', rec.id);
+  });
+
+  console.log(`[${rec.id}] finalized from staged (trim=${trimStart}..${trimEnd})`);
+  res.json({ id: rec.id, status: 'uploaded', queue: getQueueStatus() });
 });
 
 // Delete a recording and all associated data

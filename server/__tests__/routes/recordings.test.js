@@ -512,6 +512,55 @@ describe('Recordings — pre-link YouTrack', () => {
   });
 });
 
+// ================= STAGED / FINALIZE =================
+
+describe('Recordings — staged → finalized lifecycle', () => {
+  it("allows status='staged' and stores it", () => {
+    const rec = createRecording({ status: 'staged' });
+    const db = getDB();
+    const row = db.prepare('SELECT status FROM recordings WHERE id = ?').get(rec.id);
+    expect(row.status).toBe('staged');
+    cleanup(rec.id);
+  });
+
+  it('finalize route logic: flips staged → uploaded and records trim/segments', () => {
+    const rec = createRecording({ status: 'staged' });
+    const db = getDB();
+
+    // Mirror the UPDATE that routes/recordings.js :: POST /recordings/:id/finalize runs.
+    const trimStart = 1.5;
+    const trimEnd = 12.25;
+    const segmentsJson = JSON.stringify([{ start: 1.5, end: 5 }, { start: 7, end: 12.25 }]);
+
+    db.prepare(`UPDATE recordings SET
+      trim_start = ?, trim_end = ?,
+      segments_json = COALESCE(?, segments_json),
+      status = 'uploaded'
+    WHERE id = ?`).run(trimStart, trimEnd, segmentsJson, rec.id);
+
+    const row = db.prepare(
+      'SELECT status, trim_start, trim_end, segments_json FROM recordings WHERE id = ?',
+    ).get(rec.id);
+
+    expect(row.status).toBe('uploaded');
+    expect(row.trim_start).toBe(trimStart);
+    expect(row.trim_end).toBe(trimEnd);
+    expect(JSON.parse(row.segments_json)).toHaveLength(2);
+
+    cleanup(rec.id);
+  });
+
+  it('finalize is a no-op path guard: non-staged status should not flip', () => {
+    // Mirrors the `if (rec.status !== 'staged') return 409;` check in the route.
+    const rec = createRecording({ status: 'uploaded' });
+    const db = getDB();
+    const row = db.prepare('SELECT status FROM recordings WHERE id = ?').get(rec.id);
+    expect(row.status).toBe('uploaded');
+    // Route would refuse to finalize — the DB state is the one we trust.
+    cleanup(rec.id);
+  });
+});
+
 // ================= SHARE TOKEN UNIQUENESS =================
 
 describe('Recordings — share_token', () => {

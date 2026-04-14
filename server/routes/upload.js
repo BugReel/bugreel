@@ -71,11 +71,36 @@ router.post('/upload', (req, res, next) => {
   // Prefer user identity from Cloud Layer proxy headers, fall back to form body
   const author = req.headers['x-user-name'] || req.headers['x-user-email'] || req.body.author || 'Unknown';
 
+  // stage_only: upload the (already-concatenated) bytes but don't start the
+  // pipeline. The client will download the stitched blob back for local
+  // preview/trim and later hit /finalize. Used when the recorder had to
+  // auto-restart mid-capture — local preview of raw multi-segment blob is
+  // broken, so we round-trip through the server instead of muxing in JS.
+  const stageOnly = req.body.stage_only === '1' || req.body.stage_only === 'true';
+
+  const shareToken = crypto.randomUUID();
+  const initialStatus = stageOnly ? 'staged' : 'uploaded';
+
+  // Observability: record how many MediaRecorder lifecycles contributed to
+  // this upload. NULL for pre-fix clients, 1 for normal recordings, >1 when
+  // the watchdog had to restart the encoder. See docs/recording-resilience.md.
+  let recorderSegmentCount = null;
+  if (rawSizes) {
+    try {
+      const sizes = JSON.parse(rawSizes);
+      if (Array.isArray(sizes)) recorderSegmentCount = sizes.length;
+    } catch { /* already logged above */ }
+  }
+  if (recorderSegmentCount === null) {
+    const headerVal = parseInt(req.headers['x-recording-segments'], 10);
+    if (!isNaN(headerVal) && headerVal > 0) recorderSegmentCount = headerVal;
+  }
+
   const db = getDB();
   db.prepare(`
-    INSERT INTO recordings (id, author, video_filename, file_size_bytes, status, share_token)
-    VALUES (?, ?, 'video.webm', ?, 'uploaded', ?)
-  `).run(id, author, req.file.size, crypto.randomUUID());
+    INSERT INTO recordings (id, author, video_filename, file_size_bytes, status, share_token, recorder_segment_count)
+    VALUES (?, ?, 'video.webm', ?, ?, ?, ?)
+  `).run(id, author, req.file.size, initialStatus, shareToken, recorderSegmentCount);
 
   const urlEvents = req.body.url_events || null;
   const metadata = req.body.metadata || null;
@@ -89,6 +114,16 @@ router.post('/upload', (req, res, next) => {
   if (urlEvents || metadata || consoleEvents || actionEvents || manualMarkers || trimStart !== null || trimEnd !== null || segments) {
     db.prepare(`UPDATE recordings SET url_events_json = ?, metadata_json = ?, console_events_json = ?, action_events_json = ?, manual_markers_json = ?, trim_start = ?, trim_end = ?, segments_json = ? WHERE id = ?`)
       .run(urlEvents, metadata, consoleEvents, actionEvents, manualMarkers, trimStart, trimEnd, segments, id);
+  }
+
+  if (stageOnly) {
+    // Don't enqueuePipeline — client will call /api/recordings/:id/finalize.
+    return res.json({
+      id,
+      status: 'staged',
+      share_token: shareToken,
+      video_url: `/api/recordings/${shareToken}/video`,
+    });
   }
 
   // Enqueue pipeline (max 2 concurrent), catch errors
