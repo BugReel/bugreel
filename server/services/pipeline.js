@@ -5,6 +5,39 @@ import { config } from '../config.js';
 import { extractAudio, extractFrame, compressVideo, trimVideo, segmentVideo } from './ffmpeg.js';
 import { transcribe } from './whisper.js';
 import { analyzeTranscript } from './gpt.js';
+
+/**
+ * Best-effort notification to the Skrini cloud about AI usage. Used when Core
+ * runs behind a paid-SaaS wrapper (skrini.ru). Does nothing when CLOUD_USAGE_URL
+ * or INTERNAL_TOKEN is unset — Core can run standalone.
+ *
+ * @param {string} recordingId
+ * @param {'transcription'|'analysis'} kind
+ * @param {{minutes?: number, count?: number}} payload
+ */
+async function notifyUsage(recordingId, kind, payload = {}) {
+  const url = process.env.CLOUD_USAGE_URL;
+  const token = process.env.INTERNAL_TOKEN;
+  if (!url || !token) return;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Token': token,
+      },
+      body: JSON.stringify({ recording_id: recordingId, kind, ...payload }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) {
+      console.warn(`[usage] ${kind} callback for ${recordingId} → ${res.status}`);
+    }
+  } catch (err) {
+    // Never fail the pipeline because of usage reporting.
+    console.warn(`[usage] ${kind} callback failed for ${recordingId}: ${err.message}`);
+  }
+}
 // --- Concurrency queue: max 2 pipelines at once to avoid overloading CPU/RAM ---
 const MAX_CONCURRENT = 2;
 let running = 0;
@@ -127,6 +160,8 @@ async function processPipeline(recordingId) {
       db.prepare('UPDATE recordings SET transcript_json = ?, status = ? WHERE id = ?')
         .run(JSON.stringify(result), 'transcribed', recordingId);
       console.log(`[${recordingId}] Transcription complete`);
+      // Fire-and-forget usage callback to cloud (no-op for standalone deployments).
+      notifyUsage(recordingId, 'transcription', { minutes: Math.max(1, Math.round(duration / 60)) });
       return result;
     }),
     // Video compression (CPU-bound ffmpeg — runs in parallel with network call)
@@ -159,6 +194,7 @@ async function processPipeline(recordingId) {
   db.prepare('UPDATE recordings SET analysis_json = ?, status = ? WHERE id = ?')
     .run(JSON.stringify(analysis), 'analyzed', recordingId);
   console.log(`[${recordingId}] Analysis complete: type=${analysis.type}, title="${analysis.title}"`);
+  notifyUsage(recordingId, 'analysis', { count: 1 });
 
   // 4. Extract key frames (from compressed video)
   console.log(`[${recordingId}] Extracting key frames...`);
