@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import crypto from 'crypto';
 import { cleanupTestData } from './setup.js';
-import { initDB, getDB } from '../db.js';
+import { initDB, getDB, generateRecordingId } from '../db.js';
 
 beforeAll(() => {
   initDB();
@@ -123,6 +123,53 @@ describe('Database Schema — users', () => {
     const admin = db.prepare("SELECT * FROM users WHERE role = 'admin' LIMIT 1").get();
     expect(admin).toBeTruthy();
     expect(admin.name).toBe('Admin');
+  });
+});
+
+describe('generateRecordingId', () => {
+  const year = new Date().getFullYear();
+  const prefix = `REC-${year}-`;
+
+  function clearYear() {
+    getDB().prepare('DELETE FROM recordings WHERE id LIKE ?').run(`${prefix}%`);
+  }
+
+  function insert(num) {
+    const id = `${prefix}${String(num).padStart(4, '0')}`;
+    getDB().prepare("INSERT INTO recordings (id, author, share_token) VALUES (?, 'tester', ?)")
+      .run(id, crypto.randomUUID());
+    return id;
+  }
+
+  it('returns 0001 on empty table', () => {
+    clearYear();
+    expect(generateRecordingId()).toBe(`${prefix}0001`);
+    clearYear();
+  });
+
+  it('returns next sequential ID with consecutive records', () => {
+    clearYear();
+    insert(1); insert(2); insert(3);
+    expect(generateRecordingId()).toBe(`${prefix}0004`);
+    clearYear();
+  });
+
+  it('skips holes from middle deletions instead of colliding (regression)', () => {
+    // Original bug: COUNT(*)+1 returned an ID that already existed when a
+    // record was deleted from the middle of the sequence — UNIQUE constraint
+    // failure on next upload. MAX(num)+1 must keep climbing past the hole.
+    clearYear();
+    insert(1); insert(2); insert(3); insert(4); insert(5);
+    getDB().prepare('DELETE FROM recordings WHERE id = ?').run(`${prefix}0003`);
+    expect(generateRecordingId()).toBe(`${prefix}0006`);
+    clearYear();
+  });
+
+  it('handles non-contiguous gaps (mirrors real prod state)', () => {
+    clearYear();
+    [1,2,3,4,5,6,7,8,9,10,11,12,13,19,20,21,22,23,24,25].forEach(insert);
+    expect(generateRecordingId()).toBe(`${prefix}0026`);
+    clearYear();
   });
 });
 

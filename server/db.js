@@ -255,7 +255,13 @@ export function generateRecordingId() {
   const db = getDB();
   const year = new Date().getFullYear();
   const prefix = `REC-${year}-`;
-  const row = db.prepare('SELECT COUNT(*) as count FROM recordings WHERE id LIKE ?').get(`${prefix}%`);
-  const num = (row.count + 1).toString().padStart(4, '0');
+  // MAX(numeric suffix)+1, not COUNT(*)+1 — count-based numbering collides
+  // when records are deleted from the middle (retention cleanup, manual delete)
+  // because the next ID lands on a still-existing row.
+  const row = db.prepare(`
+    SELECT MAX(CAST(SUBSTR(id, ?) AS INTEGER)) AS maxNum
+    FROM recordings WHERE id LIKE ?
+  `).get(prefix.length + 1, `${prefix}%`);
+  const num = ((row.maxNum || 0) + 1).toString().padStart(4, '0');
   return `${prefix}${num}`;
 }
