@@ -128,9 +128,28 @@ chrome.commands.onCommand.addListener(async (command) => {
 // Notification click → open recording page
 chrome.notifications.onClicked.addListener(async (notifId) => {
   const serverUrl = await getServerUrl();
-  const stored = await chrome.storage.local.get('dashboardPath');
+  const stored = await chrome.storage.local.get(['dashboardPath', 'extensionToken']);
   const dashPath = stored.dashboardPath || '/';
-  const url = `${serverUrl}${dashPath}recording/${encodeURIComponent(notifId)}`;
+  let url = `${serverUrl}${dashPath}recording/${encodeURIComponent(notifId)}`;
+
+  // Bridge extension Bearer auth → browser cookie session via single-use ?h=.
+  // Falls back to plain URL if server doesn't implement the handoff endpoint.
+  if (serverUrl && stored.extensionToken) {
+    try {
+      const res = await fetch(`${serverUrl}/api/auth/handoff`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${stored.extensionToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.token) {
+          const sep = url.includes('?') ? '&' : '?';
+          url = `${url}${sep}h=${encodeURIComponent(data.token)}`;
+        }
+      }
+    } catch {}
+  }
+
   chrome.tabs.create({ url });
   chrome.notifications.clear(notifId);
 });

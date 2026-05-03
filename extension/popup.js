@@ -16,6 +16,34 @@ async function getServerUrl() {
   return r.serverUrl || '';
 }
 
+// Open a server URL in a new tab. If the server supports it (POST
+// /api/auth/handoff), enrich with a single-use ?h= token so the user lands
+// on the page already cookie-authenticated — same Bearer→cookie bridge for
+// guests and registered users. Falls back to the plain URL on any failure
+// (token missing, server returns 404, network error).
+async function openWithHandoff(plainUrl) {
+  let url = plainUrl;
+  try {
+    if (SERVER_URL && plainUrl.startsWith(SERVER_URL)) {
+      const stored = await chrome.storage.local.get('extensionToken');
+      if (stored.extensionToken) {
+        const res = await fetch(`${SERVER_URL}/api/auth/handoff`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${stored.extensionToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.token) {
+            const sep = url.includes('?') ? '&' : '?';
+            url = `${url}${sep}h=${encodeURIComponent(data.token)}`;
+          }
+        }
+      }
+    }
+  } catch {}
+  chrome.tabs.create({ url });
+}
+
 
 const $ = id => document.getElementById(id);
 const controls       = $('controls');
@@ -890,7 +918,7 @@ function setStatus(type, text) {
 function setStatusWithLink(type, text, recordingId) {
   const url = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(recordingId)}`;
   statusText.innerHTML = `${text} <a href="${url}" class="status-link" id="rec-link">${recordingId}</a>`;
-  document.getElementById('rec-link')?.addEventListener('click', (e) => { e.preventDefault(); chrome.tabs.create({ url }); });
+  document.getElementById('rec-link')?.addEventListener('click', (e) => { e.preventDefault(); openWithHandoff(url); });
   statusDot.className = 'status-dot green';
 }
 
@@ -949,7 +977,7 @@ async function loadRecentRecordings() {
     container.querySelectorAll('.recent-item').forEach(el => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
-        chrome.tabs.create({ url: el.dataset.url });
+        openWithHandoff(el.dataset.url);
       });
     });
   } catch {}
@@ -971,10 +999,10 @@ window.addEventListener('pagehide', () => {
 /* --- Dashboard link --- */
 document.getElementById('dashboard-link')?.addEventListener('click', (e) => {
   e.preventDefault();
-  chrome.tabs.create({ url: SERVER_URL + DASHBOARD_PATH });
+  openWithHandoff(SERVER_URL + DASHBOARD_PATH);
 });
 
 /* --- User badge → open dashboard --- */
 document.getElementById('user-connected')?.addEventListener('click', () => {
-  chrome.tabs.create({ url: SERVER_URL + DASHBOARD_PATH });
+  openWithHandoff(SERVER_URL + DASHBOARD_PATH);
 });

@@ -499,12 +499,38 @@ function setupButtons() {
       statusEl.innerHTML = `
         <div style="margin-top:12px;padding:16px;background:#0f2a1f;border:1px solid #22c55e;border-radius:10px;text-align:center;">
           <div style="font-size:13px;color:#22c55e;font-weight:600;margin-bottom:8px;">${t('review_uploadDone', 'Video uploaded — link copied to clipboard')}</div>
-          <a href="${url}" target="_blank" style="font-size:15px;color:#3b82f6;font-weight:700;word-break:break-all;">${url}</a>
+          <a href="${url}" target="_blank" id="rec-open-link" style="font-size:15px;color:#3b82f6;font-weight:700;word-break:break-all;">${url}</a>
           <div style="margin-top:10px;">
             <button id="btn-copy-link" style="padding:8px 20px;background:#334155;border:1px solid #475569;border-radius:6px;color:#e2e8f0;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">${t('review_copyLink', 'Copy link')}</button>
           </div>
         </div>${guestBanner}`;
       statusEl.className = 'status';
+
+      // Intercept click on the recording link: add a single-use ?h= token so
+      // the user's browser gets a session cookie via /api/auth/handoff. Plain
+      // href stays plain so right-click→Copy and middle-click yield a
+      // shareable-without-leak URL.
+      document.getElementById('rec-open-link')?.addEventListener('click', async (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        let openUrl = url;
+        try {
+          if (SERVER_URL && guestData.extensionToken) {
+            const res = await fetch(`${SERVER_URL}/api/auth/handoff`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${guestData.extensionToken}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.token) {
+                const sep = openUrl.includes('?') ? '&' : '?';
+                openUrl = `${openUrl}${sep}h=${encodeURIComponent(data.token)}`;
+              }
+            }
+          }
+        } catch {}
+        window.open(openUrl, '_blank');
+      });
 
       if (guestData.userIsGuest) {
         document.getElementById('btn-guest-upgrade')?.addEventListener('click', () => {
