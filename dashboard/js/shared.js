@@ -323,9 +323,72 @@ export function renderHeader(activePage) {
           <button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
           <button class="lang-btn ${currentLang === 'ru' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>
         </div>
+        <div id="user-menu" class="user-menu" style="display:none">
+          <button id="user-menu-btn" class="user-menu-btn" type="button" aria-haspopup="true" aria-expanded="false">
+            <span id="user-menu-avatar" class="user-menu-avatar"></span>
+            <span id="user-menu-name"></span>
+          </button>
+          <div id="user-menu-dropdown" class="user-menu-dropdown" hidden>
+            <div class="user-menu-info">
+              <div id="user-menu-fullname" class="user-menu-fullname"></div>
+              <div id="user-menu-email" class="user-menu-email"></div>
+            </div>
+            <button id="user-menu-logout" class="user-menu-logout" type="button">
+              ${t('nav_logout', 'Log out')}
+            </button>
+          </div>
+        </div>
       </div>
     </header>
   `;
+}
+
+/**
+ * Load current user from /api/auth/me and render the user menu.
+ * Logout posts /api/auth/logout (works behind both Core auth and a
+ * cloud reverse proxy that overrides the route) and redirects to /.
+ */
+let _userMenuPromise = null;
+export function initUserMenu() {
+  if (_userMenuPromise) return _userMenuPromise;
+  _userMenuPromise = fetch('/api/auth/me', { credentials: 'same-origin' })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      const u = data?.user;
+      if (!u) return;
+      const menu = document.getElementById('user-menu');
+      const nameEl = document.getElementById('user-menu-name');
+      const fullEl = document.getElementById('user-menu-fullname');
+      const emailEl = document.getElementById('user-menu-email');
+      const avatarEl = document.getElementById('user-menu-avatar');
+      const display = u.name || (u.email ? u.email.split('@')[0] : 'User');
+      const initials = display.trim().slice(0, 1).toUpperCase() || 'U';
+      if (nameEl) nameEl.textContent = display;
+      if (fullEl) fullEl.textContent = display;
+      if (emailEl) emailEl.textContent = u.email || '';
+      if (avatarEl) avatarEl.textContent = initials;
+      if (menu) menu.style.display = '';
+
+      const btn = document.getElementById('user-menu-btn');
+      const dd = document.getElementById('user-menu-dropdown');
+      btn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = !dd.hidden;
+        dd.hidden = open;
+        btn.setAttribute('aria-expanded', String(!open));
+      });
+      document.addEventListener('click', (e) => {
+        if (!dd || dd.hidden) return;
+        if (!menu.contains(e.target)) { dd.hidden = true; btn?.setAttribute('aria-expanded', 'false'); }
+      });
+
+      document.getElementById('user-menu-logout')?.addEventListener('click', async () => {
+        try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
+        window.location.href = '/';
+      });
+    })
+    .catch(() => {});
+  return _userMenuPromise;
 }
 
 /**

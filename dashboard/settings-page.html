@@ -503,12 +503,13 @@
   </div>
 
   <script type="module">
-    import { renderHeader, icons, escapeHTML, basePath } from './js/shared.js';
+    import { renderHeader, initUserMenu, icons, escapeHTML, basePath } from './js/shared.js';
     import { initQuotaWidget, getQuotaDataAsync, formatBytes } from './js/quota.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('settings');
     initQuotaWidget();
+    initUserMenu();
 
     // ---- Elements ----
     const loader = document.getElementById('settingsLoader');

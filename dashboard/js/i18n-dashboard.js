@@ -227,6 +227,9 @@
       feedback_sent: 'Thanks! Your feedback has been sent.',
       feedback_error: 'Failed to send. Please try again.',
 
+      // User menu
+      nav_logout: 'Log out',
+
       // Settings page
       nav_settings: 'Settings',
       settings_title: 'Settings',
@@ -615,6 +618,9 @@
       feedback_sending: 'Отправка…',
       feedback_sent: 'Спасибо! Отзыв отправлен.',
       feedback_error: 'Не удалось отправить. Попробуйте ещё раз.',
+
+      // User menu
+      nav_logout: 'Выйти',
 
       // Settings page
       nav_settings: 'Настройки',

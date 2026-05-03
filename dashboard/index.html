@@ -48,7 +48,7 @@
 
   <script type="module">
     import { getRecordings, deleteRecording } from './js/api.js';
-    import { renderHeader, formatDate, formatDuration, statusLabel, icons, escapeHTML, basePath } from './js/shared.js';
+    import { renderHeader, initUserMenu, formatDate, formatDuration, statusLabel, icons, escapeHTML, basePath } from './js/shared.js';
     import { initQuotaWidget, retentionBadge } from './js/quota.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
@@ -57,6 +57,7 @@
     // Render header
     document.getElementById('header').innerHTML = renderHeader('recordings');
     initQuotaWidget();
+    initUserMenu();
 
     // State
     let currentOffset = 0;

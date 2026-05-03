@@ -60,7 +60,7 @@
   <script type="module">
     import { getCards } from './js/api.js';
     import {
-      renderHeader, formatDate, statusLabel, categoryLabel, csCircleHTML,
+      renderHeader, initUserMenu, formatDate, statusLabel, categoryLabel, csCircleHTML,
       escapeHTML, icons, timeAgo, basePath
     } from './js/shared.js';
     import { initQuotaWidget } from './js/quota.js';
@@ -68,6 +68,7 @@
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('cards');
     initQuotaWidget();
+    initUserMenu();
 
     // State
     let allCards = [];

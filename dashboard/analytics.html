@@ -24,7 +24,7 @@
   <script type="module">
     import { getRecordings, getCards, getViewAnalytics } from './js/api.js';
     import {
-      renderHeader, formatDate, formatDuration, statusLabel,
+      renderHeader, initUserMenu, formatDate, formatDuration, statusLabel,
       escapeHTML, icons, timeAgo, basePath
     } from './js/shared.js';
     import { initQuotaWidget } from './js/quota.js';
@@ -32,6 +32,7 @@
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('analytics');
     initQuotaWidget();
+    initUserMenu();
 
     const container = document.getElementById('analytics');
 

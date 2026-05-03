@@ -362,6 +362,96 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   cursor: default;
 }
 
+/* --- User Menu (header) --- */
+.user-menu {
+  position: relative;
+}
+.user-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  max-width: 180px;
+}
+.user-menu-btn:hover {
+  border-color: var(--text3);
+  background: var(--surface2);
+}
+.user-menu-btn > #user-menu-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-menu-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 100;
+  overflow: hidden;
+}
+.user-menu-info {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.user-menu-fullname {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+.user-menu-email {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+  word-break: break-all;
+}
+.user-menu-logout {
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.user-menu-logout:hover {
+  background: var(--surface2);
+}
+@media (max-width: 600px) {
+  .user-menu-btn > #user-menu-name { display: none; }
+  .user-menu-btn { padding: 4px; }
+}
+
 /* --- Card Component --- */
 .card {
   background: var(--surface);

@@ -27,7 +27,7 @@
       setRecordingPassword, removeRecordingPassword
     } from '../js/api.js';
     import {
-      renderHeader, extractParam, formatDate, formatDuration, formatTimecode,
+      renderHeader, initUserMenu, extractParam, formatDate, formatDuration, formatTimecode,
       statusLabel, categoryLabel, csCircleHTML,
       renderDescription, escapeHTML, icons, timeAgo
     } from '../js/shared.js';
@@ -39,6 +39,7 @@
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     document.getElementById('header').innerHTML = renderHeader('recordings');
     initQuotaWidget();
+    initUserMenu();
 
     const content = document.getElementById('content');
     const recordingId = extractParam('/recording/');
