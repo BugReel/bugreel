@@ -5,6 +5,16 @@ import { getDB } from './db.js';
 
 const AUTH_COOKIE = 'tracker_auth';
 
+// Reverse proxies must keep header values within ASCII (RFC 7230). When the
+// upstream user has a non-ASCII name like "Алексей", the proxy percent-encodes
+// it. Decode here transparently — plain ASCII strings pass through unchanged.
+function decodeProxyHeader(value) {
+  if (!value) return '';
+  const s = String(value);
+  if (!s.includes('%')) return s;
+  try { return decodeURIComponent(s); } catch { return s; }
+}
+
 // Legacy token for backward compatibility (simple mode)
 const LEGACY_AUTH_TOKEN = config.dashboardPassword
   ? crypto.createHash('sha256').update(config.dashboardPassword + 'bugreel-default-salt').digest('hex')
@@ -80,16 +90,18 @@ export function authenticateRequest(req, res, next) {
     let user = db.prepare('SELECT * FROM users WHERE id = ?').get(proxyUserId);
     if (!user) {
       // Try by email (cloud layer sends X-User-Email)
-      const proxyEmail = req.headers['x-user-email'];
+      const proxyEmail = decodeProxyHeader(req.headers['x-user-email']);
       if (proxyEmail) {
         user = db.prepare('SELECT * FROM users WHERE email = ?').get(proxyEmail);
       }
     }
     if (!user) {
-      // Auto-create user from proxy headers (first proxied user accessing BugReel)
+      // Auto-create user from proxy headers (first proxied user accessing BugReel).
+      // Header values are ASCII-only per RFC 7230, so the proxy may percent-encode
+      // non-ASCII characters (e.g. Cyrillic names). Decode defensively.
       const userId = proxyUserId;
-      const email = req.headers['x-user-email'] || `${proxyUserId}@proxy.local`;
-      const name = req.headers['x-user-name'] || 'Proxy User';
+      const email = decodeProxyHeader(req.headers['x-user-email']) || `${proxyUserId}@proxy.local`;
+      const name = decodeProxyHeader(req.headers['x-user-name']) || 'Proxy User';
       db.prepare(`
         INSERT OR IGNORE INTO users (id, name, email, auth_provider, role)
         VALUES (?, ?, ?, 'proxy', 'admin')
@@ -225,7 +237,12 @@ export function authGuard(req, res, next) {
   if (process.env.TRUST_PROXY_AUTH === 'true') {
     return authenticateRequest(req, res, () => {
       if (!req.user) {
-        req.user = { id: 'proxy-user', name: req.headers['x-user-name'] || 'User', email: req.headers['x-user-email'] || '', role: 'admin' };
+        req.user = {
+          id: 'proxy-user',
+          name: decodeProxyHeader(req.headers['x-user-name']) || 'User',
+          email: decodeProxyHeader(req.headers['x-user-email']) || '',
+          role: 'admin',
+        };
       }
       next();
     });
