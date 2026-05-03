@@ -242,11 +242,14 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
       throw new Error(t('setup_invalidResponse', 'Invalid server response'));
     }
 
-    // Save token and user info + server-managed limits (if provided)
+    // Save token and user info + server-managed limits (if provided).
+    // Always reset userIsGuest from server response — manual connect must
+    // override any leftover guest flag from a previous install.
     const storageData = {
       extensionToken: token,
       userName: data.user.name || '',
-      userEmail: data.user.email || ''
+      userEmail: data.user.email || '',
+      userIsGuest: data.user.is_guest === true,
     };
     if (data.limits && data.limits.max_duration_sec) {
       storageData.serverMaxDurationMin = Math.floor(data.limits.max_duration_sec / 60);

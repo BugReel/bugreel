@@ -54,6 +54,15 @@ async function provisionGuestAccount() {
   const data = await res.json();
   if (!data.ok || !data.token) throw new Error('no token in response');
 
+  // Re-check storage after the network round-trip: a postMessage handoff or
+  // manual connect may have raced ahead and stored a real account token.
+  // If so, drop the guest token on the floor — never overwrite a real one.
+  const post = await chrome.storage.local.get('extensionToken');
+  if (post.extensionToken) {
+    console.log('[BugReel] Guest provision raced with real token, discarded');
+    return;
+  }
+
   const update = {
     extensionToken: data.token,
     userName: data.user?.name || 'Guest',

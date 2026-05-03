@@ -266,20 +266,39 @@ async function refreshPlanFromServer(serverUrl, token) {
     });
     if (!res.ok) return;
     const data = await res.json();
-    if (data.user?.plan) {
-      const plan = data.user.plan;
-      const maxMin = data.limits?.max_duration_sec ? Math.floor(data.limits.max_duration_sec / 60) : null;
-      updatePlanBadge(plan);
-      const updates = { serverPlan: plan };
-      if (maxMin) {
-        updates.serverMaxDurationMin = maxMin;
-        updates.maxDuration = maxMin;
-        const maxDurLabel = $('max-duration-label');
-        if (maxDurLabel) {
-          maxDurLabel.textContent = maxMin >= 60 ? `${maxMin / 60} ${t('popup_settingHour', 'hr')}` : `${maxMin} ${t('popup_settingMin', 'min')}`;
-        }
+    if (!data.user) return;
+
+    // Server is the source of truth for is_guest — re-sync local flag and
+    // re-render the popup if the storage flag drifted (e.g. an upgrade
+    // happened in another tab and we still have a stale guest badge).
+    const isGuest = data.user.is_guest === true;
+    const stored = await chrome.storage.local.get(['userIsGuest', 'userName', 'userEmail']);
+    const updates = {
+      userIsGuest: isGuest,
+      userName: data.user.name || '',
+      userEmail: data.user.email || '',
+    };
+    if (data.user.plan) updates.serverPlan = data.user.plan;
+    const maxMin = data.limits?.max_duration_sec ? Math.floor(data.limits.max_duration_sec / 60) : null;
+    if (maxMin) {
+      updates.serverMaxDurationMin = maxMin;
+      updates.maxDuration = maxMin;
+      const maxDurLabel = $('max-duration-label');
+      if (maxDurLabel) {
+        maxDurLabel.textContent = maxMin >= 60 ? `${maxMin / 60} ${t('popup_settingHour', 'hr')}` : `${maxMin} ${t('popup_settingMin', 'min')}`;
       }
-      chrome.storage.local.set(updates);
+    }
+    await chrome.storage.local.set(updates);
+
+    if (isGuest !== !!stored.userIsGuest) {
+      if (isGuest) {
+        showGuestInfo(serverUrl, token);
+      } else {
+        currentUserName = updates.userName || updates.userEmail || t('status_connected', 'Connected');
+        showUserInfo(currentUserName, updates.serverPlan);
+      }
+    } else if (data.user.plan) {
+      updatePlanBadge(data.user.plan);
     }
   } catch { /* silent — popup should not break if server is unreachable */ }
 }
