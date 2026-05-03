@@ -349,6 +349,7 @@ export function renderHeader(activePage) {
  * cloud reverse proxy that overrides the route) and redirects to /.
  */
 let _userMenuPromise = null;
+let _currentUser = null;
 export function initUserMenu() {
   if (_userMenuPromise) return _userMenuPromise;
   _userMenuPromise = fetch('/api/auth/me', { credentials: 'same-origin' })
@@ -356,6 +357,7 @@ export function initUserMenu() {
     .then(data => {
       const u = data?.user;
       if (!u) return;
+      _currentUser = { ...u, upgrade_url: data.upgrade_url || '/auth/upgrade' };
       const menu = document.getElementById('user-menu');
       const nameEl = document.getElementById('user-menu-name');
       const fullEl = document.getElementById('user-menu-fullname');
@@ -363,14 +365,33 @@ export function initUserMenu() {
       const avatarEl = document.getElementById('user-menu-avatar');
       const display = u.name || (u.email ? u.email.split('@')[0] : 'User');
       const initials = display.trim().slice(0, 1).toUpperCase() || 'U';
-      if (nameEl) nameEl.textContent = display;
-      if (fullEl) fullEl.textContent = display;
-      if (emailEl) emailEl.textContent = u.email || '';
-      if (avatarEl) avatarEl.textContent = initials;
+
+      if (u.is_guest) {
+        if (menu) menu.classList.add('user-menu-guest');
+        if (nameEl) nameEl.textContent = t('guest_save_cta', 'Save account');
+        if (fullEl) fullEl.textContent = t('guest_label', 'Guest account');
+        if (emailEl) emailEl.textContent = t('guest_no_email', 'No email — recordings expire soon');
+        if (avatarEl) avatarEl.textContent = '?';
+      } else {
+        if (nameEl) nameEl.textContent = display;
+        if (fullEl) fullEl.textContent = display;
+        if (emailEl) emailEl.textContent = u.email || '';
+        if (avatarEl) avatarEl.textContent = initials;
+      }
       if (menu) menu.style.display = '';
 
       const btn = document.getElementById('user-menu-btn');
       const dd = document.getElementById('user-menu-dropdown');
+
+      if (u.is_guest && dd) {
+        const cta = document.createElement('a');
+        cta.href = _currentUser.upgrade_url;
+        cta.className = 'user-menu-upgrade-cta';
+        cta.textContent = t('guest_save_cta', 'Save account');
+        const info = dd.querySelector('.user-menu-info');
+        if (info) info.after(cta);
+      }
+
       btn?.addEventListener('click', (e) => {
         e.stopPropagation();
         const open = !dd.hidden;
@@ -389,6 +410,17 @@ export function initUserMenu() {
     })
     .catch(() => {});
   return _userMenuPromise;
+}
+
+/** Return cached current user from /api/auth/me (or null if not loaded). */
+export function getCurrentUser() {
+  return _currentUser;
+}
+
+/** Wait for /api/auth/me to resolve, then return the cached user. */
+export async function getCurrentUserAsync() {
+  if (_userMenuPromise) await _userMenuPromise;
+  return _currentUser;
 }
 
 /**

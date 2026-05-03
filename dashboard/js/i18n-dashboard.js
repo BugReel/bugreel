@@ -303,6 +303,21 @@
       quota_ai_analyses: 'AI Analyses',
       quota_per_month: '/mo',
       quota_deletes_in: 'Deletes in {n}d',
+      quota_will_delete_on: 'Will be deleted on',
+
+      // Guest nudges
+      guest_label: 'Guest account',
+      guest_save_cta: 'Save account',
+      guest_no_email: 'No email — recordings expire soon',
+      guest_banner_default_title: 'You\'re using a guest account',
+      guest_banner_default_desc: 'Add your email — keep recordings 2× longer and unlock more space.',
+      guest_banner_default_desc_count: '{n} of {max} recordings used. ',
+      guest_banner_at_limit_title: 'You\'ve hit the {n}-recording limit',
+      guest_banner_at_limit_desc: 'Confirm your email to unlock more recordings and keep them longer.',
+      guest_banner_expiring_title: 'Your oldest recording deletes in {n} day(s)',
+      guest_banner_expiring_desc: 'Confirm your email to extend retention from {a} to {b} days.',
+      guest_banner_cta: 'Save account',
+      dismiss: 'Dismiss',
 
       // Subscription management
       quota_cancel: 'Cancel subscription',
@@ -695,6 +710,21 @@
       quota_ai_analyses: 'AI-анализ',
       quota_per_month: '/мес',
       quota_deletes_in: 'Удалится через {n}д',
+      quota_will_delete_on: 'Будет удалена',
+
+      // Guest nudges
+      guest_label: 'Гостевой аккаунт',
+      guest_save_cta: 'Сохранить аккаунт',
+      guest_no_email: 'Email не подтверждён — записи скоро удалятся',
+      guest_banner_default_title: 'Вы используете гостевой аккаунт',
+      guest_banner_default_desc: 'Подтвердите email — записи будут храниться вдвое дольше и появится больше места.',
+      guest_banner_default_desc_count: '{n} из {max} записей. ',
+      guest_banner_at_limit_title: 'Достигнут лимит {n} записей',
+      guest_banner_at_limit_desc: 'Подтвердите email, чтобы записывать больше и дольше хранить.',
+      guest_banner_expiring_title: 'Самая старая запись удалится через {n} дн.',
+      guest_banner_expiring_desc: 'Подтвердите email — хранение увеличится с {a} до {b} дней.',
+      guest_banner_cta: 'Сохранить аккаунт',
+      dismiss: 'Закрыть',
 
       // Subscription management
       quota_cancel: 'Отменить подписку',

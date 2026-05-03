@@ -452,6 +452,123 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   .user-menu-btn { padding: 4px; }
 }
 
+/* Guest CTA: button styled to grab attention without breaking the header */
+.user-menu-guest .user-menu-btn {
+  background: var(--amber-dim);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.user-menu-guest .user-menu-btn:hover {
+  background: var(--amber);
+  color: #000;
+}
+.user-menu-guest .user-menu-avatar {
+  background: var(--amber);
+  color: #000;
+}
+.user-menu-upgrade-cta {
+  display: block;
+  padding: 10px 14px;
+  background: var(--amber);
+  color: #000;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  transition: opacity 0.15s;
+}
+.user-menu-upgrade-cta:hover {
+  opacity: 0.85;
+  color: #000;
+}
+
+/* --- Guest sticky banner (recordings list) --- */
+.guest-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(90deg, var(--amber-dim) 0%, var(--surface) 100%);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  font-size: 13px;
+}
+.guest-banner.guest-banner-urgent {
+  background: linear-gradient(90deg, var(--red-dim) 0%, var(--surface) 100%);
+  border-color: var(--red);
+}
+.guest-banner-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--amber);
+  color: #000;
+}
+.guest-banner.guest-banner-urgent .guest-banner-icon {
+  background: var(--red);
+  color: #fff;
+}
+.guest-banner-text {
+  flex: 1;
+  line-height: 1.4;
+}
+.guest-banner-text strong {
+  color: var(--text);
+}
+.guest-banner-text .muted {
+  color: var(--text2);
+  font-size: 12px;
+  display: block;
+  margin-top: 2px;
+}
+.guest-banner-cta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--amber);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.guest-banner-cta:hover {
+  opacity: 0.85;
+}
+.guest-banner.guest-banner-urgent .guest-banner-cta {
+  background: var(--red);
+  color: #fff;
+}
+.guest-banner-dismiss {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+.guest-banner-dismiss:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+@media (max-width: 600px) {
+  .guest-banner { flex-wrap: wrap; }
+  .guest-banner-cta { width: 100%; justify-content: center; }
+}
+
 /* --- Card Component --- */
 .card {
   background: var(--surface);

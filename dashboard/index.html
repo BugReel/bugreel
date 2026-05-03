@@ -11,6 +11,7 @@
   <div id="header"></div>
 
   <main class="container page">
+    <div id="guest-banner-host"></div>
     <div class="page-header">
       <h1 data-i18n="index_title">Recordings</h1>
       <p class="page-desc" data-i18n="index_desc">Screen recordings from QA team</p>
@@ -48,8 +49,8 @@
 
   <script type="module">
     import { getRecordings, deleteRecording } from './js/api.js';
-    import { renderHeader, initUserMenu, formatDate, formatDuration, statusLabel, icons, escapeHTML, basePath } from './js/shared.js';
-    import { initQuotaWidget, retentionBadge } from './js/quota.js';
+    import { renderHeader, initUserMenu, getCurrentUser, formatDate, formatDuration, statusLabel, icons, escapeHTML, basePath } from './js/shared.js';
+    import { initQuotaWidget, retentionBadge, renderGuestBanner } from './js/quota.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     const YOUTRACK_URL = window.__BUGREEL_CONFIG__?.youtrackUrl || '';
@@ -87,6 +88,7 @@
 
         const data = await getRecordings(params);
         renderTable(data.recordings, data.total);
+        renderGuestBanner(document.getElementById('guest-banner-host'), data.recordings);
       } catch (err) {
         tableWrapper.innerHTML = `
           <div class="empty-state">
@@ -155,7 +157,7 @@
                   </div>
                 </td>
                 <td>${escapeHTML(r.author || '--')}</td>
-                <td class="text-muted">${formatDate(r.created_at)}${retentionBadge(r.created_at)}</td>
+                <td class="text-muted">${formatDate(r.created_at)}${retentionBadge(r.created_at, { isGuest: getCurrentUser()?.is_guest })}</td>
                 <td><span class="badge badge-${r.status}"><span class="dot"></span>${statusLabel(r.status)}</span></td>
                 <td>${(() => {
                   const ytId = r.card_youtrack_id || r.youtrack_issue_id;
