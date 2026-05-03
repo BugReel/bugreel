@@ -242,12 +242,17 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
       throw new Error(t('setup_invalidResponse', 'Invalid server response'));
     }
 
-    // Save token and user info
-    await chrome.storage.local.set({
+    // Save token and user info + server-managed limits (if provided)
+    const storageData = {
       extensionToken: token,
       userName: data.user.name || '',
       userEmail: data.user.email || ''
-    });
+    };
+    if (data.limits && data.limits.max_duration_sec) {
+      storageData.serverMaxDurationMin = Math.floor(data.limits.max_duration_sec / 60);
+      storageData.serverPlan = data.user.plan || 'free';
+    }
+    await chrome.storage.local.set(storageData);
 
     authDone = true;
     setResult('token-result', 'ok', t('setup_connected', 'Connected!'));
@@ -272,38 +277,102 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
   }
 });
 
-// Check if token already exists in storage
-(async () => {
-  const stored = await chrome.storage.local.get(['extensionToken', 'userName', 'userEmail', 'serverUrl']);
-  if (stored.extensionToken && stored.serverUrl) {
-    // Verify the token is still valid
-    try {
-      const res = await fetch(`${stored.serverUrl}/api/auth/me`, {
-        headers: { 'Authorization': `Bearer ${stored.extensionToken}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.ok && data.user) {
-          authDone = true;
-          setResult('token-result', 'ok', t('setup_alreadyConnected', 'Already connected'));
-          const btn = document.getElementById('btn-connect-token');
-          if (btn) { btn.textContent = t('setup_done', 'Done'); btn.disabled = true; }
-          const tokenInput = document.getElementById('input-token');
-          if (tokenInput) { tokenInput.value = stored.extensionToken.slice(0, 8) + '...'; tokenInput.disabled = true; }
-          const userInfo = document.getElementById('auth-user-info');
-          const userName = document.getElementById('auth-user-name');
-          if (userInfo && userName) {
-            const displayName = data.user.name || data.user.email.split('@')[0];
-            userName.textContent = `${displayName} (${data.user.email})`;
-            userInfo.classList.remove('hidden');
-          }
-          markDone('step-auth');
-          checkAllDone();
-        }
-      }
-    } catch {}
+// Render guest-mode UI: hide token paste form, show upgrade CTA
+function renderGuestMode(token, serverUrl) {
+  const guestBlock = document.getElementById('guest-block');
+  const tokenBlock = document.getElementById('token-block');
+  if (guestBlock) guestBlock.classList.remove('hidden');
+  if (tokenBlock) tokenBlock.classList.add('hidden');
+
+  const upgradeBtn = document.getElementById('btn-upgrade');
+  if (upgradeBtn && !upgradeBtn._wired) {
+    upgradeBtn._wired = true;
+    upgradeBtn.addEventListener('click', () => {
+      const url = `${serverUrl.replace(/\/$/, '')}/auth/upgrade#token=${encodeURIComponent(token)}`;
+      try { chrome.tabs.create({ url }); } catch { window.open(url, '_blank'); }
+    });
   }
-})();
+
+  const linkHave = document.getElementById('link-have-account');
+  if (linkHave && !linkHave._wired) {
+    linkHave._wired = true;
+    linkHave.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (guestBlock) guestBlock.classList.add('hidden');
+      if (tokenBlock) tokenBlock.classList.remove('hidden');
+    });
+  }
+}
+
+// Render registered-user UI: show "connected as" badge
+function renderConnected(user) {
+  const guestBlock = document.getElementById('guest-block');
+  const tokenBlock = document.getElementById('token-block');
+  if (guestBlock) guestBlock.classList.add('hidden');
+  if (tokenBlock) tokenBlock.classList.add('hidden');
+
+  const userInfo = document.getElementById('auth-user-info');
+  const userName = document.getElementById('auth-user-name');
+  if (userInfo && userName) {
+    const displayName = user.name || (user.email ? user.email.split('@')[0] : '');
+    userName.textContent = user.email ? `${displayName} (${user.email})` : displayName;
+    userInfo.classList.remove('hidden');
+  }
+}
+
+// Check if token already exists in storage
+async function refreshAuthStateFromStorage() {
+  const stored = await chrome.storage.local.get(['extensionToken', 'userName', 'userEmail', 'userIsGuest', 'serverUrl', 'serverPlan']);
+  if (!stored.extensionToken || !stored.serverUrl) return;
+
+  // Verify the token is still valid
+  try {
+    const res = await fetch(`${stored.serverUrl}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${stored.extensionToken}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok || !data.user) return;
+
+    // Sync server-managed limits if provided
+    const updates = {};
+    if (data.limits && data.limits.max_duration_sec) {
+      updates.serverMaxDurationMin = Math.floor(data.limits.max_duration_sec / 60);
+      updates.serverPlan = data.user.plan || 'free';
+    }
+    if (typeof data.user.is_guest === 'boolean') updates.userIsGuest = data.user.is_guest;
+    if (Object.keys(updates).length) await chrome.storage.local.set(updates);
+
+    const isGuest = data.user.is_guest === true;
+    authDone = true;
+
+    if (isGuest) {
+      renderGuestMode(stored.extensionToken, stored.serverUrl);
+      // Guest mode: step is "active" but not "done" — user can finish here or upgrade
+      const stepAuth = document.getElementById('step-auth');
+      if (stepAuth) stepAuth.classList.add('active');
+    } else {
+      renderConnected(data.user);
+      setResult('token-result', 'ok', t('setup_alreadyConnected', 'Already connected'));
+      const btn = document.getElementById('btn-connect-token');
+      if (btn) { btn.textContent = t('setup_done', 'Done'); btn.disabled = true; }
+      const tokenInput = document.getElementById('input-token');
+      if (tokenInput) { tokenInput.value = stored.extensionToken.slice(0, 8) + '...'; tokenInput.disabled = true; }
+      markDone('step-auth');
+    }
+    checkAllDone();
+  } catch {}
+}
+
+refreshAuthStateFromStorage();
+
+// React to background-side updates (e.g. postMessage handoff after email upgrade)
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  if (changes.extensionToken || changes.userIsGuest) {
+    refreshAuthStateFromStorage();
+  }
+});
 
 // --- Done ---
 

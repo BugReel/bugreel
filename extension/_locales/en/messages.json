@@ -22,6 +22,18 @@
   "popup_setupAccount": {
     "message": "Set up account"
   },
+  "popup_guestTitle": {
+    "message": "Guest mode"
+  },
+  "popup_guestRetention": {
+    "message": "Recordings available for 7 days."
+  },
+  "popup_guestUpgradeCta": {
+    "message": "Save permanently →"
+  },
+  "popup_guestLimit": {
+    "message": "limit"
+  },
   "popup_labelAuthor": {
     "message": "Author"
   },
@@ -188,6 +200,24 @@
   "label_connected_as": {
     "message": "Connected as:"
   },
+  "guest_ready_title": {
+    "message": "You're ready to record."
+  },
+  "guest_ready_desc": {
+    "message": "A temporary account was created for you. Recordings will be available for 7 days."
+  },
+  "guest_save_title": {
+    "message": "Save your recordings permanently?"
+  },
+  "guest_save_desc": {
+    "message": "Confirm your email to keep your recordings forever and unlock the full dashboard."
+  },
+  "button_save_permanently": {
+    "message": "Save permanently"
+  },
+  "link_have_account": {
+    "message": "Already have an account? Connect with token"
+  },
   "step_done_title": {
     "message": "Done"
   },
@@ -276,6 +306,15 @@
   },
   "review_copied": {
     "message": "Copied!"
+  },
+  "review_guestExpiresTitle": {
+    "message": "This link expires in 7 days."
+  },
+  "review_guestExpiresDesc": {
+    "message": "Save your recordings permanently — confirm your email."
+  },
+  "review_guestUpgradeBtn": {
+    "message": "Save permanently"
   },
   "review_discarded": {
     "message": "Recording discarded."

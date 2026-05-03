@@ -140,19 +140,38 @@
         <div class="step-title" data-i18n="step_connect_title">Connect Your Account</div>
       </div>
       <div class="step-body">
-        <p data-i18n="step_connect_desc">Link your BugReel account so recordings are associated with you.</p>
-        <div class="auth-instructions" style="margin-top:8px;">
-          <div style="margin-bottom:4px;" data-i18n-html="step_connect_instruction_1">1. Open your BugReel dashboard and log in</div>
-          <div style="margin-bottom:4px;" data-i18n-html="step_connect_instruction_2">2. Go to <strong>Settings</strong> and click <strong>Generate Extension Token</strong></div>
-          <div style="margin-bottom:4px;" data-i18n="step_connect_instruction_3">3. Copy the token and paste it below</div>
+        <!-- Guest mode block: shown when an anonymous account was auto-provisioned -->
+        <div id="guest-block" class="hidden">
+          <p style="color:#22c55e;font-weight:600;margin-bottom:6px;" data-i18n="guest_ready_title">You're ready to record.</p>
+          <p data-i18n="guest_ready_desc">A temporary account was created for you. Recordings will be available for 7 days.</p>
+          <div style="margin-top:14px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:8px;">
+            <div style="font-weight:600;color:#e2e8f0;margin-bottom:6px;" data-i18n="guest_save_title">Save your recordings permanently?</div>
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;" data-i18n="guest_save_desc">Confirm your email to keep your recordings forever and unlock the full dashboard.</div>
+            <button class="btn btn-blue" id="btn-upgrade" data-i18n="button_save_permanently">Save permanently</button>
+            <span id="upgrade-result" class="result" style="margin-left:8px;"></span>
+          </div>
+          <div style="margin-top:14px;">
+            <a href="#" id="link-have-account" style="font-size:12px;color:#64748b;text-decoration:underline;cursor:pointer;" data-i18n="link_have_account">Already have an account? Connect with token</a>
+          </div>
         </div>
-        <div style="margin-top:12px;">
-          <input type="text" id="input-token" data-i18n="placeholder_extension_token" data-i18n-attr="placeholder" placeholder="Paste extension token here..." style="width:100%;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:ui-monospace,monospace;outline:none;" />
+
+        <!-- Token paste form: default for first-time connect, or fallback for "have an account" -->
+        <div id="token-block">
+          <p data-i18n="step_connect_desc">Link your BugReel account so recordings are associated with you.</p>
+          <div class="auth-instructions" style="margin-top:8px;">
+            <div style="margin-bottom:4px;" data-i18n-html="step_connect_instruction_1">1. Open your BugReel dashboard and log in</div>
+            <div style="margin-bottom:4px;" data-i18n-html="step_connect_instruction_2">2. Go to <strong>Settings</strong> and click <strong>Generate Extension Token</strong></div>
+            <div style="margin-bottom:4px;" data-i18n="step_connect_instruction_3">3. Copy the token and paste it below</div>
+          </div>
+          <div style="margin-top:12px;">
+            <input type="text" id="input-token" data-i18n="placeholder_extension_token" data-i18n-attr="placeholder" placeholder="Paste extension token here..." style="width:100%;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:ui-monospace,monospace;outline:none;" />
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+            <button class="btn btn-blue" id="btn-connect-token" data-i18n="button_connect">Connect</button>
+            <span id="token-result" class="result"></span>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
-          <button class="btn btn-blue" id="btn-connect-token" data-i18n="button_connect">Connect</button>
-          <span id="token-result" class="result"></span>
-        </div>
+
         <div id="auth-user-info" class="hidden" style="margin-top:10px;padding:10px;background:#0f172a;border:1px solid #22c55e;border-radius:8px;">
           <span style="color:#22c55e;font-weight:600;" data-i18n="label_connected_as">Connected as:</span>
           <span id="auth-user-name" style="color:#e2e8f0;margin-left:4px;"></span>

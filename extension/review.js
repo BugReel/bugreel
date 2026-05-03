@@ -483,7 +483,19 @@ function setupButtons() {
       // Auto-copy link to clipboard
       navigator.clipboard.writeText(url).catch(() => {});
 
+      (async () => {
       // Show prominent link with copy button
+      const guestData = await chrome.storage.local.get(['userIsGuest', 'extensionToken']);
+      const guestBanner = guestData.userIsGuest ? `
+        <div style="margin-top:12px;padding:14px 16px;background:linear-gradient(135deg,rgba(59,130,246,0.10),rgba(139,92,246,0.10));border:1px solid #1e3a5f;border-radius:10px;display:flex;align-items:center;gap:12px;text-align:left;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div style="flex:1;">
+            <div style="color:#e2e8f0;font-weight:600;font-size:13px;">${t('review_guestExpiresTitle', 'This link expires in 7 days.')}</div>
+            <div style="color:#94a3b8;font-size:12px;margin-top:2px;">${t('review_guestExpiresDesc', 'Save your recordings permanently — confirm your email.')}</div>
+          </div>
+          <button id="btn-guest-upgrade" style="padding:8px 14px;background:#3b82f6;border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;">${t('review_guestUpgradeBtn', 'Save permanently')}</button>
+        </div>` : '';
+
       statusEl.innerHTML = `
         <div style="margin-top:12px;padding:16px;background:#0f2a1f;border:1px solid #22c55e;border-radius:10px;text-align:center;">
           <div style="font-size:13px;color:#22c55e;font-weight:600;margin-bottom:8px;">${t('review_uploadDone', 'Video uploaded — link copied to clipboard')}</div>
@@ -491,8 +503,16 @@ function setupButtons() {
           <div style="margin-top:10px;">
             <button id="btn-copy-link" style="padding:8px 20px;background:#334155;border:1px solid #475569;border-radius:6px;color:#e2e8f0;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">${t('review_copyLink', 'Copy link')}</button>
           </div>
-        </div>`;
+        </div>${guestBanner}`;
       statusEl.className = 'status';
+
+      if (guestData.userIsGuest) {
+        document.getElementById('btn-guest-upgrade')?.addEventListener('click', () => {
+          const base = (SERVER_URL || '').replace(/\/$/, '');
+          if (!base || !guestData.extensionToken) return;
+          window.open(`${base}/auth/upgrade#token=${encodeURIComponent(guestData.extensionToken)}`, '_blank');
+        });
+      }
 
       document.getElementById('btn-copy-link')?.addEventListener('click', () => {
         navigator.clipboard.writeText(url).then(() => {
@@ -506,6 +526,7 @@ function setupButtons() {
       btnUpload.style.display = 'none';
       btnDiscard.style.display = 'none';
       document.getElementById('trim-section').style.display = 'none';
+      })();
     }
 
     if (msg.type === 'upload-error') {

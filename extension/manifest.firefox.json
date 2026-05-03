@@ -28,6 +28,12 @@
       "js": ["content-script-actions.js"],
       "run_at": "document_end",
       "all_frames": false
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content-script-server-bridge.js"],
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "action": {
@@ -57,7 +63,11 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "bugreel@bugreel.io",
-      "strict_min_version": "109.0"
+      "strict_min_version": "109.0",
+      "data_collection_permissions": {
+        "required": ["websiteContent"],
+        "optional": ["technicalAndInteraction"]
+      }
     }
   }
 }

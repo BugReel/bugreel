@@ -70,7 +70,7 @@ let timerPausedElapsed = 0;
     'author', 'captureMode', 'micEnabled', 'systemAudioEnabled',
     'webcamEnabled', 'webcamDeviceId',
     'extensionState', 'recordingStartedAt', 'pausedElapsed', 'serverUrl',
-    'extensionToken', 'userName', 'userEmail',
+    'extensionToken', 'userName', 'userEmail', 'userIsGuest',
     'maxDuration', 'videoQuality', 'afterRecording',
     'serverMaxDurationMin', 'serverPlan'
   ]);
@@ -104,7 +104,11 @@ let timerPausedElapsed = 0;
   if (stored.extensionToken) {
     hasExtensionToken = true;
     currentUserName = stored.userName || stored.userEmail || t('status_connected', 'Connected');
-    showUserInfo(currentUserName, stored.serverPlan);
+    if (stored.userIsGuest) {
+      showGuestInfo(stored.serverUrl, stored.extensionToken);
+    } else {
+      showUserInfo(currentUserName, stored.serverPlan);
+    }
     // Refresh plan from server (non-blocking)
     refreshPlanFromServer(stored.serverUrl, stored.extensionToken);
     // Hide legacy author dropdown
@@ -190,12 +194,52 @@ let timerPausedElapsed = 0;
 function showUserInfo(name, plan) {
   if (!name) { showSetupPrompt(); return; }
   const connected = $('user-connected');
+  const guest = $('user-guest');
   const notConnected = $('user-not-connected');
   const displayName = $('user-display-name');
   if (connected) { connected.classList.remove('hidden'); connected.style.display = 'flex'; }
+  if (guest) { guest.classList.add('hidden'); guest.style.display = 'none'; }
   if (notConnected) { notConnected.classList.add('hidden'); notConnected.style.display = 'none'; }
   if (displayName) displayName.textContent = name;
   updatePlanBadge(plan);
+}
+
+function showGuestInfo(serverUrl, token) {
+  const connected = $('user-connected');
+  const guest = $('user-guest');
+  const notConnected = $('user-not-connected');
+  if (connected) { connected.classList.add('hidden'); connected.style.display = 'none'; }
+  if (notConnected) { notConnected.classList.add('hidden'); notConnected.style.display = 'none'; }
+  if (guest) { guest.classList.remove('hidden'); guest.style.display = ''; }
+
+  updateGuestQuota(serverUrl, token);
+
+  const link = $('link-guest-upgrade');
+  if (link && !link._wired) {
+    link._wired = true;
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const base = (serverUrl || '').replace(/\/$/, '');
+      if (!base || !token) return;
+      chrome.tabs.create({ url: `${base}/auth/upgrade#token=${encodeURIComponent(token)}` });
+    });
+  }
+}
+
+async function updateGuestQuota(serverUrl, token) {
+  const el = $('user-guest-quota');
+  if (!el || !serverUrl || !token) return;
+  try {
+    const res = await fetch(`${serverUrl}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const max = data?.limits?.max_recordings;
+    if (typeof max === 'number' && max > 0) {
+      el.textContent = `${t('popup_guestLimit', 'limit')}: ${max}`;
+    }
+  } catch {}
 }
 
 function updatePlanBadge(plan) {
@@ -242,8 +286,10 @@ async function refreshPlanFromServer(serverUrl, token) {
 
 function showSetupPrompt() {
   const connected = $('user-connected');
+  const guest = $('user-guest');
   const notConnected = $('user-not-connected');
   if (connected) { connected.classList.add('hidden'); connected.style.display = 'none'; }
+  if (guest) { guest.classList.add('hidden'); guest.style.display = 'none'; }
   if (notConnected) { notConnected.classList.remove('hidden'); notConnected.style.display = ''; }
 
   // Wire up the setup link
@@ -733,7 +779,9 @@ chrome.runtime.onMessage.addListener((msg) => {
     }
   }
   if (msg.type === 'blob-saved') {
-    // Blob saved to IDB — show review state
+    // Blob saved to IDB — show review state. Background also opens
+    // review.html on this same message; keeping the UI flip here so the
+    // popup itself reflects 'ready' immediately (status bar hides).
     showState('ready');
   }
   if (msg.type === 'upload-started') setStatus('working', t('status_uploading', 'Uploading...'));

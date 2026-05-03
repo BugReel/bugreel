@@ -158,6 +158,15 @@
         <span id="user-plan-badge" style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:4px;background:#334155;color:#94a3b8;flex-shrink:0;line-height:1.2;"></span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" style="flex-shrink:0;cursor:pointer;" id="user-dashboard-icon"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       </div>
+      <div id="user-guest" class="hidden" style="padding:8px 10px;background:linear-gradient(135deg,rgba(59,130,246,0.10),rgba(139,92,246,0.10));border:1px solid #1e3a5f;border-radius:10px;font-size:11px;line-height:1.4;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span style="color:#e2e8f0;font-weight:600;" data-i18n="popup_guestTitle">Guest mode</span>
+          <span id="user-guest-quota" style="margin-left:auto;color:#94a3b8;font-size:10px;"></span>
+        </div>
+        <div style="color:#94a3b8;margin-bottom:6px;" data-i18n="popup_guestRetention">Recordings available for 7 days.</div>
+        <a href="#" id="link-guest-upgrade" style="color:#60a5fa;text-decoration:underline;cursor:pointer;font-weight:600;" data-i18n="popup_guestUpgradeCta">Save permanently &rarr;</a>
+      </div>
       <div id="user-not-connected" class="hidden" style="padding:8px 12px;background:#1c1306;border:1px solid #854d0e;border-radius:10px;font-size:11px;color:#fbbf24;">
         <span data-i18n="popup_notConnected">Not connected</span> &mdash; <a href="#" id="link-setup-auth" style="color:#3b82f6;text-decoration:underline;cursor:pointer;" data-i18n="popup_setupAccount">Set up account</a>
       </div>

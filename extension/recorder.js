@@ -230,19 +230,19 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
       surfaceSwitching: 'include',    // Allow switching captured surface during recording
     };
 
-    // CaptureController: prevent Chrome from stealing focus after screen selection (macOS fix)
+    // CaptureController: prevent Chrome from stealing focus after screen selection (macOS fix).
+    // Without setFocusBehavior('no-focus-change') Chrome applies default 'focus-captured-surface',
+    // which on monitor capture keeps Chrome as the foreground app and blocks the user from
+    // cmd-tabbing to minimized apps for the whole recording. The call is spec-documented as
+    // tab/window only and throws on monitor surfaces — swallow that throw, the attempt itself
+    // is enough to hint Chrome not to steal focus on the ones where it's legal.
     if (typeof CaptureController !== 'undefined') {
       const controller = new CaptureController();
       displayMediaOptions.controller = controller;
       captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
-      // setFocusBehavior only works for tab/window captures. Monitor (full-screen)
-      // throws by design — check surface first to avoid noise in Sentry.
-      const [vTrack] = captureStream.getVideoTracks();
-      const surface = vTrack && vTrack.getSettings ? vTrack.getSettings().displaySurface : null;
-      if (surface === 'browser' || surface === 'window') {
-        try { controller.setFocusBehavior('no-focus-change'); } catch (e) {
-          console.debug('[BugReel] setFocusBehavior:', e.message);
-        }
+      try { controller.setFocusBehavior('no-focus-change'); } catch (e) {
+        // Expected for monitor captures — Chromium requires tab/window. Ignore.
+        console.debug('[BugReel] setFocusBehavior:', e.message);
       }
     } else {
       captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
@@ -652,45 +652,29 @@ async function handleRecordingFinished() {
       extras.recorderSegmentSizes = segmentSizes;
       await directUpload(blob, extras);
     } else {
-      // Multi-segment recordings: the raw Blob is N concatenated WebM
-      // documents — review.html's <video> reads only the first one's
-      // duration, so the user would see a broken preview. Round-trip
-      // through the server: upload staged, download the ffmpeg-stitched
-      // blob, hand that to review. Single-segment recordings skip this.
-      let blobForReview = blob;
-      let stagedInfo = null;
-      if (segmentCount > 1) {
-        try {
-          stagedInfo = await stageMultiSegmentRecording(blob, segmentSizes);
-          blobForReview = stagedInfo.blob;
-          console.log('[BugReel] Staged stitched blob received: ' +
-            (blobForReview.size / 1048576).toFixed(1) + 'MB, id=' + stagedInfo.recordingId);
-        } catch (e) {
-          // Fall back to saving the raw multi-WebM blob: preview will be
-          // broken (shows only the first segment) but at least the user
-          // can retry upload — server concat is run again on upload.
-          console.error('[BugReel] Staging failed, saving raw blob to IDB so data is not lost:', e);
-          chrome.runtime.sendMessage({
-            type: 'upload-error',
-            error: 'Сбой обработки записи, восстановлен исходник. Попробуйте выгрузить из превью.',
-          }).catch(() => {});
-          blobForReview = blob;
-        }
-      }
-
+      // Always save the raw Blob — even for multi-segment recordings.
+      // Multi-segment preview is partially broken (player reads only the
+      // first segment's duration), but the data is intact and the server
+      // ffmpeg-concats on upload. The previous Phase 1.5 round-trip
+      // (upload staged → wait for server stitch → download → save) hung
+      // for long recordings: ~150 MB up + server processing + download
+      // could take many minutes with no popup progress, manifesting as a
+      // permanent "Сохранение записи…" with the user unable to reach
+      // review at all.
+      console.log('[BugReel] Saving raw blob: ' + (blob.size / 1048576).toFixed(1) + 'MB, segments=' + segmentCount);
       try {
-        await saveRecordingBlob(blobForReview, {
+        await saveRecordingBlob(blob, {
           serverUrl: pendingServerUrl,
           author: pendingAuthor,
           timestamp: Date.now(),
-          size: blobForReview.size,
+          size: blob.size,
           segmentCount,
           segmentSizes,
-          stagedRecordingId: stagedInfo ? stagedInfo.recordingId : null,
-          stagedShareToken: stagedInfo ? stagedInfo.shareToken : null,
+          stagedRecordingId: null,
+          stagedShareToken: null,
         });
         console.log('[BugReel] Blob saved to IDB OK');
-        chrome.runtime.sendMessage({ type: 'blob-saved', fileSize: blobForReview.size }).catch(() => {});
+        chrome.runtime.sendMessage({ type: 'blob-saved', fileSize: blob.size }).catch(() => {});
       } catch (e) {
         console.error('[BugReel] Failed to save blob:', e);
         chrome.runtime.sendMessage({ type: 'upload-error', error: 'Failed to save: ' + e.message }).catch(() => {});

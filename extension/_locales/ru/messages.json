@@ -22,6 +22,18 @@
   "popup_setupAccount": {
     "message": "Подключите аккаунт"
   },
+  "popup_guestTitle": {
+    "message": "Гостевой режим"
+  },
+  "popup_guestRetention": {
+    "message": "Записи доступны 7 дней."
+  },
+  "popup_guestUpgradeCta": {
+    "message": "Сохранить навсегда →"
+  },
+  "popup_guestLimit": {
+    "message": "лимит"
+  },
   "popup_labelAuthor": {
     "message": "Автор"
   },
@@ -173,6 +185,24 @@
   "label_connected_as": {
     "message": "Подключено как:"
   },
+  "guest_ready_title": {
+    "message": "Можно записывать прямо сейчас."
+  },
+  "guest_ready_desc": {
+    "message": "Мы создали временный аккаунт. Записи будут доступны 7 дней."
+  },
+  "guest_save_title": {
+    "message": "Сохранить записи навсегда?"
+  },
+  "guest_save_desc": {
+    "message": "Подтвердите email, чтобы сохранить записи и открыть полный кабинет."
+  },
+  "button_save_permanently": {
+    "message": "Сохранить навсегда"
+  },
+  "link_have_account": {
+    "message": "Уже есть аккаунт? Подключить по токену"
+  },
   "step_done_title": {
     "message": "Готово"
   },
@@ -261,6 +291,15 @@
   },
   "review_copied": {
     "message": "Скопировано!"
+  },
+  "review_guestExpiresTitle": {
+    "message": "Ссылка истечёт через 7 дней."
+  },
+  "review_guestExpiresDesc": {
+    "message": "Сохраните записи навсегда — подтвердите email."
+  },
+  "review_guestUpgradeBtn": {
+    "message": "Сохранить навсегда"
   },
   "review_discarded": {
     "message": "Запись удалена."
