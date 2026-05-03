@@ -70,6 +70,10 @@ router.post('/upload', (req, res, next) => {
   }
   // Prefer user identity from Cloud Layer proxy headers, fall back to form body
   const author = req.headers['x-user-name'] || req.headers['x-user-email'] || req.body.author || 'Unknown';
+  // Stable owner id: trusted X-User-Id from proxy, or req.user from local auth.
+  // Used to scope recordings per user — author is just a display label that
+  // can collide (e.g. multiple "Guest" upgrades).
+  const userId = req.headers['x-user-id'] || req.user?.id || null;
 
   // stage_only: upload the (already-concatenated) bytes but don't start the
   // pipeline. The client will download the stitched blob back for local
@@ -98,9 +102,9 @@ router.post('/upload', (req, res, next) => {
 
   const db = getDB();
   db.prepare(`
-    INSERT INTO recordings (id, author, video_filename, file_size_bytes, status, share_token, recorder_segment_count)
-    VALUES (?, ?, 'video.webm', ?, ?, ?, ?)
-  `).run(id, author, req.file.size, initialStatus, shareToken, recorderSegmentCount);
+    INSERT INTO recordings (id, author, user_id, video_filename, file_size_bytes, status, share_token, recorder_segment_count)
+    VALUES (?, ?, ?, 'video.webm', ?, ?, ?, ?)
+  `).run(id, author, userId, req.file.size, initialStatus, shareToken, recorderSegmentCount);
 
   const urlEvents = req.body.url_events || null;
   const metadata = req.body.metadata || null;

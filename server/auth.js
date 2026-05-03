@@ -211,8 +211,19 @@ function isPublicRoute(req) {
   // Extension upload (authenticated via Bearer token, handled separately)
   if (p.startsWith('/api/upload')) return true;
 
-  // Public read-only: individual recording data (report page needs this)
-  if (req.method === 'GET' && /^\/api\/recordings\/[^/]+/.test(p)) return true;
+  // Public share-token lookup (the canonical endpoint for /report/ pages)
+  if (req.method === 'GET' && /^\/api\/recordings\/by-token\//.test(p)) return true;
+
+  // Public report page assets — the route itself enforces share_token vs id
+  // ownership, so leaving the routes "public" only means auth isn't required
+  // to attempt them; non-owner ids return 404 inside the handler.
+  if (req.method === 'GET' && /^\/api\/recordings\/[^/]+\/(video|subtitles\.vtt)$/.test(p)) return true;
+  if (req.method === 'GET' && /^\/api\/recordings\/[^/]+\/frames\//.test(p)) return true;
+
+  // Legacy fallback: /api/recordings/{share_token} returns the same JSON as
+  // /by-token/{share_token}. Kept public for old report links; handler
+  // rejects any id that isn't a share_token unless caller owns it.
+  if (req.method === 'GET' && /^\/api\/recordings\/[^/]+$/.test(p)) return true;
 
   // Video comments: GET and POST are public, DELETE is handled by the route (requires auth)
   if (/^\/api\/recordings\/[^/]+\/comments/.test(p)) return true;

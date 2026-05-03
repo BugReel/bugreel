@@ -208,6 +208,7 @@ export function initDB() {
   try { db.exec('ALTER TABLE recordings ADD COLUMN segments_json TEXT'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN password_hash TEXT'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN share_token TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN user_id TEXT'); } catch {}
   // Observability for the recorder auto-restart fix (docs/recording-resilience.md
   // §Observability). NULL or 1 = single-segment normal recording. >1 means the
   // encoder stalled during capture and the segment controller restarted it

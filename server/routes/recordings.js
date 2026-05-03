@@ -6,6 +6,18 @@ import { getDB } from '../db.js';
 import { getQueueStatus, enqueuePipeline } from '../services/pipeline.js';
 import { getTrackerConfig } from './settings.js';
 
+// Multi-tenant deployments (BugReel behind a Cloud Layer reverse proxy that
+// authenticates each request with X-User-Id) must isolate recordings per
+// owner. Self-hosted single-team installs keep the original shared-workspace
+// behavior. The same env flag also gates Core's own auth in auth.js.
+const SCOPE_BY_USER = process.env.TRUST_PROXY_AUTH === 'true';
+
+function ownsRecording(req, recording) {
+  if (!SCOPE_BY_USER) return true;
+  if (!req.user || !recording) return false;
+  return recording.user_id === req.user.id;
+}
+
 /**
  * Recursively calculate total size of a directory in bytes.
  */
@@ -78,6 +90,12 @@ router.get('/recordings', (req, res) => {
   let where = '';
   const conditions = [];
   const params = [];
+
+  if (SCOPE_BY_USER) {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    conditions.push('r.user_id = ?');
+    params.push(req.user.id);
+  }
 
   if (status) {
     conditions.push('r.status = ?');
@@ -174,10 +192,12 @@ router.get('/recordings/by-token/:token', (req, res) => {
 // Single recording with frames and card, JSON fields parsed
 router.get('/recordings/:id', (req, res) => {
   const db = getDB();
-  // Try by ID first, then by share_token as fallback
-  let recording = db.prepare('SELECT * FROM recordings WHERE id = ?').get(req.params.id);
+  // Public share_token path takes precedence so a recording.id never resolves
+  // to a non-owner by accident. Then fall back to id with ownership check.
+  let recording = db.prepare('SELECT * FROM recordings WHERE share_token = ?').get(req.params.id);
   if (!recording) {
-    recording = db.prepare('SELECT * FROM recordings WHERE share_token = ?').get(req.params.id);
+    recording = db.prepare('SELECT * FROM recordings WHERE id = ?').get(req.params.id);
+    if (recording && !ownsRecording(req, recording)) recording = null;
   }
   if (!recording) return res.status(404).json({ error: 'Not found' });
 
@@ -230,8 +250,9 @@ router.put('/recordings/:id/transcript', (req, res) => {
   const { words } = req.body;
   if (!Array.isArray(words)) return res.status(400).json({ error: 'words array is required' });
 
-  const recording = db.prepare('SELECT id, transcript_json FROM recordings WHERE id = ?').get(req.params.id);
+  const recording = db.prepare('SELECT id, user_id, transcript_json FROM recordings WHERE id = ?').get(req.params.id);
   if (!recording) return res.status(404).json({ error: 'Recording not found' });
+  if (!ownsRecording(req, recording)) return res.status(404).json({ error: 'Recording not found' });
 
   let transcript = {};
   try { transcript = JSON.parse(recording.transcript_json || '{}'); } catch {}
@@ -249,8 +270,9 @@ router.put('/recordings/:id/context', (req, res) => {
   const db = getDB();
   const { url_events, console_events, action_events } = req.body;
 
-  const recording = db.prepare('SELECT id FROM recordings WHERE id = ?').get(req.params.id);
+  const recording = db.prepare('SELECT id, user_id FROM recordings WHERE id = ?').get(req.params.id);
   if (!recording) return res.status(404).json({ error: 'Recording not found' });
+  if (!ownsRecording(req, recording)) return res.status(404).json({ error: 'Recording not found' });
 
   const updates = [];
   const params = [];
@@ -269,13 +291,11 @@ router.put('/recordings/:id/context', (req, res) => {
 // Serve WebVTT subtitles generated from transcript_json (supports both recording ID and share_token)
 router.get('/recordings/:id/subtitles.vtt', (req, res) => {
   const db = getDB();
-  // Resolve share_token to recording ID if needed
-  let recId = req.params.id;
-  const byId = db.prepare('SELECT id, transcript_json FROM recordings WHERE id = ?').get(recId);
-  let recording = byId;
-  if (!byId) {
-    const byToken = db.prepare('SELECT id, transcript_json FROM recordings WHERE share_token = ?').get(recId);
-    if (byToken) recording = byToken;
+  // Public path: share_token. Authenticated path: id + ownership.
+  let recording = db.prepare('SELECT id, user_id, transcript_json FROM recordings WHERE share_token = ?').get(req.params.id);
+  if (!recording) {
+    recording = db.prepare('SELECT id, user_id, transcript_json FROM recordings WHERE id = ?').get(req.params.id);
+    if (recording && !ownsRecording(req, recording)) recording = null;
   }
 
   if (!recording || !recording.transcript_json) {
@@ -335,18 +355,17 @@ function formatVTTTime(seconds) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
 }
 
-// Serve video file (supports both recording ID and share_token)
+// Serve video file (share_token = public, id = owner-only)
 router.get('/recordings/:id/video', (req, res) => {
   const db = getDB();
-  // Resolve share_token to recording ID if needed
-  let recId = req.params.id;
-  const byId = db.prepare('SELECT id FROM recordings WHERE id = ?').get(recId);
-  if (!byId) {
-    const byToken = db.prepare('SELECT id FROM recordings WHERE share_token = ?').get(recId);
-    if (byToken) recId = byToken.id;
+  let recording = db.prepare('SELECT id, user_id FROM recordings WHERE share_token = ?').get(req.params.id);
+  if (!recording) {
+    recording = db.prepare('SELECT id, user_id FROM recordings WHERE id = ?').get(req.params.id);
+    if (recording && !ownsRecording(req, recording)) recording = null;
   }
+  if (!recording) return res.status(404).json({ error: 'Video not found' });
 
-  const filePath = path.join(config.dataDir, recId, 'video.webm');
+  const filePath = path.join(config.dataDir, recording.id, 'video.webm');
   res.sendFile(filePath, (err) => {
     if (err && !res.headersSent) {
       res.status(404).json({ error: 'Video not found' });
@@ -354,18 +373,17 @@ router.get('/recordings/:id/video', (req, res) => {
   });
 });
 
-// Serve frame image (supports both recording ID and share_token)
+// Serve frame image (share_token = public, id = owner-only)
 router.get('/recordings/:id/frames/:filename', (req, res) => {
   const db = getDB();
-  // Resolve share_token to recording ID if needed
-  let recId = req.params.id;
-  const byId = db.prepare('SELECT id FROM recordings WHERE id = ?').get(recId);
-  if (!byId) {
-    const byToken = db.prepare('SELECT id FROM recordings WHERE share_token = ?').get(recId);
-    if (byToken) recId = byToken.id;
+  let recording = db.prepare('SELECT id, user_id FROM recordings WHERE share_token = ?').get(req.params.id);
+  if (!recording) {
+    recording = db.prepare('SELECT id, user_id FROM recordings WHERE id = ?').get(req.params.id);
+    if (recording && !ownsRecording(req, recording)) recording = null;
   }
+  if (!recording) return res.status(404).json({ error: 'Frame not found' });
 
-  const filePath = path.join(config.dataDir, recId, 'frames', req.params.filename);
+  const filePath = path.join(config.dataDir, recording.id, 'frames', req.params.filename);
   res.sendFile(filePath, (err) => {
     if (err && !res.headersSent) {
       res.status(404).json({ error: 'Frame not found' });
@@ -380,8 +398,9 @@ router.get('/recordings/:id/frames/:filename', (req, res) => {
 // records the trim/metadata and kicks off processing.
 router.post('/recordings/:id/finalize', (req, res) => {
   const db = getDB();
-  const rec = db.prepare('SELECT id, status FROM recordings WHERE id = ?').get(req.params.id);
+  const rec = db.prepare('SELECT id, user_id, status FROM recordings WHERE id = ?').get(req.params.id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
+  if (!ownsRecording(req, rec)) return res.status(404).json({ error: 'Not found' });
   if (rec.status !== 'staged') {
     return res.status(409).json({ error: 'not_staged', status: rec.status });
   }
@@ -425,8 +444,9 @@ router.post('/recordings/:id/finalize', (req, res) => {
 // Delete a recording and all associated data
 router.delete('/recordings/:id', (req, res) => {
   const db = getDB();
-  const recording = db.prepare('SELECT id FROM recordings WHERE id = ?').get(req.params.id);
+  const recording = db.prepare('SELECT id, user_id FROM recordings WHERE id = ?').get(req.params.id);
   if (!recording) return res.status(404).json({ error: 'Not found' });
+  if (!ownsRecording(req, recording)) return res.status(404).json({ error: 'Not found' });
 
   const id = recording.id;
 
@@ -460,8 +480,9 @@ router.post('/recordings/:id/pre-link-youtrack', (req, res) => {
     return res.status(400).json({ error: 'youtrack_issue_id required' });
   }
 
-  const recording = db.prepare('SELECT id, status FROM recordings WHERE id = ?').get(req.params.id);
+  const recording = db.prepare('SELECT id, user_id, status FROM recordings WHERE id = ?').get(req.params.id);
   if (!recording) return res.status(404).json({ error: 'Recording not found' });
+  if (!ownsRecording(req, recording)) return res.status(404).json({ error: 'Recording not found' });
 
   // If card already linked to YouTrack, reject
   const card = db.prepare('SELECT youtrack_issue_id FROM cards WHERE recording_id = ?').get(req.params.id);
@@ -479,8 +500,9 @@ router.post('/recordings/:id/pre-link-youtrack', (req, res) => {
 // Clear pre-link
 router.delete('/recordings/:id/pre-link-youtrack', (req, res) => {
   const db = getDB();
-  const recording = db.prepare('SELECT id FROM recordings WHERE id = ?').get(req.params.id);
+  const recording = db.prepare('SELECT id, user_id FROM recordings WHERE id = ?').get(req.params.id);
   if (!recording) return res.status(404).json({ error: 'Recording not found' });
+  if (!ownsRecording(req, recording)) return res.status(404).json({ error: 'Recording not found' });
 
   db.prepare('UPDATE recordings SET pending_youtrack_issue_id = NULL WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
