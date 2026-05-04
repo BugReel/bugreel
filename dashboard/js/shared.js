@@ -317,11 +317,10 @@ export function renderHeader(activePage) {
         <div id="quota-widget" style="display:none"></div>
         <button id="feedback-btn" class="feedback-btn" style="display:none" title="${t('feedback_button', 'Report a problem')}" aria-label="${t('feedback_button', 'Report a problem')}">
           ${icons.messageCircle}
-          <span>${t('feedback_button', 'Report a problem')}</span>
         </button>
-        <div class="lang-switcher">
-          <button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
-          <button class="lang-btn ${currentLang === 'ru' ? 'active' : ''}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>
+        <div class="lang-switcher" role="group" aria-label="Language">
+          <button type="button" class="lang-btn ${currentLang === 'en' ? 'active' : ''}" aria-pressed="${currentLang === 'en'}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
+          <button type="button" class="lang-btn ${currentLang === 'ru' ? 'active' : ''}" aria-pressed="${currentLang === 'ru'}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>
         </div>
         <div id="user-menu" class="user-menu" style="display:none">
           <button id="user-menu-btn" class="user-menu-btn" type="button" aria-haspopup="true" aria-expanded="false">
