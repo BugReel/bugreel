@@ -292,6 +292,9 @@
   "review_copied": {
     "message": "Скопировано!"
   },
+  "review_openInDashboard": {
+    "message": "Открыть в дашборде"
+  },
   "review_guestExpiresTitle": {
     "message": "Ссылка истечёт через 7 дней."
   },

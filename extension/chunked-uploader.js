@@ -129,7 +129,7 @@ async function chunkedUpload(blob, options = {}) {
   // Clear saved state
   await clearState(upload_id);
 
-  return { id: completeRes.id, status: completeRes.status };
+  return { id: completeRes.id, status: completeRes.status, shareToken: completeRes.share_token };
 }
 
 /**

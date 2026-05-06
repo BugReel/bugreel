@@ -478,9 +478,18 @@ function setupButtons() {
       progressFill.style.width = '100%';
       progressText.textContent = '100%';
       uploadControls.classList.add('hidden');
-      const url = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(msg.recordingId)}`;
+      // Public share URL (anonymous-shareable, gated by share_token UUID).
+      // Falls back to the private dashboard URL only when the server didn't
+      // surface a share_token — older self-hosted deployments. The dashboard
+      // URL is also kept for the secondary "Open in dashboard" affordance so
+      // the owner can jump straight to analytics/transcript views.
+      const dashUrl = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(msg.recordingId)}`;
+      const publicUrl = msg.shareToken
+        ? `${SERVER_URL}/recording/${encodeURIComponent(msg.shareToken)}`
+        : dashUrl;
+      const url = publicUrl;
 
-      // Auto-copy link to clipboard
+      // Auto-copy public link to clipboard
       navigator.clipboard.writeText(url).catch(() => {});
 
       (async () => {
@@ -496,24 +505,37 @@ function setupButtons() {
           <button id="btn-guest-upgrade" style="padding:8px 14px;background:#3b82f6;border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;">${t('review_guestUpgradeBtn', 'Save permanently')}</button>
         </div>` : '';
 
+      // Secondary "Open in dashboard" link only makes sense when public and
+      // dashboard URLs differ (i.e. we actually have a share_token).
+      const dashboardLink = (publicUrl !== dashUrl) ? `
+          <div style="margin-top:8px;font-size:12px;color:#64748b;">
+            <a href="${dashUrl}" target="_blank" id="rec-dash-link" style="color:#64748b;text-decoration:underline;">${t('review_openInDashboard', 'Open in dashboard')}</a>
+          </div>` : '';
+
       statusEl.innerHTML = `
         <div style="margin-top:12px;padding:16px;background:#0f2a1f;border:1px solid #22c55e;border-radius:10px;text-align:center;">
           <div style="font-size:13px;color:#22c55e;font-weight:600;margin-bottom:8px;">${t('review_uploadDone', 'Video uploaded — link copied to clipboard')}</div>
           <a href="${url}" target="_blank" id="rec-open-link" style="font-size:15px;color:#3b82f6;font-weight:700;word-break:break-all;">${url}</a>
           <div style="margin-top:10px;">
             <button id="btn-copy-link" style="padding:8px 20px;background:#334155;border:1px solid #475569;border-radius:6px;color:#e2e8f0;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">${t('review_copyLink', 'Copy link')}</button>
-          </div>
+          </div>${dashboardLink}
         </div>${guestBanner}`;
       statusEl.className = 'status';
 
-      // Intercept click on the recording link: add a single-use ?h= token so
-      // the user's browser gets a session cookie via /api/auth/handoff. Plain
-      // href stays plain so right-click→Copy and middle-click yield a
-      // shareable-without-leak URL.
-      document.getElementById('rec-open-link')?.addEventListener('click', async (e) => {
+      // Public share link opens directly — no auth handoff needed (anyone
+      // can view by share_token).
+      document.getElementById('rec-open-link')?.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        // Default browser behavior is fine for public URLs — no preventDefault.
+      });
+
+      // "Open in dashboard" — owner-only; attach single-use ?h= token so the
+      // browser gets a session cookie via /api/auth/handoff (same SSO that
+      // the old combined link relied on).
+      document.getElementById('rec-dash-link')?.addEventListener('click', async (e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
         e.preventDefault();
-        let openUrl = url;
+        let openUrl = dashUrl;
         try {
           if (SERVER_URL && guestData.extensionToken) {
             const res = await fetch(`${SERVER_URL}/api/auth/handoff`, {

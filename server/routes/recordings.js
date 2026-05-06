@@ -438,7 +438,9 @@ router.post('/recordings/:id/finalize', (req, res) => {
   });
 
   console.log(`[${rec.id}] finalized from staged (trim=${trimStart}..${trimEnd})`);
-  res.json({ id: rec.id, status: 'uploaded', queue: getQueueStatus() });
+  // Return share_token so the extension can build a public URL
+  // (anonymous-shareable) instead of the private dashboard URL after upload.
+  res.json({ id: rec.id, status: 'uploaded', share_token: rec.share_token, queue: getQueueStatus() });
 });
 
 // Delete a recording and all associated data

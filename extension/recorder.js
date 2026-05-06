@@ -727,7 +727,11 @@ async function directUpload(blob, extras) {
         },
       });
       console.log('[BugReel] Chunked upload done:', result.id);
-      chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || 'unknown' }).catch(() => {});
+      chrome.runtime.sendMessage({
+        type: 'upload-done',
+        recordingId: result.id || 'unknown',
+        shareToken: result.shareToken || null,
+      }).catch(() => {});
       return;
     } catch (err) {
       if (ctl.cancelled) {
@@ -769,7 +773,11 @@ async function directUpload(blob, extras) {
         try {
           const result = JSON.parse(xhr.responseText);
           console.log('[BugReel] Direct upload done:', result.id);
-          chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || 'unknown' }).catch(() => {});
+          chrome.runtime.sendMessage({
+            type: 'upload-done',
+            recordingId: result.id || 'unknown',
+            shareToken: result.share_token || null,
+          }).catch(() => {});
           resolve();
         } catch (e) { reject(new Error('Invalid server response')); }
       } else {
@@ -915,7 +923,11 @@ async function doUpload(extras = {}) {
       if (!resp.ok) throw new Error(`Finalize failed: ${resp.status} ${await resp.text()}`);
       const result = await resp.json();
       await deleteRecordingBlob();
-      chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || stagedRecordingId }).catch(() => {});
+      chrome.runtime.sendMessage({
+        type: 'upload-done',
+        recordingId: result.id || stagedRecordingId,
+        shareToken: result.share_token || data.stagedShareToken || null,
+      }).catch(() => {});
       return;
     } catch (err) {
       chrome.runtime.sendMessage({ type: 'upload-error', error: err.message }).catch(() => {});
@@ -950,7 +962,11 @@ async function doUpload(extras = {}) {
         },
       });
       await deleteRecordingBlob();
-      chrome.runtime.sendMessage({ type: 'upload-done', recordingId: result.id || 'unknown' }).catch(() => {});
+      chrome.runtime.sendMessage({
+        type: 'upload-done',
+        recordingId: result.id || 'unknown',
+        shareToken: result.shareToken || null,
+      }).catch(() => {});
       return;
     } catch (err) {
       if (ctl.cancelled) {
@@ -992,7 +1008,8 @@ async function doUpload(extras = {}) {
           await deleteRecordingBlob();
           chrome.runtime.sendMessage({
             type: 'upload-done',
-            recordingId: result.id || result.recordingId || 'unknown'
+            recordingId: result.id || result.recordingId || 'unknown',
+            shareToken: result.share_token || null,
           }).catch(() => {});
           resolve();
         } catch (e) {

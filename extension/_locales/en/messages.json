@@ -307,6 +307,9 @@
   "review_copied": {
     "message": "Copied!"
   },
+  "review_openInDashboard": {
+    "message": "Open in dashboard"
+  },
   "review_guestExpiresTitle": {
     "message": "This link expires in 7 days."
   },

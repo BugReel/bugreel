@@ -137,7 +137,9 @@ router.post('/upload', (req, res, next) => {
   });
 
   const queueInfo = getQueueStatus();
-  res.json({ id, status: 'uploaded', queue: queueInfo });
+  // Return share_token so the extension can build a public URL
+  // (anonymous-shareable) instead of the private dashboard URL after upload.
+  res.json({ id, status: 'uploaded', share_token: shareToken, queue: queueInfo });
 });
 
 export default router;

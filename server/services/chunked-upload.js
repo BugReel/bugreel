@@ -237,7 +237,10 @@ export async function completeUpload(uploadId) {
     db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('error', recordingId);
   });
 
-  return { upload_id: uploadId, recording_id: recordingId, status: 'uploaded' };
+  // Return share_token (mirrors the stage_only branch above) so the route
+  // handler — and ultimately the extension — can surface the public URL
+  // /recording/{share_token} as the auto-copied link after upload.
+  return { upload_id: uploadId, recording_id: recordingId, status: 'uploaded', share_token: shareToken };
 }
 
 /**
