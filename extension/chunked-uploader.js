@@ -17,7 +17,12 @@ const MAX_RETRIES = 5;
 const RETRY_BASE_DELAY = 2000; // 2s, exponential: 2s, 4s, 8s, 16s, 32s
 const AUTO_RETRY_MAX = 3;
 const AUTO_RETRY_DELAYS = [3000, 6000, 9000];
-const XHR_TIMEOUT = 30000; // 30s per chunk
+// No-progress watchdog: abort only when bytes stop flowing for this long.
+// We can't use xhr.timeout (a hard total cap) because slow uplinks need many
+// minutes to push a 5 MB chunk; previously a 30 s cap aborted at ~3 MB on a
+// 100 KB/s line and the retry restarted from byte 0 forever.
+const STALL_TIMEOUT = 45000; // 45s with no progress = stalled connection
+const HARD_TIMEOUT = 10 * 60 * 1000; // absolute ceiling per chunk (10 min)
 
 /**
  * Upload a blob in chunks to the BugReel server.
@@ -245,15 +250,27 @@ async function uploadChunkWithRetry(chunkBlob, opts) {
 function uploadSingleChunk(chunkBlob, { url, token, durationSec, controller, onChunkProgress }) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    let cancelWatcher = null;
+    let watcher = null;
+    let lastProgressAt = Date.now();
+    let lastLoaded = 0;
+    const startedAt = Date.now();
+    let stalledOut = false;
+    let hardTimedOut = false;
 
     xhr.upload.addEventListener('progress', (e) => {
+      // Any forward motion in bytes resets the stall timer. We deliberately
+      // ignore e.lengthComputable here for the watchdog — even non-computable
+      // progress events mean bytes are still flowing.
+      if (e.loaded !== lastLoaded) {
+        lastLoaded = e.loaded;
+        lastProgressAt = Date.now();
+      }
       if (e.lengthComputable && onChunkProgress) {
         onChunkProgress(e.loaded, e.total);
       }
     });
 
-    const cleanup = () => { if (cancelWatcher) clearInterval(cancelWatcher); };
+    const cleanup = () => { if (watcher) clearInterval(watcher); };
 
     xhr.addEventListener('load', () => {
       cleanup();
@@ -269,28 +286,42 @@ function uploadSingleChunk(chunkBlob, { url, token, durationSec, controller, onC
     });
 
     xhr.addEventListener('error', () => { cleanup(); reject(new Error('Network error')); });
-    xhr.addEventListener('timeout', () => { cleanup(); reject(new Error('Chunk upload timeout (30s)')); });
+    xhr.addEventListener('timeout', () => { cleanup(); reject(new Error('Chunk upload timeout')); });
     xhr.addEventListener('abort', () => {
       cleanup();
       if (controller && controller.cancelled) return reject(cancelledError());
+      if (stalledOut) return reject(new Error(`Chunk stalled (no progress for ${Math.round(STALL_TIMEOUT/1000)}s)`));
+      if (hardTimedOut) return reject(new Error(`Chunk exceeded hard timeout (${Math.round(HARD_TIMEOUT/1000)}s)`));
       reject(new Error('Upload aborted'));
     });
 
     xhr.open('PUT', url);
-    xhr.timeout = XHR_TIMEOUT;
+    // No xhr.timeout — that's a hard total cap and slow uplinks legitimately
+    // need many minutes to push a 5 MB chunk. We use a progress-based
+    // watchdog below instead, which only aborts when bytes actually stop.
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     if (durationSec) xhr.setRequestHeader('X-Recording-Duration', String(durationSec));
 
     xhr.send(chunkBlob);
 
-    // Cancel watcher: if user hits Cancel mid-chunk, abort the XHR so we stop
-    // wasting bandwidth and exit fast instead of waiting for the chunk to finish.
-    if (controller) {
-      cancelWatcher = setInterval(() => {
-        if (controller.cancelled) { try { xhr.abort(); } catch {} }
-      }, 250);
-    }
+    // Single combined watcher: cancel + stall watchdog + hard ceiling.
+    // 250 ms is fine for cancel responsiveness and cheap enough to run for
+    // multi-minute chunk uploads.
+    watcher = setInterval(() => {
+      if (controller && controller.cancelled) { try { xhr.abort(); } catch {} return; }
+      const now = Date.now();
+      if (now - lastProgressAt > STALL_TIMEOUT) {
+        stalledOut = true;
+        try { xhr.abort(); } catch {}
+        return;
+      }
+      if (now - startedAt > HARD_TIMEOUT) {
+        hardTimedOut = true;
+        try { xhr.abort(); } catch {}
+        return;
+      }
+    }, 250);
   });
 }
 
