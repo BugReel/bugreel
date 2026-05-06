@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Report - BugReel</title>
-  <link rel="stylesheet" href="../css/style.css">
-  <script src="../js/i18n-dashboard.js"></script>
+  <title>BugReel</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="./js/i18n-dashboard.js"></script>
   <style>
     /* Report-specific gallery */
     .report-gallery {
@@ -301,12 +301,12 @@
   </div>
 
   <script type="module">
-    import { getRecording, getRecordingByToken, videoUrl, frameUrl, getVideoComments, addVideoComment } from '../js/api.js';
+    import { getRecording, getRecordingByToken, videoUrl, frameUrl, getVideoComments, addVideoComment } from './js/api.js';
     import {
       extractParam, formatDate, formatDuration, formatTimecode,
       renderDescription, escapeHTML, icons, timeAgo
-    } from '../js/shared.js';
-    import { createTimeline } from '../js/timeline.js';
+    } from './js/shared.js';
+    import { createTimeline } from './js/timeline.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
 
@@ -344,7 +344,7 @@
         render(data);
         document.title = data.card
           ? `${data.card.title} — ${window.__branding?.name || 'BugReel'}`
-          : `Report: ${recordingId}`;
+          : `${recordingId} — ${window.__branding?.name || 'BugReel'}`;
       } catch (err) {
         content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>Failed to load: ${escapeHTML(err.message)}</p></div>`;
       }

@@ -75,6 +75,17 @@ app.use('/extension', express.static(path.join(__dirname, '..', 'extension')));
 // Static: dashboard assets (css, js)
 app.use(express.static(dashboardDir));
 
+// Static: dashboard assets ALSO mounted at /share/ and /report/ so report.html
+// (loaded at /share/{token}) can use relative ./css/ and ./js/ paths that
+// resolve into the same physical assets without leaving the public prefix.
+// This matters in front-of-proxy deployments where /css/ at the root might
+// not be exposed (e.g. an upstream gateway that only forwards /share/* to
+// this server). Mount before the SPA catch-all so /share/css/style.css
+// serves the file, and only /share/{anything-else} falls through to
+// report.html.
+app.use('/share', express.static(dashboardDir));
+app.use('/report', express.static(dashboardDir));
+
 // Static: recordings data (video, frames) — with password protection
 app.use('/data', passwordCheckData, express.static(config.dataDir));
 
