@@ -587,6 +587,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Must await state restore — service worker may have restarted since recording
     (async () => {
       await ensureStateLoaded();
+
+      // Recovery: state='uploading' but no live offscreen/recorder context = stuck.
+      // Happens when the upload errored before delivering 'upload-error' (service
+      // worker restart, or the user hit F5 on review.html which triggered the
+      // offscreen close). The blob is still in IDB — long recordings would
+      // otherwise be unrecoverable. Reset to 'ready' and let the retry proceed.
+      if (state === 'uploading') {
+        let hasContext = false;
+        if (HAS_OFFSCREEN) {
+          try {
+            const ctx = await chrome.runtime.getContexts({
+              contextTypes: ['OFFSCREEN_DOCUMENT'],
+              documentUrls: [chrome.runtime.getURL('recorder.html')]
+            });
+            hasContext = ctx.length > 0;
+          } catch {}
+        } else {
+          hasContext = !!recorderTabId;
+        }
+        if (!hasContext) {
+          console.warn('[BugReel] start-upload: detected stuck uploading state (no offscreen) — recovering to ready');
+          await setState('ready');
+          uploadChunked = false;
+          uploadPaused = false;
+        }
+      }
+
       if (state !== 'ready') {
         console.warn('[BugReel] start-upload rejected: state=' + state);
         sendResponse({ success: false, error: 'No recording ready' });
