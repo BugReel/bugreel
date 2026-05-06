@@ -15,7 +15,7 @@ const CHUNKS_DIR = '_chunks';
  * Initialize a chunked upload session.
  * Returns upload_id, chunk_size, total_chunks, expires_at.
  */
-export function initUpload({ filename, totalSize, author, metadata }) {
+export function initUpload({ filename, totalSize, author, userId, metadata }) {
   if (!filename || !totalSize || totalSize <= 0) {
     throw Object.assign(new Error('Missing required fields: filename, totalSize'), { statusCode: 400 });
   }
@@ -34,9 +34,9 @@ export function initUpload({ filename, totalSize, author, metadata }) {
   const expiresAt = new Date(Date.now() + SESSION_TTL_HOURS * 3600 * 1000).toISOString();
 
   db.prepare(`
-    INSERT INTO upload_sessions (id, author, filename, total_size, chunk_size, total_chunks, temp_dir, metadata_json, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, author || 'Unknown', filename, totalSize, CHUNK_SIZE, totalChunks, tempDir, metadata || null, expiresAt);
+    INSERT INTO upload_sessions (id, author, user_id, filename, total_size, chunk_size, total_chunks, temp_dir, metadata_json, expires_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, author || 'Unknown', userId || null, filename, totalSize, CHUNK_SIZE, totalChunks, tempDir, metadata || null, expiresAt);
 
   return { upload_id: id, chunk_size: CHUNK_SIZE, total_chunks: totalChunks, expires_at: expiresAt };
 }
@@ -192,10 +192,13 @@ export async function completeUpload(uploadId) {
   // Observability: number of MediaRecorder lifecycles that contributed to this
   // recording. >1 means the watchdog had to restart the encoder mid-capture.
   const recorderSegmentCount = Array.isArray(segSizes) ? segSizes.length : null;
+  // Carry the upload session's user_id (captured at /upload/init from the
+  // X-User-Id proxy header) onto the recording so multi-tenant ownership
+  // checks resolve correctly. Mirrors the non-chunked /upload path.
   db.prepare(`
-    INSERT INTO recordings (id, author, video_filename, file_size_bytes, status, share_token, recorder_segment_count)
-    VALUES (?, ?, 'video.webm', ?, ?, ?, ?)
-  `).run(recordingId, session.author, finalBytes, initialStatus, shareToken, recorderSegmentCount);
+    INSERT INTO recordings (id, author, user_id, video_filename, file_size_bytes, status, share_token, recorder_segment_count)
+    VALUES (?, ?, ?, 'video.webm', ?, ?, ?, ?)
+  `).run(recordingId, session.author, session.user_id || null, finalBytes, initialStatus, shareToken, recorderSegmentCount);
 
   // Save metadata (url_events, console_events, etc.)
   if (sessionMeta) {

@@ -166,6 +166,7 @@ export function initDB() {
     CREATE TABLE IF NOT EXISTS upload_sessions (
       id TEXT PRIMARY KEY,
       author TEXT,
+      user_id TEXT,
       filename TEXT NOT NULL,
       total_size INTEGER NOT NULL,
       chunk_size INTEGER NOT NULL DEFAULT 5242880,
@@ -209,6 +210,11 @@ export function initDB() {
   try { db.exec('ALTER TABLE recordings ADD COLUMN password_hash TEXT'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN share_token TEXT'); } catch {}
   try { db.exec('ALTER TABLE recordings ADD COLUMN user_id TEXT'); } catch {}
+  // Chunked uploads (init/chunk/complete) must remember the owner across the
+  // multi-request session so completeUpload can persist user_id on the final
+  // recording. Without this, multi-tenant deployments end up with NULL owners
+  // on every chunked upload and recordings.user_id-based ownership checks 404.
+  try { db.exec('ALTER TABLE upload_sessions ADD COLUMN user_id TEXT'); } catch {}
   // Observability for the recorder auto-restart fix (docs/recording-resilience.md
   // §Observability). NULL or 1 = single-segment normal recording. >1 means the
   // encoder stalled during capture and the segment controller restarted it

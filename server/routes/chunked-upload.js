@@ -7,10 +7,16 @@ const router = Router();
 router.post('/upload/init', (req, res) => {
   try {
     const author = req.headers['x-user-name'] || req.headers['x-user-email'] || req.body.author || 'Unknown';
+    // Stable owner id — same precedence as POST /upload (non-chunked path):
+    // trusted X-User-Id from the Cloud Layer proxy, then req.user from local
+    // auth. Without this, completeUpload would persist user_id=NULL and
+    // ownsRecording() would reject every subsequent fetch as 404.
+    const userId = req.headers['x-user-id'] || req.user?.id || null;
     const result = initUpload({
       filename: req.body.filename,
       totalSize: req.body.total_size,
       author,
+      userId,
       metadata: req.body.metadata ? JSON.stringify(req.body.metadata) : null,
     });
     res.json({ success: true, ...result });
