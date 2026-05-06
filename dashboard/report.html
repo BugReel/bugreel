@@ -317,8 +317,9 @@
     }
 
     const content = document.getElementById('content');
-    // URL param is now a share_token (UUID) — server redirects ID-based URLs to share_token
-    const shareToken = extractParam('/report/');
+    // URL param is a share_token (UUID) — server redirects ID-based URLs to share_token.
+    // Try /share/ first (canonical since 1.7.5), fall back to /report/ for legacy links.
+    const shareToken = extractParam('/share/') || extractParam('/report/');
     // Will be set after loading the recording (real recording ID for API calls)
     let recordingId = null;
     let lightboxFrames = [];
@@ -756,7 +757,10 @@
   <!-- View analytics tracking -->
   <script>
     (function() {
-      var urlParam = location.pathname.split('/report/')[1];
+      // Accept both /share/ (canonical since 1.7.5) and /report/ (legacy)
+      var parts = location.pathname.split('/share/');
+      if (parts.length < 2) parts = location.pathname.split('/report/');
+      var urlParam = parts[1];
       if (!urlParam) return;
       urlParam = decodeURIComponent(urlParam.replace(/\/$/, ''));
 

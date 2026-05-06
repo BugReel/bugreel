@@ -93,21 +93,23 @@ app.get('*', (req, res) => {
   if (req.path.startsWith('/card/')) {
     return res.sendFile(path.join(dashboardDir, 'card.html'));
   }
-  if (req.path.startsWith('/report/')) {
-    // Public report page: if accessed by recording ID, redirect to share_token URL.
-    // If accessed by share_token (UUID) or unknown value, serve the page normally.
-    const rawId = req.path.replace('/report/', '').replace(/\/$/, '');
+  if (req.path.startsWith('/share/') || req.path.startsWith('/report/')) {
+    // Public share page (/share/) — canonical since 1.7.5. Old /report/
+    // links still work for already-shared URLs, no redirect (avoids breaking
+    // analytics referrers and chat-app link previews on existing sends).
+    //
+    // If accessed by recording ID, redirect to share_token URL on the same
+    // prefix the user came in on. If accessed by share_token (UUID) or
+    // unknown value, serve the page normally — report.html handles 404.
+    const prefix = req.path.startsWith('/share/') ? '/share/' : '/report/';
+    const rawId = req.path.replace(prefix, '').replace(/\/$/, '');
     if (rawId) {
       const paramId = decodeURIComponent(rawId);
       const db = getDB();
-      // Check if this looks like a recording ID (not a UUID share_token)
       const recording = db.prepare('SELECT id, share_token FROM recordings WHERE id = ?').get(paramId);
       if (recording && recording.share_token) {
-        // Redirect from enumerable ID to non-guessable share_token
-        return res.redirect(301, `/report/${encodeURIComponent(recording.share_token)}`);
+        return res.redirect(301, `${prefix}${encodeURIComponent(recording.share_token)}`);
       }
-      // If looked up by share_token, or recording not found — serve page normally
-      // (report.html JS will handle the 404 display)
     }
     return res.sendFile(path.join(dashboardDir, 'report.html'));
   }

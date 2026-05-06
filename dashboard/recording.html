@@ -389,10 +389,12 @@
       if (!btn || !currentData) return;
 
       btn.addEventListener('click', () => {
-        // Use share_token for public report URL, fall back to recording ID
+        // Use share_token for public share URL, fall back to recording ID.
+        // /share/ is canonical since 1.7.5 — /report/ still works for legacy
+        // links but the dashboard always emits the new path going forward.
         const token = currentData.recording.share_token;
         const publicId = token || recordingId;
-        const url = `${location.origin}/report/${encodeURIComponent(publicId)}`;
+        const url = `${location.origin}/share/${encodeURIComponent(publicId)}`;
         navigator.clipboard.writeText(url).then(() => {
           const orig = btn.innerHTML;
           btn.innerHTML = `${icons.checkCircle} ${t('copied', 'Copied')}`;

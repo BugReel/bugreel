@@ -163,16 +163,18 @@ export function requireAuth(req, res, next) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Smart link: /recording/{id} → redirect to /report/{share_token} for non-authenticated users
+    // Smart link: /recording/{id} → redirect to /share/{share_token} for
+    // non-authenticated users. Canonical public path is /share/ since 1.7.5;
+    // /report/ is still served for backward compat with older shared links.
     const recMatch = req.path.match(/^\/recording\/(.+)$/);
     if (recMatch) {
       const recId = decodeURIComponent(recMatch[1]);
       const db = getDB();
       const rec = db.prepare('SELECT share_token FROM recordings WHERE id = ?').get(recId);
       if (rec && rec.share_token) {
-        return res.redirect(`/report/${encodeURIComponent(rec.share_token)}`);
+        return res.redirect(`/share/${encodeURIComponent(rec.share_token)}`);
       }
-      return res.redirect(`/report/${recMatch[1]}`);
+      return res.redirect(`/share/${recMatch[1]}`);
     }
 
     return res.redirect('/login');
@@ -199,8 +201,8 @@ function isPublicRoute(req) {
   // Auth endpoints
   if (p === '/login' || p === '/api/auth/login' || p === '/api/auth/register') return true;
 
-  // Report pages (public share links)
-  if (p.startsWith('/report/')) return true;
+  // Public share pages — /share/ is canonical, /report/ kept for backward compat
+  if (p.startsWith('/share/') || p.startsWith('/report/')) return true;
 
   // Embed pages (public, embeddable in iframes)
   if (p.startsWith('/embed/')) return true;

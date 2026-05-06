@@ -11,10 +11,14 @@ import { hasValidAccess } from '../routes/password.js';
  * Authenticated dashboard users (req.user) bypass the password check.
  */
 export function passwordCheckPage(req, res, next) {
-  // Only intercept report page requests
-  if (!req.path.startsWith('/report/')) return next();
+  // Only intercept share/report page requests. /share/ is canonical since
+  // 1.7.5; /report/ kept for backward compat with already-shared links.
+  const prefix = req.path.startsWith('/share/') ? '/share/'
+              : req.path.startsWith('/report/') ? '/report/'
+              : null;
+  if (!prefix) return next();
 
-  const rawId = req.path.replace('/report/', '').replace(/\/$/, '');
+  const rawId = req.path.replace(prefix, '').replace(/\/$/, '');
   if (!rawId) return next();
   const recordingId = decodeURIComponent(rawId);
 

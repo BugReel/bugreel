@@ -479,13 +479,14 @@ function setupButtons() {
       progressText.textContent = '100%';
       uploadControls.classList.add('hidden');
       // Public share URL (anonymous-shareable, gated by share_token UUID).
-      // Falls back to the private dashboard URL only when the server didn't
-      // surface a share_token — older self-hosted deployments. The dashboard
-      // URL is also kept for the secondary "Open in dashboard" affordance so
-      // the owner can jump straight to analytics/transcript views.
+      // /share/ is the canonical public path since 1.7.5 — semantically
+      // matches a screen-share product better than the legacy /report/
+      // (which is still served by the server for backward compat with old
+      // links). Falls back to the private dashboard URL only when the
+      // server didn't surface a share_token — older self-hosted deployments.
       const dashUrl = `${SERVER_URL}${DASHBOARD_PATH}recording/${encodeURIComponent(msg.recordingId)}`;
       const publicUrl = msg.shareToken
-        ? `${SERVER_URL}/recording/${encodeURIComponent(msg.shareToken)}`
+        ? `${SERVER_URL}/share/${encodeURIComponent(msg.shareToken)}`
         : dashUrl;
       const url = publicUrl;
 
