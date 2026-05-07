@@ -210,6 +210,11 @@ function isPublicRoute(req) {
   // Static assets
   if (p.startsWith('/css/') || p.startsWith('/js/')) return true;
 
+  // Public branding (logo + name) — read by anonymous share-page so the tab
+  // title and header logo render correctly. Owner-only /api/settings is the
+  // full settings blob (with tracker tokens) and stays protected.
+  if (req.method === 'GET' && p === '/api/branding') return true;
+
   // Extension upload (authenticated via Bearer token, handled separately)
   if (p.startsWith('/api/upload')) return true;
 

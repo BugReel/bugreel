@@ -331,20 +331,25 @@
 
     async function load() {
       try {
-        // Try loading by share_token first, fall back to direct ID for backwards compat
-        let data;
-        try {
-          data = await getRecordingByToken(shareToken);
-        } catch (e) {
-          // Fallback: maybe the URL still has a recording ID (before migration)
-          data = await getRecording(shareToken);
-        }
+        // Branding fetch runs in parallel with the recording fetch so the
+        // brand name is available by the time we set document.title below
+        // (otherwise the tab would briefly read "BugReel" before swap).
+        const [data] = await Promise.all([
+          (async () => {
+            // Try loading by share_token first, fall back to direct ID for backwards compat
+            try { return await getRecordingByToken(shareToken); }
+            catch (e) { return await getRecording(shareToken); }
+          })(),
+          loadBranding(),
+        ]);
         // Use the real recording ID for all subsequent API calls
         recordingId = data.recording.id;
         render(data);
+        applyBranding();
+        const brand = window.__branding?.name || 'BugReel';
         document.title = data.card
-          ? `${data.card.title} — ${window.__branding?.name || 'BugReel'}`
-          : `${recordingId} — ${window.__branding?.name || 'BugReel'}`;
+          ? `${data.card.title} — ${brand}`
+          : `${recordingId} — ${brand}`;
       } catch (err) {
         content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>Failed to load: ${escapeHTML(err.message)}</p></div>`;
       }
@@ -375,7 +380,7 @@
             <span class="detail-meta-item">${icons.user} ${escapeHTML(r.author || '--')}</span>
             <span class="detail-meta-item">${icons.calendar} ${formatDate(r.created_at)}</span>
             <span class="detail-meta-item">${icons.clock} ${formatDuration(r.duration_seconds)}</span>
-            <a href="${videoUrl(r.id)}" download="${r.id}.webm" class="btn btn-sm" style="margin-left:auto; gap:6px; font-size:0.75rem;">
+            <a href="${videoUrl(shareToken)}" download="${r.id}.webm" class="btn btn-sm" style="margin-left:auto; gap:6px; font-size:0.75rem;">
               ${icons.video} ${t('report_download', 'Download')}
               <span style="font-size:0.65rem; color:var(--text3);">${formatFileSize(r.file_size_bytes)}</span>
             </a>
@@ -387,7 +392,7 @@
               <!-- Video -->
               <div class="video-container">
                 <video id="videoPlayer" controls preload="metadata">
-                  <source src="${videoUrl(r.id)}" type="video/webm">
+                  <source src="${videoUrl(shareToken)}" type="video/webm">
                 </video>
               </div>
 
@@ -399,7 +404,7 @@
                 <div class="report-gallery" id="gallery">
                   ${validFrames.map((f, i) => `
                     <div class="report-gallery-item" data-index="${i}">
-                      <img src="${frameUrl(r.id, f.filename)}" alt="Frame ${i + 1}" loading="lazy">
+                      <img src="${frameUrl(shareToken, f.filename)}" alt="Frame ${i + 1}" loading="lazy">
                       <span class="gallery-time">${formatTimecode(f.time_seconds)}</span>
                     </div>
                   `).join('')}
@@ -460,7 +465,8 @@
       setupLightbox();
       loadComments();
       setupCommentForm();
-      loadBranding();
+      // Branding is fetched in parallel with the recording (see load()) and
+      // applied to the freshly-rendered DOM by load() right after this.
     }
 
     function renderReportAnalysis(a, card) {
@@ -515,7 +521,10 @@
         videoElement: video,
         frames,
         duration: duration || 60,
-        recordingId,
+        // Anonymous viewers can only access frame URLs via share_token; pass it
+        // here (instead of the resolved REC-… id) so timeline thumbnails load
+        // for both owner and public viewers.
+        recordingId: shareToken,
         editable: false,
         onKeyframeSelect: (frameId, time) => {
           video.currentTime = time;
@@ -576,7 +585,7 @@
     function updateLightbox() {
       const f = lightboxFrames[lightboxIndex];
       if (!f) return;
-      document.getElementById('lb-img').src = frameUrl(recordingId, f.filename);
+      document.getElementById('lb-img').src = frameUrl(shareToken, f.filename);
       document.getElementById('lb-caption').textContent =
         `${formatTimecode(f.time_seconds)}${f.description ? ' — ' + f.description : ''}`;
       document.getElementById('lb-counter').textContent =
@@ -588,24 +597,36 @@
 
     // --- Video Comments ---
 
+    // Two-phase to play nicely with the parallel recording fetch in load():
+    //   loadBranding()   — pure fetch, populates window.__branding
+    //   applyBranding()  — runs AFTER render() paints .brand-name / #report-logo
+    //
+    // /api/branding is the public no-auth endpoint — /api/settings is
+    // owner-only (returns tracker tokens etc.) and 401s on anonymous
+    // share-page loads. Field names differ: branding returns
+    // {name, logo_url, logo_link} (the DB keys are branding_*, but the
+    // public projection drops the prefix).
     async function loadBranding() {
       try {
-        const res = await fetch('/api/settings');
+        const res = await fetch('/api/branding');
         if (!res.ok) return;
-        const settings = await res.json();
-        const logoEl = document.getElementById('report-logo');
-        if (!logoEl) return;
-        if (settings.branding_logo_url) {
-          const link = settings.branding_logo_link || '#';
-          logoEl.innerHTML = `<a href="${escapeHTML(link)}" target="_blank" rel="noopener" style="display:flex;align-items:center;text-decoration:none;"><img src="${escapeHTML(settings.branding_logo_url)}" alt="" style="height:28px;max-width:160px;object-fit:contain;"></a>`;
-        }
-        if (settings.branding_name) {
-          document.querySelectorAll('.brand-name').forEach(el => { el.textContent = settings.branding_name; });
-          document.title = document.title.replace(/BugReel/g, settings.branding_name);
-        }
-      } catch { /* branding is optional */ } finally {
-        document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
+        window.__branding = await res.json();
+      } catch { /* branding is optional */ }
+    }
+
+    function applyBranding() {
+      const branding = window.__branding;
+      const reveal = () => document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
+      if (!branding) { reveal(); return; }
+      const logoEl = document.getElementById('report-logo');
+      if (logoEl && branding.logo_url) {
+        const link = branding.logo_link || '#';
+        logoEl.innerHTML = `<a href="${escapeHTML(link)}" target="_blank" rel="noopener" style="display:flex;align-items:center;text-decoration:none;"><img src="${escapeHTML(branding.logo_url)}" alt="" style="height:28px;max-width:160px;object-fit:contain;"></a>`;
       }
+      if (branding.name) {
+        document.querySelectorAll('.brand-name').forEach(el => { el.textContent = branding.name; });
+      }
+      reveal();
     }
 
     async function loadComments() {

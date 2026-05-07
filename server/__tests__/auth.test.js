@@ -126,45 +126,54 @@ describe('Sessions', () => {
 // --- Auth Middleware (unit level) ---
 
 describe('isPublicRoute patterns', () => {
-  // Test the logic without Express — just check path patterns
+  // Test the logic without Express — just check path patterns.
+  // Mirrors the GET-method-keyed pairs as [method, path] to cover routes
+  // where method gates publicness (e.g. /api/branding GET only).
   const publicPaths = [
-    '/login',
-    '/api/auth/login',
-    '/api/auth/register',
-    '/report/abc123',
-    '/report/some-long-share-token',
-    '/embed/xyz',
-    '/css/style.css',
-    '/js/app.js',
+    ['GET', '/login'],
+    ['POST', '/api/auth/login'],
+    ['POST', '/api/auth/register'],
+    ['GET', '/share/abc123'],
+    ['GET', '/share/some-long-share-token'],
+    ['GET', '/report/abc123'],
+    ['GET', '/report/some-long-share-token'],
+    ['GET', '/embed/xyz'],
+    ['GET', '/css/style.css'],
+    ['GET', '/js/app.js'],
+    ['GET', '/api/branding'],
   ];
 
   const protectedPaths = [
-    '/api/recordings',
-    '/api/cards',
-    '/api/settings',
-    '/',
-    '/recording/abc',
-    '/api/upload',
+    ['GET', '/api/recordings'],
+    ['GET', '/api/cards'],
+    ['GET', '/api/settings'],
+    ['GET', '/'],
+    ['GET', '/recording/abc'],
+    // /api/branding is public on GET only; non-GET should require auth
+    ['POST', '/api/branding'],
   ];
 
-  // Simple pattern checker matching auth.js isPublicRoute logic
-  function isPublic(p) {
+  // Simple pattern checker mirroring auth.js isPublicRoute logic.
+  // /api/upload is intentionally NOT in publicPaths — it's "public" in
+  // isPublicRoute but enforces its own Bearer-token check inside the handler.
+  function isPublic(method, p) {
     if (p === '/login' || p === '/api/auth/login' || p === '/api/auth/register') return true;
-    if (p.startsWith('/report/')) return true;
+    if (p.startsWith('/share/') || p.startsWith('/report/')) return true;
     if (p.startsWith('/embed/')) return true;
     if (p.startsWith('/css/') || p.startsWith('/js/')) return true;
+    if (method === 'GET' && p === '/api/branding') return true;
     return false;
   }
 
-  publicPaths.forEach(p => {
-    it(`${p} is public`, () => {
-      expect(isPublic(p)).toBe(true);
+  publicPaths.forEach(([method, p]) => {
+    it(`${method} ${p} is public`, () => {
+      expect(isPublic(method, p)).toBe(true);
     });
   });
 
-  protectedPaths.forEach(p => {
-    it(`${p} is protected`, () => {
-      expect(isPublic(p)).toBe(false);
+  protectedPaths.forEach(([method, p]) => {
+    it(`${method} ${p} is protected`, () => {
+      expect(isPublic(method, p)).toBe(false);
     });
   });
 });
