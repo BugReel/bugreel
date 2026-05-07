@@ -131,6 +131,24 @@
       font-size: 0.8rem;
     }
 
+    /* Header logo: when applyBranding() swaps in a deployment logo image,
+       the parent #report-logo (.logo) is a flex container without an explicit
+       size for img children. Pin both dimensions so a square 192×192 brand
+       PNG doesn't render at intrinsic size. svg fallback (when no logo_url
+       is configured) is constrained too. */
+    .report-header .logo img {
+      height: 28px;
+      width: auto;
+      max-width: 160px;
+      object-fit: contain;
+      display: block;
+    }
+    .report-header .logo > svg {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
     /* --- Video Comments --- */
     .video-comments {
       margin-top: 32px;
@@ -146,6 +164,19 @@
     .video-comments-header h2 {
       font-size: 1.1rem;
       font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+    }
+    /* Inline SVGs from shared.js icons map ship without width/height attrs —
+       in a flex parent without an explicit size they balloon to the default
+       replaced-element size (~300×150). Constrain here so the comments
+       header doesn't render with a giant message-bubble icon. */
+    .video-comments-header h2 svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
     }
     .video-comments-header .comment-count {
       background: var(--surface2);
