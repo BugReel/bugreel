@@ -99,8 +99,45 @@
       }
     }
 
+    function renderOnboarding() {
+      const installUrl = window.__branding?.extension_install_url || '/install.html';
+      return `
+        <div class="onboarding">
+          <h2 class="onboarding-title">${t('onboarding_title', 'Make your first recording in 3 steps')}</h2>
+          <div class="onboarding-steps">
+            <div class="onboarding-step">
+              <div class="onboarding-step-num">1</div>
+              <h3>${t('onboarding_step1_title', 'Install the extension')}</h3>
+              <p>${t('onboarding_step1_desc', 'Add the browser extension — it captures your screen and uploads here automatically.')}</p>
+              <a class="onboarding-cta" href="${escapeHTML(installUrl)}" target="_blank" rel="noopener">${t('onboarding_step1_cta', 'Install extension')} →</a>
+            </div>
+            <div class="onboarding-step">
+              <div class="onboarding-step-num">2</div>
+              <h3>${t('onboarding_step2_title', 'Pin the icon')}</h3>
+              <p>${t('onboarding_step2_desc', 'Open the puzzle icon next to the address bar and pin the extension so it stays one click away.')}</p>
+            </div>
+            <div class="onboarding-step">
+              <div class="onboarding-step-num">3</div>
+              <h3>${t('onboarding_step3_title', 'Click record')}</h3>
+              <p>${t('onboarding_step3_desc', 'Click the extension icon → Record. When you stop, the video lands here with a shareable link.')}</p>
+            </div>
+          </div>
+          <p class="onboarding-hint">${t('onboarding_token_hint', 'Need a token? Generate one in <a href="/settings">Settings → Extension token</a>.')}</p>
+        </div>
+      `;
+    }
+
     function renderTable(recordings, total) {
       if (!recordings.length) {
+        const filtersActive = !!(filterStatus.value || filterAuthor.value.trim() || filterSearch.value.trim());
+        // If the account is genuinely empty (no filters, total=0) show an
+        // onboarding flow — three steps to first recording. If filters are
+        // active or there's history elsewhere, fall back to the plain empty
+        // state so power-users aren't nagged.
+        if (total === 0 && !filtersActive) {
+          tableWrapper.innerHTML = renderOnboarding();
+          return;
+        }
         tableWrapper.innerHTML = `
           <div class="empty-state">
             ${icons.inbox}
