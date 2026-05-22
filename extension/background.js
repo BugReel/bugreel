@@ -87,6 +87,7 @@ let actionEvents = [];
 let manualMarkers = [];
 let recordingStartTime = null;
 let capturedTabId = null;
+let recordingSourceTabId = null; // the tab the user initiated recording from — used to scope the webcam widget to a single tab
 let screenInfo = null;
 let crmProfile = null;
 let recorderTabId = null; // Firefox: tab ID for recorder page
@@ -386,6 +387,12 @@ async function setState(newState, extraStorage = {}) {
   if (newState === 'ready' || newState === 'idle') {
     recordingStartTime = 0;
   }
+  // Clear the recording-source tab id once we leave an active recording so
+  // widgets in other tabs don't keep treating any tab as "the recording tab".
+  if (newState !== 'recording' && newState !== 'paused' && newState !== 'starting' && !('recordingTabId' in extraStorage)) {
+    extraStorage.recordingTabId = null;
+    recordingSourceTabId = null;
+  }
   await chrome.storage.local.set({ extensionState: newState, ...extraStorage });
 
   const badges = {
@@ -402,6 +409,15 @@ async function setState(newState, extraStorage = {}) {
 /* ── Message handling ── */
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // --- Content scripts asking which tab they live in ---
+  // Used by content-script-widget.js to decide whether the current tab is the
+  // recording tab (only that tab should acquire the webcam to avoid leaking
+  // permission prompts into every open tab).
+  if (message.type === 'get-my-tab-id') {
+    sendResponse({ tabId: sender.tab?.id ?? null });
+    return; // synchronous response
+  }
+
   // --- Token handoff from server bridge content-script ---
   // The dashboard page generated a fresh token and posted it; content-script
   // forwarded it here. We accept only if sender is the configured serverUrl.
@@ -497,7 +513,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[BugReel] Firefox: recording confirmed by recorder tab');
     recordingStartTime = Date.now();
     startTrackingListeners();
-    setState('recording', { recordingStartedAt: recordingStartTime, pausedElapsed: 0 });
+    setState('recording', { recordingStartedAt: recordingStartTime, pausedElapsed: 0, recordingTabId: recordingSourceTabId });
     return;
   }
 
@@ -820,6 +836,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
   chrome.storage.local.set({ manualMarkersCount: 0, manualMarkersData: '[]' });
   recordingStartTime = Date.now();
   capturedTabId = (mode === 'tab' && tabId) ? tabId : null;
+  recordingSourceTabId = tabId || null;
 
   // Chrome tab mode: get streamId via tabCapture API
   // Firefox: streamId stays undefined → recorder uses getDisplayMedia
@@ -975,7 +992,7 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
   startTrackingListeners();
 
   const startedAt = Date.now();
-  await setState('recording', { recordingStartedAt: startedAt, pausedElapsed: 0 });
+  await setState('recording', { recordingStartedAt: startedAt, pausedElapsed: 0, recordingTabId: recordingSourceTabId });
 
   console.log('[BugReel] Recording started successfully');
   return { success: true };

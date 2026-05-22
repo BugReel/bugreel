@@ -12,6 +12,16 @@
   let controlDragState = null;
   let webcamDragState = null;
   let collapsed = false;
+  let myTabId = null; // cached after first round-trip to background; used to gate webcam capture
+
+  async function getMyTabId() {
+    if (myTabId != null) return myTabId;
+    try {
+      const r = await chrome.runtime.sendMessage({ type: 'get-my-tab-id' });
+      myTabId = r?.tabId ?? null;
+    } catch { myTabId = null; }
+    return myTabId;
+  }
 
   const t = (key, fallback) => {
     try { return chrome.i18n?.getMessage(key) || fallback || key; }
@@ -120,8 +130,15 @@
   async function createWebcam() {
     if (webcamHost) return;
     try {
-      const stored = await new Promise(r => chrome.storage.local.get(['webcamEnabled', 'webcamDeviceId', 'webcamPipSize', 'webcamCirclePosition'], r));
+      const stored = await new Promise(r => chrome.storage.local.get(['webcamEnabled', 'webcamDeviceId', 'webcamPipSize', 'webcamCirclePosition', 'recordingTabId'], r));
       if (!stored.webcamEnabled) return;
+
+      // Only acquire the camera in the tab the user started the recording from.
+      // Without this gate the widget fires getUserMedia in every open tab — each
+      // origin then prompts for camera permission, and pending prompts can leak
+      // live tracks after the user has already stopped recording.
+      const tabId = await getMyTabId();
+      if (stored.recordingTabId != null && tabId != null && stored.recordingTabId !== tabId) return;
 
       const size = stored.webcamPipSize || 180;
       const constraints = {
@@ -129,6 +146,15 @@
         audio: false,
       };
       webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Race: getUserMedia may have been waiting on a permission prompt; the
+      // recording could have already finished. Drop the stream immediately so
+      // we don't hold the camera after the user thought it was released.
+      if (state.extensionState !== 'recording' && state.extensionState !== 'paused') {
+        webcamStream.getTracks().forEach(t => t.stop());
+        webcamStream = null;
+        return;
+      }
 
       webcamHost = document.createElement('div');
       webcamHost.id = WEBCAM_ID;
