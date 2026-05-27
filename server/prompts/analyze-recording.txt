@@ -53,17 +53,42 @@ If you genuinely cannot tell, use `other`. Do not force a type.
 - No marketing language. Plain, direct.
 
 **chapters**:
-- 3 to 12 chapters depending on video length:
+- Aim for 3 to 12 chapters depending on video length:
   - Under 2 minutes: 0 chapters (return empty array `[]`).
   - 2–10 minutes: 3–5 chapters.
   - 10–30 minutes: 5–8 chapters.
-  - 30–60 minutes: 7–10 chapters.
-  - 60+ minutes: 8–12 chapters.
+  - 30–60 minutes: 6–10 chapters.
+  - 60+ minutes: 7–12 chapters.
+- Counts are a target, not a quota. If the recording really has only 4 topic
+  switches in 60 minutes, return 4 — DO NOT pad with invented boundaries to
+  hit a number.
 - `time` in seconds, MUST be within video duration (0 to duration-1).
 - First chapter MUST start at `time: 0` (or as close as semantically reasonable, like the first sentence after greeting).
 - Chapter titles: 3-7 words, describe what happens in that segment.
 - No overlap, strictly increasing `time`.
 - Don't make chapter titles too generic ("Introduction", "Continued"). Be specific.
+
+**HOW TO PICK CHAPTER TIMESTAMPS — STRICT, READ CAREFULLY**
+
+The user will click these timestamps to jump to a video moment. If you put
+`time: 540` and the speaker is not actually starting the topic you titled, the
+feature is broken.
+
+- Find chapter boundaries by reading the transcript and locating the EXACT
+  word/phrase where the speaker pivots to a new topic. Use the timestamp of
+  THAT word from the word-level timestamps array.
+- Do NOT space chapters evenly (e.g. every 3 minutes, every 5 minutes). That is
+  the single most common failure mode. Anti-pattern: `[0, 180, 360, 540, 720]`
+  for a 12-minute video — these are guesses, not real boundaries.
+- If two consecutive chapter timestamps differ by exactly the same number, or
+  by a round number like 60/120/180/300/600 seconds — re-check whether those
+  are actually the moments where the topic changes. Usually they aren't.
+- Real chapter timestamps look irregular: `[0, 47.3, 213.8, 482.1, 690.6]`.
+  Decimal/odd values are GOOD — they indicate you found a specific word.
+- The chapter title should literally describe what the speaker says in the
+  first ~30 seconds after that timestamp. Test mentally: "If I read the
+  transcript starting at this time, would the next paragraph be about
+  <chapter title>?" If not — wrong timestamp.
 
 ### Examples
 
@@ -83,20 +108,20 @@ For a 35-minute bug report:
 }
 ```
 
-For a 64-minute tutorial:
+For a 64-minute tutorial (note the irregular, transcript-derived timestamps):
 ```json
 {
   "type": "tutorial",
   "title": "Настройка блоков урока и AI-генерации заданий",
   "summary": "Разбор интерфейса конструктора уроков: как добавлять блоки, настраивать тайминги, использовать AI-генерацию заданий по теме. Пройдёмся по каждому из 5 типов блоков (Знакомство, Калибровка, Core, Speaking, Practice) и поправим формулировки. В конце — обзор пульта учителя.",
   "chapters": [
-    {"time": 0,    "title": "Обзор интерфейса"},
-    {"time": 480,  "title": "Блок Знакомство"},
-    {"time": 1100, "title": "Блок Калибровка уровня"},
-    {"time": 1730, "title": "Блок Core: лексика и грамматика"},
-    {"time": 2400, "title": "Блок Speaking"},
-    {"time": 3050, "title": "AI-генерация заданий"},
-    {"time": 3500, "title": "Пульт учителя и итоги"}
+    {"time": 0,      "title": "Обзор интерфейса"},
+    {"time": 487.2,  "title": "Блок Знакомство"},
+    {"time": 1124.8, "title": "Блок Калибровка уровня"},
+    {"time": 1733.5, "title": "Блок Core: лексика и грамматика"},
+    {"time": 2418.1, "title": "Блок Speaking"},
+    {"time": 3052.6, "title": "AI-генерация заданий"},
+    {"time": 3491.4, "title": "Пульт учителя и итоги"}
   ]
 }
 ```
