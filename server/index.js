@@ -26,7 +26,7 @@ const dashboardDir = path.join(__dirname, '..', 'dashboard');
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // CORS for extension
 app.use((req, res, next) => {
