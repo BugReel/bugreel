@@ -178,10 +178,14 @@
             ${filtered.map(r => `
               <tr data-id="${escapeHTML(r.id)}">
                 <td>
-                  ${r.first_frame
-                    ? `<img class="rec-thumb" src="/api/recordings/${encodeURIComponent(r.id)}/frames/${encodeURIComponent(r.first_frame)}" alt="" loading="lazy">`
-                    : `<div class="rec-thumb-placeholder">${icons.video}</div>`
-                  }
+                  ${(() => {
+                    // Prefer the AI-picked thumbnail (representative frame) over the
+                    // first-by-timecode frame — that one is usually a blank intro.
+                    const thumb = r.thumbnail_filename || r.first_frame;
+                    return thumb
+                      ? `<img class="rec-thumb" src="/api/recordings/${encodeURIComponent(r.id)}/frames/${encodeURIComponent(thumb)}" alt="" loading="lazy">`
+                      : `<div class="rec-thumb-placeholder">${icons.video}</div>`;
+                  })()}
                 </td>
                 <td>
                   <div class="rec-info">
@@ -190,7 +194,8 @@
                     </a>
                     ${r.has_password ? `<span class="badge" style="background:var(--amber-dim); color:var(--amber); font-size:0.6rem; padding:1px 6px; gap:3px;" title="Password protected">${icons.lock}</span>` : ''}
                     ${r.comment_count > 0 ? `<span class="badge" style="background:var(--blue-dim); color:var(--blue); font-size:0.6rem; padding:1px 6px; gap:3px;" title="${r.comment_count} comment${r.comment_count > 1 ? 's' : ''}">${icons.messageCircle} ${r.comment_count}</span>` : ''}
-                    ${r.card_title ? `<span class="rec-title">${escapeHTML(r.card_title)}</span>` : ''}
+                    ${(r.card_title || r.ai_title) ? `<span class="rec-title">${escapeHTML(r.card_title || r.ai_title)}</span>` : ''}
+                    ${!r.card_title && r.ai_type ? `<span class="badge badge-${escapeHTML(r.ai_type)}" style="font-size:0.6rem; padding:1px 6px;">${escapeHTML(r.ai_type)}</span>` : ''}
                   </div>
                 </td>
                 <td>${escapeHTML(r.author || '--')}</td>

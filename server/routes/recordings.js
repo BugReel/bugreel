@@ -37,6 +37,32 @@ function getDirSize(dirPath) {
   return total;
 }
 
+// Recording columns that store JSON-serialised payloads. Parsed once here so
+// both GET endpoints (by-token and by-id) stay in sync as new AI fields land.
+const JSON_FIELDS = [
+  ['transcript_json',       'transcript'],
+  ['analysis_json',         'analysis'],
+  ['url_events_json',       'url_events'],
+  ['metadata_json',         'metadata'],
+  ['console_events_json',   'console_events'],
+  ['action_events_json',    'action_events'],
+  ['ai_chapters_json',      'ai_chapters'],
+  ['ai_action_items_json',  'ai_action_items'],
+  ['ai_key_concepts_json',  'ai_key_concepts'],
+];
+
+function hydrateRecording(recording) {
+  recording.has_password = !!recording.password_hash;
+  delete recording.password_hash;
+  for (const [rawKey, outKey] of JSON_FIELDS) {
+    if (recording[rawKey]) {
+      try { recording[outKey] = JSON.parse(recording[rawKey]); }
+      catch { recording[outKey] = null; }
+    }
+  }
+  return recording;
+}
+
 const router = Router();
 
 // Queue status (for monitoring)
@@ -145,30 +171,7 @@ router.get('/recordings/by-token/:token', (req, res) => {
   const db = getDB();
   const recording = db.prepare('SELECT * FROM recordings WHERE share_token = ?').get(req.params.token);
   if (!recording) return res.status(404).json({ error: 'Not found' });
-
-  // Add has_password flag, remove password_hash from response
-  recording.has_password = !!recording.password_hash;
-  delete recording.password_hash;
-
-  // Parse JSON fields
-  if (recording.transcript_json) {
-    try { recording.transcript = JSON.parse(recording.transcript_json); } catch { recording.transcript = null; }
-  }
-  if (recording.analysis_json) {
-    try { recording.analysis = JSON.parse(recording.analysis_json); } catch { recording.analysis = null; }
-  }
-  if (recording.url_events_json) {
-    try { recording.url_events = JSON.parse(recording.url_events_json); } catch { recording.url_events = null; }
-  }
-  if (recording.metadata_json) {
-    try { recording.metadata = JSON.parse(recording.metadata_json); } catch { recording.metadata = null; }
-  }
-  if (recording.console_events_json) {
-    try { recording.console_events = JSON.parse(recording.console_events_json); } catch { recording.console_events = null; }
-  }
-  if (recording.action_events_json) {
-    try { recording.action_events = JSON.parse(recording.action_events_json); } catch { recording.action_events = null; }
-  }
+  hydrateRecording(recording);
 
   const frames = db.prepare(
     'SELECT * FROM frames WHERE recording_id = ? ORDER BY time_seconds'
@@ -200,30 +203,7 @@ router.get('/recordings/:id', (req, res) => {
     if (recording && !ownsRecording(req, recording)) recording = null;
   }
   if (!recording) return res.status(404).json({ error: 'Not found' });
-
-  // Add has_password flag, remove password_hash from response
-  recording.has_password = !!recording.password_hash;
-  delete recording.password_hash;
-
-  // Parse JSON fields
-  if (recording.transcript_json) {
-    try { recording.transcript = JSON.parse(recording.transcript_json); } catch { recording.transcript = null; }
-  }
-  if (recording.analysis_json) {
-    try { recording.analysis = JSON.parse(recording.analysis_json); } catch { recording.analysis = null; }
-  }
-  if (recording.url_events_json) {
-    try { recording.url_events = JSON.parse(recording.url_events_json); } catch { recording.url_events = null; }
-  }
-  if (recording.metadata_json) {
-    try { recording.metadata = JSON.parse(recording.metadata_json); } catch { recording.metadata = null; }
-  }
-  if (recording.console_events_json) {
-    try { recording.console_events = JSON.parse(recording.console_events_json); } catch { recording.console_events = null; }
-  }
-  if (recording.action_events_json) {
-    try { recording.action_events = JSON.parse(recording.action_events_json); } catch { recording.action_events = null; }
-  }
+  hydrateRecording(recording);
 
   const frames = db.prepare(
     'SELECT * FROM frames WHERE recording_id = ? ORDER BY time_seconds'

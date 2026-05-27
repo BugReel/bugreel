@@ -221,6 +221,18 @@ export function initDB() {
   // N times. Used to decide if Phase 1.5 (staged preview) is worth keeping.
   try { db.exec('ALTER TABLE recordings ADD COLUMN recorder_segment_count INTEGER'); } catch {}
 
+  // AI Value Pack: generic per-recording AI artifacts that work for any
+  // recording type (not just bugs). Populated by classifyAndSummarize step
+  // in the pipeline. Independent of the `cards` table (which stays
+  // bug/feature/enhancement-specific for tracker export).
+  try { db.exec('ALTER TABLE recordings ADD COLUMN ai_type TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN ai_title TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN ai_summary TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN ai_chapters_json TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN ai_action_items_json TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN ai_key_concepts_json TEXT'); } catch {}
+  try { db.exec('ALTER TABLE recordings ADD COLUMN thumbnail_filename TEXT'); } catch {}
+
   // Backfill share_token for existing recordings that don't have one
   const noToken = db.prepare('SELECT id FROM recordings WHERE share_token IS NULL').all();
   if (noToken.length > 0) {

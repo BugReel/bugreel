@@ -4,7 +4,12 @@ import { getDB } from '../db.js';
 import { config } from '../config.js';
 import { extractAudio, extractFrame, compressVideo, trimVideo, segmentVideo } from './ffmpeg.js';
 import { transcribe } from './whisper.js';
-import { analyzeTranscript } from './gpt.js';
+import { analyzeTranscript, classifyAndSummarize, extractActionItems, extractKeyConcepts } from './gpt.js';
+
+// Recording types that get the legacy bug-card + YouTrack export flow.
+const BUG_LIKE_TYPES = new Set(['bug', 'feature', 'enhancement']);
+const MEETING_TYPES = new Set(['meeting']);
+const LESSON_TYPES = new Set(['tutorial', 'walkthrough', 'lesson']);
 
 /**
  * Best-effort notification to the Skrini cloud about AI usage. Used when Core
@@ -87,7 +92,18 @@ export function retryStuckRecordings() {
 
   // Reset stuck ones
   for (const { id } of stuck) {
-    db.prepare("UPDATE recordings SET status = 'uploaded', transcript_json = NULL, analysis_json = NULL WHERE id = ?").run(id);
+    db.prepare(`UPDATE recordings SET
+      status = 'uploaded',
+      transcript_json = NULL,
+      analysis_json = NULL,
+      ai_type = NULL,
+      ai_title = NULL,
+      ai_summary = NULL,
+      ai_chapters_json = NULL,
+      ai_action_items_json = NULL,
+      ai_key_concepts_json = NULL,
+      thumbnail_filename = NULL
+      WHERE id = ?`).run(id);
     db.prepare("DELETE FROM frames WHERE recording_id = ?").run(id);
     db.prepare("DELETE FROM cards WHERE recording_id = ?").run(id);
   }
@@ -173,9 +189,6 @@ async function processPipeline(recordingId) {
     })
   ]);
 
-  // 3. GPT analysis (needs transcript + optional URL/console context)
-  console.log(`[${recordingId}] Analyzing with GPT...`);
-
   // Parse URL events and console errors from recording (if captured by extension)
   let urlEvents = null;
   let consoleEvents = null;
@@ -190,45 +203,114 @@ async function processPipeline(recordingId) {
     if (recording.action_events_json) actionEvents = JSON.parse(recording.action_events_json);
   } catch {}
 
-  const analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents, duration);
-  db.prepare('UPDATE recordings SET analysis_json = ?, status = ? WHERE id = ?')
-    .run(JSON.stringify(analysis), 'analyzed', recordingId);
-  console.log(`[${recordingId}] Analysis complete: type=${analysis.type}, title="${analysis.title}"`);
+  // 3. First-pass: classify recording type + generic summary/chapters.
+  // Runs for EVERY recording (bug, lesson, meeting, demo, ...). The result drives
+  // which type-specific extractor (if any) runs next.
+  console.log(`[${recordingId}] Classifying recording + generating summary/chapters...`);
+  const classification = await classifyAndSummarize(transcript, duration, urlEvents, consoleEvents, actionEvents);
+  db.prepare(
+    'UPDATE recordings SET ai_type = ?, ai_title = ?, ai_summary = ?, ai_chapters_json = ? WHERE id = ?'
+  ).run(
+    classification.type,
+    classification.title,
+    classification.summary || null,
+    JSON.stringify(classification.chapters || []),
+    recordingId
+  );
+  console.log(`[${recordingId}] Classified as ${classification.type}: "${classification.title}" (${(classification.chapters || []).length} chapters)`);
   notifyUsage(recordingId, 'analysis', { count: 1 });
 
-  // 4. Extract key frames (from compressed video)
+  // 4. Type-specific deep extraction.
+  let analysis = null;          // legacy bug-card analysis (only for BUG_LIKE_TYPES)
+  let actionItemsResult = null; // meeting payload
+  let conceptsResult = null;    // lesson/tutorial payload
+  const aiType = classification.type;
+
+  if (BUG_LIKE_TYPES.has(aiType)) {
+    console.log(`[${recordingId}] Running bug-card analysis (analyzeTranscript)...`);
+    analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents, duration);
+    db.prepare('UPDATE recordings SET analysis_json = ? WHERE id = ?')
+      .run(JSON.stringify(analysis), recordingId);
+    notifyUsage(recordingId, 'analysis', { count: 1 });
+  } else if (MEETING_TYPES.has(aiType)) {
+    console.log(`[${recordingId}] Extracting action items / decisions / open questions...`);
+    try {
+      actionItemsResult = await extractActionItems(transcript, classification.chapters || []);
+      db.prepare('UPDATE recordings SET ai_action_items_json = ? WHERE id = ?')
+        .run(JSON.stringify(actionItemsResult), recordingId);
+      notifyUsage(recordingId, 'analysis', { count: 1 });
+    } catch (err) {
+      console.warn(`[${recordingId}] extractActionItems failed: ${err.message}`);
+    }
+  } else if (LESSON_TYPES.has(aiType)) {
+    console.log(`[${recordingId}] Extracting key concepts / learning goals / practical steps...`);
+    try {
+      conceptsResult = await extractKeyConcepts(transcript, classification.chapters || [], urlEvents, actionEvents);
+      db.prepare('UPDATE recordings SET ai_key_concepts_json = ? WHERE id = ?')
+        .run(JSON.stringify(conceptsResult), recordingId);
+      notifyUsage(recordingId, 'analysis', { count: 1 });
+    } catch (err) {
+      console.warn(`[${recordingId}] extractKeyConcepts failed: ${err.message}`);
+    }
+  }
+  db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('analyzed', recordingId);
+
+  // 5. Extract key frames. Source depends on recording type:
+  //    - bug/feature/enhancement: GPT keyFrames (existing behaviour)
+  //    - meeting/lesson/etc.: derive from chapters (one frame per chapter)
+  //    - manual markers always merged in, take priority.
   console.log(`[${recordingId}] Extracting key frames...`);
   const framesDir = path.join(recDir, 'frames');
   fs.mkdirSync(framesDir, { recursive: true });
 
-  // Parse manual markers (user-pressed camera button during recording)
   let manualMarkers = [];
   try {
     if (recording.manual_markers_json) manualMarkers = JSON.parse(recording.manual_markers_json);
   } catch {}
 
-  // Merge: manual markers take priority, GPT frames within 3s of a manual one are skipped
-  const DEDUP_THRESHOLD = 3.0;
-  // Clamp timestamps to video duration (GPT can hallucinate times beyond the end)
   const maxTime = duration > 0 ? Math.max(duration - 0.1, 0) : Infinity;
-  const gptFrames = (analysis.keyFrames || []).map(f => ({ time: Math.min(Math.max(f.time, 0), maxTime), description: f.description, detail: f.detail || '', isManual: false }));
+  const clampTime = t => Math.min(Math.max(Number(t) || 0, 0), maxTime);
+
+  let gptFrames = [];
+  if (analysis && Array.isArray(analysis.keyFrames)) {
+    gptFrames = analysis.keyFrames.map(f => ({
+      time: clampTime(f.time),
+      description: f.description || '',
+      detail: f.detail || '',
+      isManual: false,
+    }));
+  } else if (Array.isArray(classification.chapters)) {
+    // Derive frames from chapters. Skip the very first chapter at t=0 (often a blank intro).
+    gptFrames = classification.chapters
+      .map((c, i) => ({
+        time: clampTime(i === 0 && (Number(c.time) || 0) < 2 ? 2 : c.time),
+        description: c.title || '',
+        detail: '',
+        isManual: false,
+      }))
+      .filter(f => f.time > 0);
+  }
+
+  const DEDUP_THRESHOLD = 3.0;
   const mergedFrames = [
-    ...manualMarkers.map(m => ({ time: m.ts, description: 'Manual screenshot', isManual: true })),
+    ...manualMarkers.map(m => ({ time: m.ts, description: 'Manual screenshot', detail: '', isManual: true })),
     ...gptFrames.filter(gpt =>
       !manualMarkers.some(m => Math.abs(m.ts - gpt.time) <= DEDUP_THRESHOLD)
     )
   ].sort((a, b) => a.time - b.time).slice(0, config.maxScreenshots);
 
   if (manualMarkers.length > 0) {
-    console.log(`[${recordingId}] Manual markers: ${manualMarkers.length}, GPT frames: ${gptFrames.length}, merged: ${mergedFrames.length}`);
+    console.log(`[${recordingId}] Manual markers: ${manualMarkers.length}, AI frames: ${gptFrames.length}, merged: ${mergedFrames.length}`);
   }
 
+  const frameFilenames = [];
   for (let i = 0; i < mergedFrames.length; i++) {
     const frame = mergedFrames[i];
     const filename = `${String(i + 1).padStart(3, '0')}_${frame.time.toFixed(1)}s.jpg`;
     const framePath = path.join(framesDir, filename);
 
     await extractFrame(videoPath, frame.time, framePath);
+    frameFilenames.push({ filename, time: frame.time, isManual: frame.isManual });
 
     db.prepare('INSERT INTO frames (recording_id, time_seconds, description, detail, filename, is_manual) VALUES (?, ?, ?, ?, ?, ?)')
       .run(recordingId, frame.time, frame.description, frame.detail || '', filename, frame.isManual ? 1 : 0);
@@ -236,23 +318,48 @@ async function processPipeline(recordingId) {
   db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('frames_extracted', recordingId);
   console.log(`[${recordingId}] Extracted ${mergedFrames.length} frames`);
 
-  // 5. Create card
-  console.log(`[${recordingId}] Creating card...`);
-  const description = formatDescription(analysis);
-  const cardResult = db.prepare(`
-    INSERT INTO cards (recording_id, type, title, description, summary, status)
-    VALUES (?, ?, ?, ?, ?, 'draft')
-  `).run(
-    recordingId,
-    analysis.type || 'bug',
-    analysis.title || 'Untitled',
-    description,
-    analysis.summary || null
-  );
-  const cardId = cardResult.lastInsertRowid;
-  console.log(`[${recordingId}] Card #${cardId} created`);
+  // 6. Smart thumbnail — prefer the first non-manual AI frame (most representative),
+  // fall back to first manual marker, then to the frame at ~25% of duration.
+  let thumbnailFilename = null;
+  const aiFrame = frameFilenames.find(f => !f.isManual);
+  const anyFrame = frameFilenames[0];
+  if (aiFrame) {
+    thumbnailFilename = aiFrame.filename;
+  } else if (anyFrame) {
+    thumbnailFilename = anyFrame.filename;
+  } else if (duration > 0) {
+    const t = Math.min(duration * 0.25, Math.max(duration - 1, 0));
+    const filename = `thumb_${t.toFixed(1)}s.jpg`;
+    try {
+      await extractFrame(videoPath, t, path.join(framesDir, filename));
+      thumbnailFilename = filename;
+    } catch (err) {
+      console.warn(`[${recordingId}] thumbnail fallback failed: ${err.message}`);
+    }
+  }
+  if (thumbnailFilename) {
+    db.prepare('UPDATE recordings SET thumbnail_filename = ? WHERE id = ?').run(thumbnailFilename, recordingId);
+    console.log(`[${recordingId}] Thumbnail: ${thumbnailFilename}`);
+  }
 
-  // 6. Done (YouTrack export is manual — via POST /api/cards/:id/export-youtrack)
+  // 7. Create tracker card — only for bug-like recordings (kept compatible with YouTrack export).
+  if (analysis && BUG_LIKE_TYPES.has(aiType)) {
+    console.log(`[${recordingId}] Creating tracker card...`);
+    const description = formatDescription(analysis);
+    const cardResult = db.prepare(`
+      INSERT INTO cards (recording_id, type, title, description, summary, status)
+      VALUES (?, ?, ?, ?, ?, 'draft')
+    `).run(
+      recordingId,
+      analysis.type || aiType,
+      analysis.title || classification.title || 'Untitled',
+      description,
+      analysis.summary || classification.summary || null
+    );
+    console.log(`[${recordingId}] Card #${cardResult.lastInsertRowid} created`);
+  }
+
+  // 8. Done. YouTrack export remains manual (POST /api/cards/:id/export-youtrack).
   db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('complete', recordingId);
   console.log(`[${recordingId}] Pipeline complete!`);
 

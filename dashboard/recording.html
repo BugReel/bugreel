@@ -77,6 +77,13 @@
       const r = recording;
       const analysis = r.analysis || {};
       const transcript = r.transcript || {};
+      const aiChapters = Array.isArray(r.ai_chapters) ? r.ai_chapters : [];
+      const aiActionItems = r.ai_action_items || null;
+      const aiConcepts = r.ai_key_concepts || null;
+      // Title/summary priority: card → ai_title → id
+      const displayTitle = card?.title || r.ai_title || null;
+      const displaySummary = card?.summary || r.ai_summary || null;
+      const displayType = card?.type || r.ai_type || null;
       content.innerHTML = `
         <!-- Back link -->
         <a href="../" class="back-link">${icons.arrowLeft} ${t('back_to_recordings', 'Back to recordings')}</a>
@@ -85,8 +92,8 @@
         <div class="detail-header" style="align-items:flex-start;">
           ${card && card.cs_total != null ? `<div style="margin-top:4px;">${csCircleHTML(card.cs_total, card.cs_category, 'cs-circle-lg')}</div>` : ''}
           <div style="flex:1;">
-            <h1>${card ? escapeHTML(card.title || 'Untitled') : `<span style="font-family:'JetBrains Mono','Fira Code',monospace;">${escapeHTML(r.id)}</span>`}</h1>
-            ${card?.summary ? `<p class="card-summary">${escapeHTML(card.summary)}</p>` : ''}
+            <h1>${displayTitle ? escapeHTML(displayTitle) : `<span style="font-family:'JetBrains Mono','Fira Code',monospace;">${escapeHTML(r.id)}</span>`}</h1>
+            ${displaySummary ? `<p class="card-summary">${escapeHTML(displaySummary)}</p>` : ''}
           </div>
           ${r.status === 'complete' && card ? `
             <button class="btn btn-sm" id="btnPassword" title="${r.has_password ? t('password_protected', 'Password protected') : t('set_password', 'Set password')}" style="margin-top:4px; ${r.has_password ? 'color:var(--amber);' : ''}">
@@ -95,9 +102,14 @@
             <button class="btn btn-sm" id="btnEmbed" title="Embed" style="margin-top:4px;">
               ${icons.code}
             </button>
-            <button class="btn btn-sm" id="btnShareLink" title="Copy link" style="margin-top:4px;">
+            <button class="btn btn-sm" id="btnShareLink" title="${t('copy_link', 'Copy link')}" style="margin-top:4px;">
               ${icons.share}
             </button>
+            ${(r.ai_summary || displayTitle) ? `
+              <button class="btn btn-sm" id="btnShareText" title="${t('copy_share_text', 'Copy share text with AI summary')}" style="margin-top:4px;">
+                ${icons.sparkle}
+              </button>
+            ` : ''}
           ` : ''}
         </div>
 
@@ -138,7 +150,7 @@
 
         <!-- Meta (single line: badge + author + date + duration + youtrack) -->
         <div class="detail-meta mb-16">
-          ${card?.type ? `<span class="badge badge-${card.type}">${escapeHTML(card.type)}</span>` : ''}
+          ${displayType ? `<span class="badge badge-${escapeHTML(displayType)}">${escapeHTML(displayType)}</span>` : ''}
           ${card?.cs_category ? `<span class="badge badge-${card.cs_category}">${categoryLabel(card.cs_category)}</span>` : ''}
           ${r.has_password ? `<span class="badge badge-amber" style="background:var(--amber-dim); color:var(--amber); gap:4px;">${icons.lock} ${t('protected', 'Protected')}</span>` : ''}
           <span class="detail-meta-item">${icons.user} ${escapeHTML(r.author || '--')}</span>
@@ -221,6 +233,8 @@
           </div>
         </div>
 
+        ${renderAiPack(r, aiChapters, aiActionItems, aiConcepts)}
+
         <!-- Three columns: Description | Transcript | Context -->
         <div class="three-columns mb-16">
           <!-- Column 1: Description (editable via modal) -->
@@ -276,6 +290,24 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Ask AI chat panel — auto-hidden if endpoint isn't available -->
+        <div class="column-panel ai-chat-panel mb-16" id="aiChatPanel" hidden>
+          <div class="column-panel-header">
+            <span class="column-panel-label">${icons.sparkle} ${t('ask_ai', 'Ask AI')}</span>
+            <span class="text-dim text-xs">${t('ask_ai_hint', 'Cited timestamps are clickable')}</span>
+          </div>
+          <div class="column-panel-body">
+            <div id="aiChatMessages" class="ai-chat-messages"></div>
+            <div id="aiChatSuggestions" class="ai-chat-suggestions"></div>
+            <div class="ai-chat-input-row">
+              <textarea id="aiChatInput" rows="2" maxlength="2000" class="edit-field"
+                placeholder="${t('ask_ai_placeholder', 'Ask about this recording...')}"></textarea>
+              <button class="btn btn-primary" id="btnAiSend" title="${t('send', 'Send')}">${icons.send}</button>
+            </div>
+            <div id="aiChatError" class="ai-chat-error" hidden></div>
           </div>
         </div>
 
@@ -347,6 +379,8 @@
 
       setupVideoInteractions(frames, transcript);
       setupKeyframesIndex(frames);
+      setupAiPack(r);
+      setupAiChat(r);
       // Auto-refresh if still processing
       if (r.status !== 'complete' && r.status !== 'error') {
         startAutoRefresh();
@@ -357,6 +391,7 @@
       setupTranscriptEdit(transcript);
       setupContextEdit(r);
       setupShareButton();
+      setupSmartShareText();
       setupEmbedButton();
       setupPasswordPanel(r);
       setupYoutrackPanel(r, card);
@@ -402,6 +437,45 @@
         }).catch(() => {
           prompt('Copy link:', url);
         });
+      });
+    }
+
+    // --- Smart share text ---
+    // Builds a paste-ready summary block (title + AI summary + chapters + link)
+    // for Slack/email/Telegram. Visible only when AI artifacts exist.
+    function setupSmartShareText() {
+      const btn = document.getElementById('btnShareText');
+      if (!btn || !currentData) return;
+      const r = currentData.recording;
+      const card = currentData.card;
+
+      btn.addEventListener('click', () => {
+        const token = r.share_token;
+        const publicId = token || recordingId;
+        const url = `${location.origin}/share/${encodeURIComponent(publicId)}`;
+
+        const title = (card && card.title) || r.ai_title || '';
+        const summary = (card && card.summary) || r.ai_summary || '';
+        const chapters = Array.isArray(r.ai_chapters) ? r.ai_chapters : [];
+
+        const parts = [];
+        if (title) parts.push(title);
+        if (summary) parts.push('', summary);
+        if (chapters.length) {
+          parts.push('', t('chapters', 'Chapters') + ':');
+          for (const c of chapters) {
+            const time = formatTimecode(Number(c.time) || 0);
+            parts.push(`  ${time} — ${c.title || ''}`);
+          }
+        }
+        parts.push('', url);
+        const text = parts.join('\n').trim();
+
+        navigator.clipboard.writeText(text).then(() => {
+          const orig = btn.innerHTML;
+          btn.innerHTML = `${icons.checkCircle}`;
+          setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }).catch(() => prompt('Copy:', text));
       });
     }
 
@@ -630,6 +704,109 @@
       }, 3000);
     }
 
+    // --- AI Pack: chapters + type-specific extracted artifacts ---
+    // Rendered for ANY recording (not just bug reports). Chapters always appear
+    // if present; action items / key concepts appear based on ai_type.
+    function renderAiPack(r, chapters, actionItems, concepts) {
+      const blocks = [];
+
+      if (Array.isArray(chapters) && chapters.length > 0) {
+        const items = chapters.map(c => `
+          <button class="ai-chapter-row" data-time="${Number(c.time) || 0}">
+            <span class="ai-chapter-time">${formatTimecode(Number(c.time) || 0)}</span>
+            <span class="ai-chapter-title">${escapeHTML(c.title || '')}</span>
+          </button>
+        `).join('');
+        blocks.push(`
+          <div class="column-panel ai-pack-panel">
+            <div class="column-panel-header">
+              <span class="column-panel-label">${icons.layers} ${t('chapters', 'Chapters')}</span>
+              <span class="text-dim text-xs">${chapters.length}</span>
+            </div>
+            <div class="column-panel-body ai-chapters-list">
+              ${items}
+            </div>
+          </div>
+        `);
+      }
+
+      if (actionItems) {
+        const itemHtml = (arr, emptyMsg) => arr && arr.length
+          ? `<ul class="ai-list">${arr.map(it => {
+              const text = escapeHTML(it.text || '');
+              const owner = it.owner ? ` · <span class="ai-meta">${escapeHTML(it.owner)}</span>` : '';
+              const deadline = it.deadline ? ` · <span class="ai-meta">${escapeHTML(it.deadline)}</span>` : '';
+              const time = it.time != null
+                ? `<button class="ai-time-link" data-time="${Number(it.time) || 0}">${formatTimecode(Number(it.time) || 0)}</button>`
+                : '';
+              return `<li>${time}<span class="ai-li-text">${text}</span>${owner}${deadline}</li>`;
+            }).join('')}</ul>`
+          : `<div class="text-dim text-xs">${emptyMsg}</div>`;
+
+        const hasAny = (actionItems.actionItems?.length || 0)
+          + (actionItems.decisions?.length || 0)
+          + (actionItems.openQuestions?.length || 0) > 0;
+        if (hasAny) {
+          blocks.push(`
+            <div class="column-panel ai-pack-panel">
+              <div class="column-panel-header">
+                <span class="column-panel-label">${icons.checkCircle} ${t('action_items', 'Action Items')}</span>
+                <button class="column-edit-btn" id="btnCopyActionItems" title="${t('copy', 'Copy')}">${icons.copy || icons.code}</button>
+              </div>
+              <div class="column-panel-body">
+                ${actionItems.actionItems?.length ? `<div class="ai-section-label">${t('to_do', 'To do')}</div>${itemHtml(actionItems.actionItems, '')}` : ''}
+                ${actionItems.decisions?.length ? `<div class="ai-section-label">${t('decisions', 'Decisions')}</div>${itemHtml(actionItems.decisions, '')}` : ''}
+                ${actionItems.openQuestions?.length ? `<div class="ai-section-label">${t('open_questions', 'Open questions')}</div>${itemHtml(actionItems.openQuestions, '')}` : ''}
+              </div>
+            </div>
+          `);
+        }
+      }
+
+      if (concepts) {
+        const list = (arr) => arr && arr.length
+          ? `<ul class="ai-list">${arr.map(s => `<li><span class="ai-li-text">${escapeHTML(typeof s === 'string' ? s : (s.text || ''))}</span></li>`).join('')}</ul>`
+          : '';
+
+        const conceptRows = (concepts.keyConcepts || []).map(c => `
+          <li>
+            ${c.time != null ? `<button class="ai-time-link" data-time="${Number(c.time) || 0}">${formatTimecode(Number(c.time) || 0)}</button>` : ''}
+            <span class="ai-li-text"><strong>${escapeHTML(c.term || '')}</strong> — ${escapeHTML(c.explanation || '')}</span>
+          </li>
+        `).join('');
+
+        const stepRows = (concepts.practicalSteps || []).map(s => `
+          <li>
+            ${s.time != null ? `<button class="ai-time-link" data-time="${Number(s.time) || 0}">${formatTimecode(Number(s.time) || 0)}</button>` : ''}
+            <span class="ai-li-text">${escapeHTML(s.text || '')}</span>
+          </li>
+        `).join('');
+
+        const hasAny = (concepts.learningGoals?.length || 0)
+          + (concepts.keyConcepts?.length || 0)
+          + (concepts.practicalSteps?.length || 0)
+          + (concepts.prerequisites?.length || 0) > 0;
+        if (hasAny) {
+          blocks.push(`
+            <div class="column-panel ai-pack-panel">
+              <div class="column-panel-header">
+                <span class="column-panel-label">${icons.sparkle} ${t('lesson_pack', 'Learning')}</span>
+              </div>
+              <div class="column-panel-body">
+                ${concepts.learningGoals?.length ? `<div class="ai-section-label">${t('learning_goals', 'You will learn')}</div>${list(concepts.learningGoals)}` : ''}
+                ${concepts.keyConcepts?.length ? `<div class="ai-section-label">${t('key_concepts', 'Key concepts')}</div><ul class="ai-list">${conceptRows}</ul>` : ''}
+                ${concepts.practicalSteps?.length ? `<div class="ai-section-label">${t('practical_steps', 'Steps')}</div><ul class="ai-list">${stepRows}</ul>` : ''}
+                ${concepts.prerequisites?.length ? `<div class="ai-section-label">${t('prerequisites', 'Prerequisites')}</div>${list(concepts.prerequisites)}` : ''}
+              </div>
+            </div>
+          `);
+        }
+      }
+
+      if (blocks.length === 0) return '';
+      return `<div class="ai-pack-grid mb-16">${blocks.join('')}</div>`;
+    }
+
     // --- Analysis fields by type ---
     function renderAnalysisFields(a) {
       const field = (title, text) => text ? `<div class="analysis-field"><h4>${title}</h4><p>${escapeHTML(text)}</p></div>` : '';
@@ -831,6 +1008,204 @@
             if (status) status.textContent = t('status_error', 'Error') + ': ' + err.message;
           }
         });
+      });
+    }
+
+    // Wire up seek-on-click for any element with [data-time] inside the AI pack,
+    // and the copy-action-items button. Idempotent — safe to call after re-render.
+    function setupAiPack(r) {
+      const video = document.getElementById('videoPlayer');
+      document.querySelectorAll('.ai-chapter-row, .ai-time-link').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          const t = parseFloat(el.dataset.time);
+          if (video && !isNaN(t)) {
+            video.currentTime = t;
+            video.play().catch(() => {});
+          }
+        });
+      });
+
+      const btnCopy = document.getElementById('btnCopyActionItems');
+      if (btnCopy && r.ai_action_items) {
+        btnCopy.addEventListener('click', () => {
+          const ai = r.ai_action_items;
+          const lines = [];
+          if (ai.actionItems?.length) {
+            lines.push(t('to_do', 'To do') + ':');
+            for (const it of ai.actionItems) {
+              const owner = it.owner ? ` (${it.owner})` : '';
+              const dl = it.deadline ? ` — ${it.deadline}` : '';
+              lines.push(`- ${it.text || ''}${owner}${dl}`);
+            }
+            lines.push('');
+          }
+          if (ai.decisions?.length) {
+            lines.push(t('decisions', 'Decisions') + ':');
+            for (const d of ai.decisions) lines.push(`- ${d.text || ''}`);
+            lines.push('');
+          }
+          if (ai.openQuestions?.length) {
+            lines.push(t('open_questions', 'Open questions') + ':');
+            for (const q of ai.openQuestions) lines.push(`- ${q.text || ''}`);
+          }
+          const text = lines.join('\n').trim();
+          navigator.clipboard.writeText(text).then(() => {
+            const orig = btnCopy.innerHTML;
+            btnCopy.innerHTML = icons.checkCircle;
+            setTimeout(() => { btnCopy.innerHTML = orig; }, 1500);
+          }).catch(() => prompt('Copy:', text));
+        });
+      }
+    }
+
+    // --- Ask AI chat ------------------------------------------------------
+    // Generic chat over the recording's AI context (transcript, summary,
+    // chapters, action items). The backend lives in the cloud layer — if the
+    // endpoint isn't deployed (e.g., open-source BugReel without the cloud
+    // wrapper) we silently hide the panel.
+    async function setupAiChat(r) {
+      const panel = document.getElementById('aiChatPanel');
+      if (!panel) return;
+
+      // Only useful when the recording has finished processing and there's
+      // actually something for the model to ground its answers in.
+      if (r.status !== 'complete') return;
+      const hasContext =
+        (r.transcript && r.transcript.text)
+        || r.ai_summary
+        || (Array.isArray(r.ai_chapters) && r.ai_chapters.length > 0);
+      if (!hasContext) return;
+
+      // Probe the endpoint by fetching history. If absent → leave hidden.
+      let history = [];
+      try {
+        const res = await fetch(`/api/recordings/${encodeURIComponent(r.id)}/ai-chat`);
+        if (!res.ok) return;
+        const data = await res.json();
+        history = Array.isArray(data.messages) ? data.messages : [];
+      } catch {
+        return;
+      }
+
+      panel.hidden = false;
+      const messagesEl = document.getElementById('aiChatMessages');
+      const suggEl = document.getElementById('aiChatSuggestions');
+      const inputEl = document.getElementById('aiChatInput');
+      const sendBtn = document.getElementById('btnAiSend');
+      const errEl = document.getElementById('aiChatError');
+
+      function renderMessage(role, content) {
+        const safe = escapeHTML(content || '');
+        // Newlines → <br>, [T:123.4] citations → clickable seek buttons.
+        const withBreaks = safe.replace(/\n/g, '<br>');
+        const withLinks = withBreaks.replace(/\[T:(\d+(?:\.\d+)?)\]/g, (_m, sec) => {
+          const ts = parseFloat(sec);
+          return `<button class="ai-time-link" data-time="${ts}">${formatTimecode(ts)}</button>`;
+        });
+        const avatar = role === 'user' ? icons.user : icons.sparkle;
+        return `<div class="ai-chat-msg ai-chat-msg-${role}">
+          <div class="ai-chat-msg-avatar">${avatar}</div>
+          <div class="ai-chat-msg-body">${withLinks}</div>
+        </div>`;
+      }
+
+      function bindTimeLinks(root) {
+        const video = document.getElementById('videoPlayer');
+        root.querySelectorAll('.ai-time-link').forEach(el => {
+          if (el.dataset.bound) return;
+          el.dataset.bound = '1';
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            const ts = parseFloat(el.dataset.time);
+            if (video && !isNaN(ts)) {
+              video.currentTime = ts;
+              video.play().catch(() => {});
+            }
+          });
+        });
+      }
+
+      function renderHistory() {
+        if (!history.length) {
+          messagesEl.innerHTML = `<div class="ai-chat-empty">${t('ai_chat_empty', 'Ask anything about this recording — the AI grounds answers in the transcript.')}</div>`;
+          const suggestions = [
+            t('ai_chat_suggest_summary', 'Summarize the key points'),
+            t('ai_chat_suggest_actions', 'What was decided or needs to be done?'),
+            t('ai_chat_suggest_problems', 'What problems or questions came up?'),
+          ];
+          suggEl.innerHTML = suggestions
+            .map(s => `<button class="ai-chat-suggestion" data-prompt="${escapeHTML(s)}">${escapeHTML(s)}</button>`)
+            .join('');
+        } else {
+          messagesEl.innerHTML = history.map(m => renderMessage(m.role, m.content)).join('');
+          suggEl.innerHTML = '';
+        }
+        bindTimeLinks(messagesEl);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      let pending = false;
+      async function send(text) {
+        const question = (text || '').trim();
+        if (!question || pending) return;
+        pending = true;
+        errEl.hidden = true;
+        errEl.textContent = '';
+
+        history.push({ role: 'user', content: question });
+        suggEl.innerHTML = '';
+        renderHistory();
+        inputEl.value = '';
+        inputEl.disabled = true;
+        sendBtn.disabled = true;
+
+        const pendingEl = document.createElement('div');
+        pendingEl.className = 'ai-chat-msg ai-chat-msg-assistant ai-chat-pending';
+        pendingEl.innerHTML = `<div class="ai-chat-msg-avatar">${icons.sparkle}</div>`
+          + `<div class="ai-chat-msg-body"><span class="ai-chat-thinking">${t('ai_chat_thinking', 'Thinking…')}</span></div>`;
+        messagesEl.appendChild(pendingEl);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        try {
+          const res = await fetch(`/api/recordings/${encodeURIComponent(r.id)}/ai-chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || `HTTP ${res.status}`);
+          }
+          const data = await res.json();
+          history.push({ role: 'assistant', content: data.answer || '' });
+          renderHistory();
+        } catch (err) {
+          pendingEl.remove();
+          // The user's question was persisted server-side already, so just
+          // surface the error inline — they can retry without losing it.
+          errEl.textContent = t('ai_chat_error', 'Could not get an answer') + ': ' + err.message;
+          errEl.hidden = false;
+        } finally {
+          pending = false;
+          inputEl.disabled = false;
+          sendBtn.disabled = false;
+          inputEl.focus();
+        }
+      }
+
+      renderHistory();
+
+      sendBtn.addEventListener('click', () => send(inputEl.value));
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          send(inputEl.value);
+        }
+      });
+      suggEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.ai-chat-suggestion');
+        if (btn) send(btn.dataset.prompt);
       });
     }
 
