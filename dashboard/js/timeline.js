@@ -8,6 +8,7 @@
  * @param {HTMLElement} options.container
  * @param {HTMLVideoElement} options.videoElement
  * @param {Array<{id, time_seconds, description}>} options.frames
+ * @param {Array<{time_seconds, title}>} [options.chapters]
  * @param {number} options.duration - total video duration in seconds
  * @param {boolean} [options.editable=true]
  * @param {function(frameId, newTime):void} [options.onKeyframeChange]
@@ -19,6 +20,7 @@ export function createTimeline(options) {
     container,
     videoElement,
     frames,
+    chapters = [],
     duration,
     recordingId,
     editable = true,
@@ -29,6 +31,7 @@ export function createTimeline(options) {
   } = options;
 
   let currentFrames = [...frames];
+  let currentChapters = Array.isArray(chapters) ? [...chapters] : [];
   let activeMarkerId = null;
 
   // --- Build DOM ---
@@ -58,7 +61,24 @@ export function createTimeline(options) {
     return marker;
   }
 
+  // Chapter ticks (thin vertical markers, no thumb, click-to-seek)
+  function createChapterEl(ch, idx) {
+    const tick = document.createElement('div');
+    tick.className = 'timeline-chapter-tick';
+    tick.dataset.idx = idx;
+    const t = Math.max(0, Math.min(duration, Number(ch.time_seconds) || 0));
+    tick.style.left = `${(t / duration) * 100}%`;
+    tick.title = ch.title ? `${formatTime(t)} — ${ch.title}` : formatTime(t);
+    tick.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideTooltip();
+      videoElement.currentTime = t;
+    });
+    return tick;
+  }
+
   currentFrames.forEach(f => track.appendChild(createMarkerEl(f)));
+  currentChapters.forEach((ch, i) => track.appendChild(createChapterEl(ch, i)));
 
   // --- Add-screenshot tooltip ---
   const tooltip = document.createElement('div');

@@ -80,10 +80,15 @@
       const aiChapters = Array.isArray(r.ai_chapters) ? r.ai_chapters : [];
       const aiActionItems = r.ai_action_items || null;
       const aiConcepts = r.ai_key_concepts || null;
-      // Title/summary priority: card → ai_title → id
-      const displayTitle = card?.title || r.ai_title || null;
-      const displaySummary = card?.summary || r.ai_summary || null;
-      const displayType = card?.type || r.ai_type || null;
+      // Title/summary/type priority: ai_* wins when ai_type is set, otherwise
+      // fall back to legacy card.* fields. The legacy card is only created for
+      // bug-like recordings; for lesson/tutorial/meeting/demo a stale card
+      // from a pre-AI-Value-Pack analysis would mismatch the current ai_type.
+      const BUG_LIKE_AI = new Set(['bug', 'feature', 'enhancement']);
+      const preferAi = r.ai_type && !BUG_LIKE_AI.has(r.ai_type);
+      const displayTitle = (preferAi ? r.ai_title : card?.title) || r.ai_title || card?.title || null;
+      const displaySummary = (preferAi ? r.ai_summary : card?.summary) || r.ai_summary || card?.summary || null;
+      const displayType = (preferAi ? r.ai_type : card?.type) || r.ai_type || null;
       content.innerHTML = `
         <!-- Back link -->
         <a href="../" class="back-link">${icons.arrowLeft} ${t('back_to_recordings', 'Back to recordings')}</a>
@@ -377,7 +382,7 @@
         ` : ''}
       `;
 
-      setupVideoInteractions(frames, transcript);
+      setupVideoInteractions(frames, transcript, aiChapters);
       setupKeyframesIndex(frames);
       setupAiPack(r);
       setupAiChat(r);
@@ -1222,7 +1227,7 @@
     }
 
     // --- Video, timeline, frame/transcript interactions ---
-    function setupVideoInteractions(frames, transcript) {
+    function setupVideoInteractions(frames, transcript, chapters = []) {
       const video = document.getElementById('videoPlayer');
       if (!video) return;
 
@@ -1234,6 +1239,7 @@
           container: timelineContainer,
           videoElement: video,
           frames: frames,
+          chapters: chapters,
           duration: duration,
           recordingId: recordingId,
           editable: true,

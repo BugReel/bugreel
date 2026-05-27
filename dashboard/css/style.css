@@ -3199,6 +3199,27 @@ select.edit-field {
   background-color: transparent;
 }
 
+/* Chapter ticks — thin vertical markers from AI-detected chapters */
+.timeline-chapter-tick {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--amber, #f59e0b);
+  border-radius: 1.5px;
+  cursor: pointer;
+  z-index: 1;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+  pointer-events: auto;
+}
+
+.timeline-chapter-tick:hover {
+  transform: scaleX(1.6);
+  background: var(--amber, #fbbf24);
+  box-shadow: 0 0 0 2px var(--amber-dim, rgba(245, 158, 11, 0.35));
+}
+
 .timeline-labels {
   display: flex;
   justify-content: space-between;
