@@ -938,9 +938,16 @@ async function doUpload(extras = {}) {
   // Large files: chunked upload with retry/resume/pause
   if (blob.size > CHUNKED_UPLOAD_THRESHOLD && typeof chunkedUpload === 'function') {
     console.log('[BugReel] Using chunked upload for large file (' + (blob.size / 1048576).toFixed(1) + 'MB)');
-    // Include segments in metadata for chunked upload
-    const metadata = { ...extras };
-    if (extras.segments) metadata.segments = JSON.stringify(extras.segments);
+    // Server reads snake_case keys out of session metadata — must match the
+    // FormData field names used by the non-chunked /upload path below.
+    const metadata = {
+      url_events: extras.urlEvents || null,
+      console_events: extras.consoleEvents || null,
+      action_events: extras.actionEvents || null,
+      manual_markers: extras.manualMarkers || null,
+      metadata: extras.metadata || null,
+      segments: extras.segments ? JSON.stringify(extras.segments) : null,
+    };
     if (segmentSizes.length > 1) metadata.recorderSegmentSizes = segmentSizes;
 
     const ctl = resetUploadController();
