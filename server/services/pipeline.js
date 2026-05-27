@@ -235,7 +235,7 @@ async function processPipeline(recordingId) {
   } else if (MEETING_TYPES.has(aiType)) {
     console.log(`[${recordingId}] Extracting action items / decisions / open questions...`);
     try {
-      actionItemsResult = await extractActionItems(transcript, classification.chapters || []);
+      actionItemsResult = await extractActionItems(transcript, classification.chapters || [], duration);
       db.prepare('UPDATE recordings SET ai_action_items_json = ? WHERE id = ?')
         .run(JSON.stringify(actionItemsResult), recordingId);
       notifyUsage(recordingId, 'analysis', { count: 1 });
@@ -245,7 +245,7 @@ async function processPipeline(recordingId) {
   } else if (LESSON_TYPES.has(aiType)) {
     console.log(`[${recordingId}] Extracting key concepts / learning goals / practical steps...`);
     try {
-      conceptsResult = await extractKeyConcepts(transcript, classification.chapters || [], urlEvents, actionEvents);
+      conceptsResult = await extractKeyConcepts(transcript, classification.chapters || [], urlEvents, actionEvents, duration);
       db.prepare('UPDATE recordings SET ai_key_concepts_json = ? WHERE id = ?')
         .run(JSON.stringify(conceptsResult), recordingId);
       notifyUsage(recordingId, 'analysis', { count: 1 });
