@@ -474,6 +474,13 @@ function fetchBranding() {
       if (trackerEl) trackerEl.style.display = 'none';
     }
 
+    // Universal: any element with data-branding-hide="<key>" is removed when
+    // the matching hide_<key> flag is set. Used by pages that render content
+    // after fetchBranding() has already resolved (e.g. Stats page filters
+    // tracker-specific summary cards). Runs again after render via
+    // applyBrandingHides().
+    applyBrandingHides(b);
+
     // Replace brand name in page content and reveal (hidden via CSS to prevent flash)
     const brandEls = document.querySelectorAll('.brand-name');
     if (b.name && b.name !== 'BugReel') {
@@ -499,6 +506,27 @@ function fetchBranding() {
     document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
   });
   return _brandingPromise;
+}
+
+/**
+ * Public: resolves to the branding payload (cached after first call).
+ * Pages that render content asynchronously can await this before deciding
+ * which BugReel-specific blocks to include.
+ */
+export function getBranding() {
+  return _brandingPromise || fetchBranding();
+}
+
+/**
+ * Hide every `[data-branding-hide="<key>"]` element when the matching
+ * `hide_<key>` flag is true. Safe to re-run after each render.
+ */
+export function applyBrandingHides(b) {
+  if (!b) return;
+  document.querySelectorAll('[data-branding-hide]').forEach(el => {
+    const key = el.getAttribute('data-branding-hide');
+    if (b[`hide_${key}`]) el.style.display = 'none';
+  });
 }
 
 /**

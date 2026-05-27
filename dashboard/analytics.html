@@ -25,7 +25,7 @@
     import { getRecordings, getCards, getViewAnalytics } from './js/api.js';
     import {
       renderHeader, initUserMenu, formatDate, formatDuration, statusLabel,
-      escapeHTML, icons, timeAgo, basePath
+      escapeHTML, icons, timeAgo, basePath, getBranding, applyBrandingHides
     } from './js/shared.js';
     import { initQuotaWidget } from './js/quota.js';
 
@@ -38,13 +38,15 @@
 
     async function load() {
       try {
-        const [recData, cardData, viewData] = await Promise.all([
+        const [recData, cardData, viewData, branding] = await Promise.all([
           getRecordings({ limit: 200, offset: 0 }),
           getCards({ limit: 200, offset: 0 }),
           getViewAnalytics().catch(() => null),
+          getBranding().catch(() => ({})),
         ]);
 
-        render(recData, cardData, viewData);
+        render(recData, cardData, viewData, branding || {});
+        applyBrandingHides(branding || {});
       } catch (err) {
         container.innerHTML = `
           <div class="empty-state">
@@ -55,7 +57,7 @@
       }
     }
 
-    function render(recData, cardData, viewData) {
+    function render(recData, cardData, viewData, branding) {
       const recordings = recData.recordings || [];
       const cards = cardData.cards || [];
       const totalRec = recData.total || recordings.length;
@@ -99,9 +101,10 @@
       });
       activities.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+      const summaryCols = branding.hide_integrations ? 'grid-2' : 'grid-4';
       container.innerHTML = `
         <!-- Summary Cards -->
-        <div class="grid-4 mb-24">
+        <div class="${summaryCols} mb-24">
           <div class="card">
             <div class="flex justify-between items-center">
               <div>
@@ -111,6 +114,7 @@
               <div class="stat-icon blue">${icons.video}</div>
             </div>
           </div>
+          ${branding.hide_integrations ? '' : `
           <div class="card">
             <div class="flex justify-between items-center">
               <div>
@@ -130,6 +134,7 @@
               <div class="stat-icon amber">${icons.clock}</div>
             </div>
           </div>
+          `}
           <div class="card">
             <div class="flex justify-between items-center">
               <div>
@@ -142,7 +147,8 @@
           </div>
         </div>
 
-        <div class="grid-2 mb-24">
+        <div class="${branding.hide_cards ? '' : 'grid-2 '}mb-24">
+          ${branding.hide_cards ? '' : `
           <!-- Type Distribution -->
           <div class="card">
             <h3 class="mb-16">${t('analytics_by_type', 'By Type')}</h3>
@@ -162,6 +168,7 @@
               `).join('')}
             </div>
           </div>
+          `}
 
           <!-- By Author -->
           <div class="card">
