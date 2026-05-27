@@ -19,7 +19,7 @@
 
       // Navigation
       nav_recordings: 'Recordings',
-      nav_analytics: 'Analytics',
+      nav_analytics: 'Stats',
       nav_guide: 'Guide',
       nav_cards: 'Cards',
 
@@ -169,7 +169,7 @@
       unassigned: 'Unassigned',
 
       // Analytics page
-      analytics_title: 'Analytics',
+      analytics_title: 'Stats',
       analytics_desc: 'Overview of recordings and processing',
       analytics_recordings: 'Recordings',
       analytics_exported: 'Exported to YT',
@@ -416,7 +416,7 @@
 
       // Navigation
       nav_recordings: 'Записи',
-      nav_analytics: 'Аналитика',
+      nav_analytics: 'Статистика',
       nav_guide: 'Руководство',
       nav_cards: 'Карточки',
 
@@ -566,7 +566,7 @@
       unassigned: 'Не назначено',
 
       // Analytics page
-      analytics_title: 'Аналитика',
+      analytics_title: 'Статистика',
       analytics_desc: 'Обзор записей и обработки',
       analytics_recordings: 'Записи',
       analytics_exported: 'Экспорт в YT',

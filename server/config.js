@@ -39,6 +39,12 @@ export const config = {
     url: process.env.BRAND_URL || 'https://bugreel.io',
     logoUrl: process.env.BRAND_LOGO_URL || '',
     logoLink: process.env.BRAND_LOGO_LINK || '',
+    // White-label feature flags — hide sections when a host product doesn't
+    // use them (e.g. a SaaS wrapper without issue-tracker integrations).
+    hideGuide: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_GUIDE || ''),
+    hideAnalytics: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_ANALYTICS || ''),
+    hideIntegrations: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_INTEGRATIONS || ''),
+    hideCards: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_CARDS || ''),
   },
 
   // Analytics — inject counters into dashboard and embed pages.

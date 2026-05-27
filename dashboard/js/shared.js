@@ -310,7 +310,7 @@ export function renderHeader(activePage) {
         </a>
         <nav class="nav">
           ${navItems.map(item => `
-            <a href="${item.href}" class="${item.key === activePage ? 'active' : ''}">
+            <a href="${item.href}" class="${item.key === activePage ? 'active' : ''}" data-nav-key="${item.key}">
               ${item.icon}
               <span>${item.label}</span>
             </a>
@@ -453,6 +453,26 @@ function fetchBranding() {
     if (b.name) document.title = document.title.replace(/BugReel/g, b.name);
 
     window.__branding = b;
+
+    // Hide nav items disabled by white-label flags (e.g. host product doesn't
+    // expose analytics or guide). Map flag → nav data-key.
+    const navHideMap = {
+      hide_analytics: 'analytics',
+      hide_guide: 'guide',
+      hide_cards: 'cards',
+    };
+    Object.entries(navHideMap).forEach(([flag, key]) => {
+      if (b[flag]) {
+        document.querySelectorAll(`[data-nav-key="${key}"]`).forEach(el => { el.style.display = 'none'; });
+      }
+    });
+
+    // Hide settings sections disabled by white-label flags. Idempotent —
+    // safe to run on every page; only matches settings-page.html DOM ids.
+    if (b.hide_integrations) {
+      const trackerEl = document.getElementById('trackerSection');
+      if (trackerEl) trackerEl.style.display = 'none';
+    }
 
     // Replace brand name in page content and reveal (hidden via CSS to prevent flash)
     const brandEls = document.querySelectorAll('.brand-name');

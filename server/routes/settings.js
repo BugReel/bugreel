@@ -43,6 +43,10 @@ function getBrandingConfig() {
     logo_url: getSetting('branding_logo_url', config.branding.logoUrl),
     logo_link: getSetting('branding_logo_link', config.branding.logoLink || config.branding.url),
     url: config.branding.url,
+    hide_guide: !!config.branding.hideGuide,
+    hide_analytics: !!config.branding.hideAnalytics,
+    hide_integrations: !!config.branding.hideIntegrations,
+    hide_cards: !!config.branding.hideCards,
   };
 }
 
