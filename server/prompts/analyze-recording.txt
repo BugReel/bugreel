@@ -90,6 +90,17 @@ feature is broken.
   transcript starting at this time, would the next paragraph be about
   <chapter title>?" If not — wrong timestamp.
 
+**SELF-CHECK BEFORE RETURNING** (do this silently, then revise if needed):
+1. For each chapter, find the word at that timestamp in the word-level
+   timestamps array. Read the next ~15 words. Does the chapter title
+   describe THAT content? If no — your timestamp is wrong, fix it.
+2. Look at the deltas between consecutive chapters. If 3+ deltas are within
+   10% of each other (e.g. 145s, 150s, 145s, 150s) — you spaced them evenly
+   instead of finding real boundaries. Re-do the chapter detection by
+   actually reading the transcript for topic shifts.
+3. Better to return FEWER chapters with correct timestamps than MORE chapters
+   with fake ones. A wrong chapter timestamp is worse than no chapter.
+
 ### Examples
 
 For a 35-minute bug report:
