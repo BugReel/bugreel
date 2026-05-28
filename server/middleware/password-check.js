@@ -1,5 +1,6 @@
 import { getDB } from '../db.js';
 import { hasValidAccess } from '../routes/password.js';
+import { config } from '../config.js';
 
 /**
  * Password-check middleware for public report pages.
@@ -44,8 +45,13 @@ export function passwordCheckPage(req, res, next) {
   const card = db.prepare('SELECT title FROM cards WHERE recording_id = ?').get(recording.id);
   const title = card?.title || recording.id;
 
+  // Localize by Accept-Language (RU/EN, English fallback) and brand from config
+  // (env-pinned; defaults to BugReel so the OSS build stays unbranded).
+  const lang = /\bru\b/i.test(req.headers['accept-language'] || '') ? 'ru' : 'en';
+  const brand = config.branding.name || 'BugReel';
+
   // Serve password prompt page (use real recording ID for the verify API call)
-  res.status(200).send(renderPasswordPage(recording.id, title, false));
+  res.status(200).send(renderPasswordPage(recording.id, title, lang, brand));
 }
 
 /**
@@ -139,24 +145,43 @@ export function passwordCheckData(req, res, next) {
  * Render the password prompt HTML page.
  * Clean, minimal design matching BugReel dark theme.
  */
-function renderPasswordPage(recordingId, title, hasError) {
-  const escapedTitle = title
+function renderPasswordPage(recordingId, title, lang = 'en', brand = 'BugReel') {
+  const esc = (v) => String(v)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-  const escapedId = recordingId
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  const escapedTitle = esc(title);
+  const escapedBrand = esc(brand);
+
+  const STRINGS = {
+    en: {
+      pageTitle: 'Protected video',
+      subtitle: 'This video is protected by the author',
+      placeholder: 'Enter password',
+      unlock: 'Unlock',
+      verifying: 'Verifying…',
+      wrong: 'Incorrect password. Please try again.',
+      connError: 'Connection error. Please try again.',
+    },
+    ru: {
+      pageTitle: 'Защищённое видео',
+      subtitle: 'Это видео защищено паролем',
+      placeholder: 'Введите пароль',
+      unlock: 'Разблокировать',
+      verifying: 'Проверка…',
+      wrong: 'Неверный пароль. Попробуйте ещё раз.',
+      connError: 'Ошибка соединения. Попробуйте ещё раз.',
+    },
+  };
+  const s = STRINGS[lang] || STRINGS.en;
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${esc(lang)}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Protected Video - BugReel</title>
+  <title>${esc(s.pageTitle)} — ${escapedBrand}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 
@@ -340,20 +365,20 @@ function renderPasswordPage(recordingId, title, hasError) {
       </div>
 
       <h1>${escapedTitle}</h1>
-      <p class="subtitle">This video is protected by the author</p>
+      <p class="subtitle">${esc(s.subtitle)}</p>
 
       <form class="password-form" id="passwordForm">
-        <div class="error-message" id="errorMsg">Incorrect password. Please try again.</div>
+        <div class="error-message" id="errorMsg">${esc(s.wrong)}</div>
         <input
           type="password"
           class="password-input"
           id="passwordInput"
-          placeholder="Enter password"
+          placeholder="${esc(s.placeholder)}"
           autocomplete="off"
           autofocus
           required
         />
-        <button type="submit" class="unlock-btn" id="unlockBtn">Unlock</button>
+        <button type="submit" class="unlock-btn" id="unlockBtn">${esc(s.unlock)}</button>
       </form>
 
       <div class="branding">
@@ -362,7 +387,7 @@ function renderPasswordPage(recordingId, title, hasError) {
           <circle cx="12" cy="12" r="6"></circle>
           <circle cx="12" cy="12" r="2"></circle>
         </svg>
-        BugReel
+        ${escapedBrand}
       </div>
     </div>
   </div>
@@ -380,7 +405,7 @@ function renderPasswordPage(recordingId, title, hasError) {
       if (!password) return;
 
       btn.disabled = true;
-      btn.textContent = 'Verifying...';
+      btn.textContent = ${JSON.stringify(s.verifying)};
       errorMsg.classList.remove('visible');
 
       try {
@@ -394,19 +419,18 @@ function renderPasswordPage(recordingId, title, hasError) {
           // Reload page — cookie is now set, will pass through to the report
           window.location.reload();
         } else {
-          const data = await res.json();
-          errorMsg.textContent = data.error || 'Incorrect password. Please try again.';
+          errorMsg.textContent = ${JSON.stringify(s.wrong)};
           errorMsg.classList.add('visible');
           input.value = '';
           input.focus();
         }
       } catch (err) {
-        errorMsg.textContent = 'Connection error. Please try again.';
+        errorMsg.textContent = ${JSON.stringify(s.connError)};
         errorMsg.classList.add('visible');
       }
 
       btn.disabled = false;
-      btn.textContent = 'Unlock';
+      btn.textContent = ${JSON.stringify(s.unlock)};
     });
   </script>
 </body>
