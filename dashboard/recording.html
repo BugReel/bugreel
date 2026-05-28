@@ -102,7 +102,7 @@
             <h1>${displayTitle ? escapeHTML(displayTitle) : `<span style="font-family:'JetBrains Mono','Fira Code',monospace;">${escapeHTML(r.id)}</span>`}</h1>
             ${displaySummary ? `<p class="card-summary">${escapeHTML(displaySummary)}</p>` : ''}
           </div>
-          ${r.status === 'complete' && card ? `
+          ${r.status === 'complete' ? `
             <button class="btn btn-sm" id="btnPassword" title="${r.has_password ? t('password_protected', 'Password protected') : t('set_password', 'Set password')}" style="margin-top:4px; ${r.has_password ? 'color:var(--amber);' : ''}">
               ${r.has_password ? icons.lock : icons.unlock}
             </button>

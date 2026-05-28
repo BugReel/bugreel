@@ -389,6 +389,13 @@
     function render({ recording, frames, card }) {
       const r = recording;
       const analysis = r.analysis || {};
+      // Loom-style (non-bug) recordings prefer the ai_* fields; the legacy
+      // bug-card + card are only meaningful for bug/feature/enhancement.
+      const BUG_LIKE_AI = new Set(['bug', 'feature', 'enhancement']);
+      const preferAi = r.ai_type && !BUG_LIKE_AI.has(r.ai_type);
+      const displayTitle = (preferAi ? r.ai_title : card?.title) || r.ai_title || card?.title || analysis.title || r.id;
+      const displaySummary = (preferAi ? r.ai_summary : card?.summary) || r.ai_summary || card?.summary || '';
+      const displayType = (preferAi ? r.ai_type : card?.type) || r.ai_type || null;
       const validFrames = (frames || []).filter(f => f.filename);
       lightboxFrames = validFrames;
 
@@ -404,10 +411,10 @@
           </div>
 
           <!-- Title -->
-          <h1 style="margin-bottom:4px;">${escapeHTML(card?.title || analysis.title || r.id)}</h1>
-          ${card?.summary ? `<p class="card-summary">${escapeHTML(card.summary)}</p>` : ''}
+          <h1 style="margin-bottom:4px;">${escapeHTML(displayTitle)}</h1>
+          ${(!preferAi && displaySummary) ? `<p class="card-summary">${escapeHTML(displaySummary)}</p>` : ''}
           <div class="report-meta mb-24">
-            ${card?.type ? `<span class="badge badge-${card.type}">${escapeHTML(card.type)}</span>` : ''}
+            ${(!preferAi && displayType) ? `<span class="badge badge-${escapeHTML(displayType)}">${escapeHTML(displayType)}</span>` : ''}
             <span class="detail-meta-item">${icons.user} ${escapeHTML(r.author || '--')}</span>
             <span class="detail-meta-item">${icons.calendar} ${formatDate(r.created_at)}</span>
             <span class="detail-meta-item">${icons.clock} ${formatDuration(r.duration_seconds)}</span>
@@ -445,7 +452,7 @@
 
             <!-- Right: analysis -->
             <div>
-              ${renderReportAnalysis(analysis, card)}
+              ${renderReportAnalysis(analysis, card, { preferAi, summary: displaySummary })}
             </div>
           </div>
 
@@ -500,7 +507,14 @@
       // applied to the freshly-rendered DOM by load() right after this.
     }
 
-    function renderReportAnalysis(a, card) {
+    function renderReportAnalysis(a, card, opts = {}) {
+      // Loom-style recordings: show the neutral AI summary as the description,
+      // not the bug-card fields (Current Behavior / Proposed Change / ...).
+      if (opts.preferAi) {
+        return opts.summary
+          ? `<div class="report-section"><h3>${t('description', 'Description')}</h3><div class="formatted-text">${renderDescription(opts.summary)}</div></div>`
+          : '';
+      }
       const sec = (title, text) => text ? `<div class="report-section"><h3>${title}</h3><p>${escapeHTML(text)}</p></div>` : '';
       const secList = (title, items, ordered) => {
         if (!items?.length) return '';
