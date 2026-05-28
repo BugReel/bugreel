@@ -266,7 +266,7 @@
           ? `${data.card.title} — ${brand}`
           : `${recordingId} — ${brand}`;
       } catch (err) {
-        content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>Failed to load: ${escapeHTML(err.message)}</p></div>`;
+        content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>${t('error', 'Error')}: ${escapeHTML(err.message)}</p></div>`;
       }
     }
 
@@ -283,6 +283,7 @@
       const validFrames = (frames || []).filter(f => f.filename);
       const aiChapters = r.ai_chapters || [];
       const moments = buildMoments(validFrames, aiChapters);
+      const uiLang = window.__dashboardI18n?.lang || 'en';
 
       content.innerHTML = `
         <div class="container page">
@@ -292,7 +293,13 @@
               <div class="logo-icon">${icons.target}</div>
               <span class="brand-name">BugReel</span>
             </div>
-            <span class="text-dim" style="margin-left:auto; font-size:0.8rem;">${escapeHTML(r.id)}</span>
+            <div style="margin-left:auto; display:flex; align-items:center; gap:16px;">
+              <span class="text-dim" style="font-size:0.8rem;">${escapeHTML(r.id)}</span>
+              <div class="lang-switcher" role="group" aria-label="Language">
+                <button type="button" class="lang-btn ${uiLang === 'en' ? 'active' : ''}" aria-pressed="${uiLang === 'en'}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
+                <button type="button" class="lang-btn ${uiLang === 'ru' ? 'active' : ''}" aria-pressed="${uiLang === 'ru'}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>
+              </div>
+            </div>
           </div>
 
           <!-- Title -->
@@ -333,30 +340,30 @@
           <!-- Video Comments Section -->
           <div class="video-comments" id="videoComments">
             <div class="video-comments-header">
-              <h2>${icons.messageCircle} Comments</h2>
+              <h2>${icons.messageCircle} ${t('comments', 'Comments')}</h2>
               <span class="comment-count" id="commentCount">...</span>
             </div>
 
             <!-- Add Comment Form -->
             <div class="comment-form" id="commentForm">
               <div class="comment-form-row">
-                <input type="text" id="commentAuthor" placeholder="Your name" maxlength="100" />
+                <input type="text" id="commentAuthor" placeholder="${t('comment_your_name', 'Your name')}" maxlength="100" />
               </div>
-              <textarea id="commentText" placeholder="Write a comment..." rows="3" maxlength="2000"></textarea>
+              <textarea id="commentText" placeholder="${t('comment_write', 'Write a comment...')}" rows="3" maxlength="2000"></textarea>
               <div class="comment-form-footer">
                 <label class="comment-timecode-toggle">
                   <input type="checkbox" id="commentTimecodeCheck" />
-                  Link to current time
+                  ${t('comment_link_time', 'Link to current time')}
                   <span class="comment-timecode-preview" id="commentTimecodePreview" style="display:none;"></span>
                 </label>
-                <button class="btn-submit" id="commentSubmit">Post comment</button>
+                <button class="btn-submit" id="commentSubmit">${t('comment_post', 'Post comment')}</button>
               </div>
               <div class="comment-form-error" id="commentError" style="display:none;"></div>
             </div>
 
             <!-- Comments List -->
             <div class="comment-list" id="commentList">
-              <div class="comments-empty">Loading comments...</div>
+              <div class="comments-empty">${t('comment_loading', 'Loading comments...')}</div>
             </div>
           </div>
         </div>
@@ -489,7 +496,7 @@
         countEl.textContent = comments.length;
 
         if (comments.length === 0) {
-          list.innerHTML = '<div class="comments-empty">No comments yet. Be the first to comment!</div>';
+          list.innerHTML = `<div class="comments-empty">${t('comment_empty', 'No comments yet. Be the first to comment!')}</div>`;
           return;
         }
 
@@ -521,7 +528,7 @@
           });
         });
       } catch (err) {
-        list.innerHTML = '<div class="comments-empty">Failed to load comments.</div>';
+        list.innerHTML = `<div class="comments-empty">${t('comment_load_failed', 'Failed to load comments.')}</div>`;
       }
     }
 
@@ -569,13 +576,13 @@
         errorEl.style.display = 'none';
 
         if (!authorName) {
-          errorEl.textContent = 'Please enter your name.';
+          errorEl.textContent = t('comment_need_name', 'Please enter your name.');
           errorEl.style.display = '';
           authorInput.focus();
           return;
         }
         if (!text) {
-          errorEl.textContent = 'Please enter a comment.';
+          errorEl.textContent = t('comment_need_text', 'Please enter a comment.');
           errorEl.style.display = '';
           textInput.focus();
           return;
@@ -585,7 +592,7 @@
         const timecode = timecodeCheck.checked && video ? video.currentTime : null;
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Posting...';
+        submitBtn.textContent = t('comment_posting', 'Posting...');
 
         try {
           await addVideoComment(recordingId, authorName, text, timecode);
@@ -598,16 +605,16 @@
           // Reload comments
           await loadComments();
         } catch (err) {
-          const msg = err.message || 'Failed to post comment.';
+          const msg = err.message || t('comment_post_failed', 'Failed to post comment.');
           if (msg.includes('429')) {
-            errorEl.textContent = 'Too many comments. Please wait a minute before posting again.';
+            errorEl.textContent = t('comment_rate_limited', 'Too many comments. Please wait a minute before posting again.');
           } else {
             errorEl.textContent = msg;
           }
           errorEl.style.display = '';
         } finally {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Post comment';
+          submitBtn.textContent = t('comment_post', 'Post comment');
         }
       });
 

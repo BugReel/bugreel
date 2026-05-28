@@ -126,6 +126,21 @@
       removing: 'Removing...',
       error: 'Error',
 
+      // Video comments (share page)
+      comments: 'Comments',
+      comment_your_name: 'Your name',
+      comment_write: 'Write a comment...',
+      comment_link_time: 'Link to current time',
+      comment_post: 'Post comment',
+      comment_posting: 'Posting...',
+      comment_loading: 'Loading comments...',
+      comment_empty: 'No comments yet. Be the first to comment!',
+      comment_load_failed: 'Failed to load comments.',
+      comment_need_name: 'Please enter your name.',
+      comment_need_text: 'Please enter a comment.',
+      comment_post_failed: 'Failed to post comment.',
+      comment_rate_limited: 'Too many comments. Please wait a minute before posting again.',
+
       // Status labels
       status_uploaded: 'Uploaded',
       status_audio_extracted: 'Audio',
@@ -539,6 +554,21 @@
       password_too_short: 'Пароль должен содержать минимум 4 символа',
       removing: 'Удаление...',
       error: 'Ошибка',
+
+      // Video comments (share page)
+      comments: 'Комментарии',
+      comment_your_name: 'Ваше имя',
+      comment_write: 'Напишите комментарий…',
+      comment_link_time: 'Привязать к текущему времени',
+      comment_post: 'Отправить',
+      comment_posting: 'Отправка…',
+      comment_loading: 'Загрузка комментариев…',
+      comment_empty: 'Пока нет комментариев. Будьте первым!',
+      comment_load_failed: 'Не удалось загрузить комментарии.',
+      comment_need_name: 'Введите имя.',
+      comment_need_text: 'Введите комментарий.',
+      comment_post_failed: 'Не удалось отправить комментарий.',
+      comment_rate_limited: 'Слишком много комментариев. Подождите минуту перед новой отправкой.',
 
       // Status labels
       status_uploaded: 'Загружено',
