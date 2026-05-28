@@ -363,8 +363,8 @@
 
       `;
 
-      setupTimeline(validFrames, r.duration_seconds, aiChapters);
-      setupMomentsList({ video: document.getElementById('videoPlayer') });
+      const highlightMoment = setupMomentsList({ video: document.getElementById('videoPlayer') });
+      setupTimeline(validFrames, r.duration_seconds, aiChapters, highlightMoment);
       loadComments();
       setupCommentForm();
       // Branding is fetched in parallel with the recording (see load()) and
@@ -420,7 +420,7 @@
       return html;
     }
 
-    function setupTimeline(frames, duration, chapters = []) {
+    function setupTimeline(frames, duration, chapters = [], onSelect = null) {
       const container = document.getElementById('timelineContainer');
       const video = document.getElementById('videoPlayer');
       if (!container || !video || !frames.length) return;
@@ -436,8 +436,10 @@
         // for both owner and public viewers.
         recordingId: shareToken,
         editable: false,
+        // createTimeline already seeks the video on tick click; mirror the owner
+        // page by also scrolling/highlighting the matching moment in the list.
         onKeyframeSelect: (frameId, time) => {
-          video.currentTime = time;
+          if (onSelect) onSelect(time);
         },
       });
     }
