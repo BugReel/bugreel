@@ -473,6 +473,10 @@ function fetchBranding() {
       const trackerEl = document.getElementById('trackerSection');
       if (trackerEl) trackerEl.style.display = 'none';
     }
+    if (b.hide_branding) {
+      const brandingEl = document.getElementById('brandingSection');
+      if (brandingEl) brandingEl.style.display = 'none';
+    }
 
     // Universal: any element with data-branding-hide="<key>" is removed when
     // the matching hide_<key> flag is set. Used by pages that render content

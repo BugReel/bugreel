@@ -28,7 +28,7 @@
           <option value="analyzed" data-i18n="status_analyzed">Analyzed</option>
           <option value="complete" data-i18n="status_complete">Complete</option>
           <option value="error" data-i18n="status_error">Error</option>
-          <option value="yt_pending" data-i18n="filter_not_sent">Not sent to tracker</option>
+          <option value="yt_pending" data-branding-hide="integrations" data-i18n="filter_not_sent">Not sent to tracker</option>
         </select>
       </div>
       <div class="filter-group">
@@ -49,7 +49,7 @@
 
   <script type="module">
     import { getRecordings, deleteRecording } from './js/api.js';
-    import { renderHeader, initUserMenu, getCurrentUser, formatDate, formatDuration, statusLabel, icons, escapeHTML, basePath } from './js/shared.js';
+    import { renderHeader, initUserMenu, getCurrentUser, formatDate, formatDuration, statusLabel, icons, escapeHTML, basePath, getBranding, applyBrandingHides } from './js/shared.js';
     import { initQuotaWidget, retentionBadge, renderGuestBanner } from './js/quota.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
@@ -88,6 +88,9 @@
 
         const data = await getRecordings(params);
         renderTable(data.recordings, data.total);
+        // Table HTML is rebuilt on every render, so re-apply white-label hides
+        // (e.g. the tracker column) to the freshly-inserted cells.
+        getBranding().then(applyBrandingHides);
         renderGuestBanner(document.getElementById('guest-banner-host'), data.recordings);
       } catch (err) {
         tableWrapper.innerHTML = `
@@ -168,7 +171,7 @@
               <th>${t('th_author', 'Author')}</th>
               <th>${t('th_date', 'Date')}</th>
               <th>${t('th_status', 'Status')}</th>
-              <th>YT</th>
+              <th data-branding-hide="integrations">YT</th>
               <th>${t('th_duration', 'Duration')}</th>
               <th>${icons.eye}</th>
               <th style="width:40px;"></th>
@@ -201,7 +204,7 @@
                 <td>${escapeHTML(r.author || '--')}</td>
                 <td class="text-muted">${formatDate(r.created_at)}${retentionBadge(r.created_at, { isGuest: getCurrentUser()?.is_guest })}</td>
                 <td><span class="badge badge-${r.status}"><span class="dot"></span>${statusLabel(r.status)}</span></td>
-                <td>${(() => {
+                <td data-branding-hide="integrations">${(() => {
                   const ytId = r.card_youtrack_id || r.youtrack_issue_id;
                   if (ytId) {
                     const ytUrl = r.youtrack_url || YOUTRACK_URL + '/issue/' + ytId;

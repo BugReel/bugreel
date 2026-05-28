@@ -47,6 +47,7 @@ function getBrandingConfig() {
     hide_analytics: !!config.branding.hideAnalytics,
     hide_integrations: !!config.branding.hideIntegrations,
     hide_cards: !!config.branding.hideCards,
+    hide_branding: !!config.branding.hideBranding,
   };
 }
 

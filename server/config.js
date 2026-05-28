@@ -45,6 +45,10 @@ export const config = {
     hideAnalytics: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_ANALYTICS || ''),
     hideIntegrations: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_INTEGRATIONS || ''),
     hideCards: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_CARDS || ''),
+    // Hide the branding customization UI itself. A multi-tenant wrapper stores
+    // branding as a single instance-wide value, so exposing the editor would let
+    // one tenant rebrand the whole deployment — hide it and pin branding via env.
+    hideBranding: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_BRANDING || ''),
   },
 
   // Analytics — inject counters into dashboard and embed pages.
