@@ -29,7 +29,7 @@
     import {
       renderHeader, initUserMenu, extractParam, formatDate, formatDuration, formatTimecode,
       statusLabel, categoryLabel, csCircleHTML,
-      renderDescription, escapeHTML, icons, timeAgo
+      renderDescription, escapeHTML, icons, timeAgo, getBranding
     } from '../js/shared.js';
     import { createTimeline } from '../js/timeline.js';
     import { renderViewAnalytics } from '../js/analytics.js';
@@ -47,6 +47,7 @@
     let timeline = null;
     let currentData = null;
     let trackerConfigured = false; // loaded from /api/settings
+    let integrationsHidden = false; // white-label hide_integrations flag
 
     if (!recordingId) {
       content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>${t('no_recording_id', 'No recording ID in URL')}</p></div>`;
@@ -55,10 +56,12 @@
     async function load() {
       try {
         // Load tracker settings and recording data in parallel
-        const [data, settingsRes] = await Promise.all([
+        const [data, settingsRes, branding] = await Promise.all([
           getRecording(recordingId),
           fetch('/api/settings').then(r => r.ok ? r.json() : null).catch(() => null),
+          getBranding().catch(() => null),
         ]);
+        integrationsHidden = !!branding?.hide_integrations;
         if (settingsRes) {
           trackerConfigured = settingsRes.tracker_type && settingsRes.tracker_type !== 'none';
         }
@@ -120,16 +123,16 @@
           ` : ''}
         </div>
 
-        <!-- Password protection panel (hidden by default) -->
-        <div class="password-panel hidden mb-16" id="passwordPanel">
-          <div class="column-panel" style="max-width:480px;">
-            <div class="column-panel-header">
-              <span class="column-panel-label">${icons.lock} ${t('password_protection', 'Password Protection')}</span>
-              <button class="column-edit-btn" id="btnClosePassword" title="Close">${icons.x}</button>
+        <!-- Password protection modal (hidden by default) -->
+        <div class="modal-overlay hidden" id="passwordPanel">
+          <div class="modal-dialog" style="max-width:480px;">
+            <div class="modal-header">
+              <h3>${icons.lock} ${t('password_protection', 'Password Protection')}</h3>
+              <button class="modal-close" id="btnClosePassword" title="${t('close', 'Close')}">${icons.x}</button>
             </div>
-            <div class="column-panel-body" style="padding:16px;">
+            <div class="modal-body">
               ${r.has_password ? `
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
                   <span class="badge badge-amber" style="background:var(--amber-dim); color:var(--amber);">${icons.lock} ${t('protected', 'Protected')}</span>
                   <span class="text-dim text-xs">${t('password_set_desc', 'Viewers must enter a password to access this recording')}</span>
                 </div>
@@ -137,14 +140,14 @@
                   <button class="btn btn-sm" id="btnChangePassword">${t('change_password', 'Change password')}</button>
                   <button class="btn btn-sm" id="btnRemovePassword" style="color:var(--red);">${t('remove_password', 'Remove password')}</button>
                 </div>
-                <div class="hidden" id="changePasswordForm" style="margin-top:12px;">
+                <div class="hidden" id="changePasswordForm" style="margin-top:8px;">
                   <div style="display:flex; gap:8px;">
                     <input type="password" id="newPasswordInput" class="edit-field" placeholder="${t('new_password', 'New password')}" style="flex:1; padding:8px 12px;" />
                     <button class="btn btn-sm btn-primary" id="btnSaveNewPassword">${t('save', 'Save')}</button>
                   </div>
                 </div>
               ` : `
-                <p class="text-dim" style="margin-bottom:12px; font-size:0.85rem;">${t('password_not_set_desc', 'Set a password to restrict access to this recording. Viewers will need to enter the password before watching.')}</p>
+                <p class="text-dim" style="margin-bottom:4px; font-size:0.85rem;">${t('password_not_set_desc', 'Set a password to restrict access to this recording. Viewers will need to enter the password before watching.')}</p>
                 <div style="display:flex; gap:8px;">
                   <input type="password" id="newPasswordInput" class="edit-field" placeholder="${t('enter_password', 'Enter password (min 4 chars)')}" style="flex:1; padding:8px 12px;" />
                   <button class="btn btn-sm btn-primary" id="btnSaveNewPassword">${t('set_password', 'Set password')}</button>
@@ -507,15 +510,33 @@
       const btnClose = document.getElementById('btnClosePassword');
       if (!btn || !panel) return;
 
-      btn.addEventListener('click', () => {
-        panel.classList.toggle('hidden');
-      });
+      function openPanel() {
+        panel.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        const input = document.getElementById('newPasswordInput');
+        if (input) setTimeout(() => input.focus(), 100);
+      }
+
+      function closePanel() {
+        panel.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+
+      btn.addEventListener('click', openPanel);
 
       if (btnClose) {
-        btnClose.addEventListener('click', () => {
-          panel.classList.add('hidden');
-        });
+        btnClose.addEventListener('click', closePanel);
       }
+
+      // Close on overlay click
+      panel.addEventListener('click', (e) => {
+        if (e.target === panel) closePanel();
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !panel.classList.contains('hidden')) closePanel();
+      });
 
       // Change password button (when password is already set)
       const btnChange = document.getElementById('btnChangePassword');
@@ -539,6 +560,7 @@
             await removeRecordingPassword(recordingId);
             const data = await getRecording(recordingId);
             currentData = data;
+            document.body.style.overflow = '';
             render(data);
           } catch (err) {
             if (status) {
@@ -576,6 +598,7 @@
             await setRecordingPassword(recordingId, password);
             const data = await getRecording(recordingId);
             currentData = data;
+            document.body.style.overflow = '';
             render(data);
           } catch (err) {
             if (status) {
@@ -600,6 +623,8 @@
 
     // --- YouTrack section rendering (4 states) ---
     function renderYouTrackSection(r, card) {
+      // White-label: integrations disabled → no tracker UI at all
+      if (integrationsHidden) return '';
       // State A: Already sent to YouTrack
       if (card?.youtrack_issue_id) {
         return `<a href="${config_youtrackUrl}/issue/${card.youtrack_issue_id}" target="_blank" class="detail-meta-item yt-exported">${icons.checkCircle} ${escapeHTML(card.youtrack_issue_id)}</a>`;

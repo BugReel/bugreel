@@ -111,6 +111,21 @@
       saved: 'Saved',
       extracting_frame: 'Extracting frame...',
 
+      // Password protection
+      password_protection: 'Password Protection',
+      password_protected: 'Password protected',
+      set_password: 'Set password',
+      enter_password: 'Enter password (min 4 chars)',
+      new_password: 'New password',
+      change_password: 'Change password',
+      remove_password: 'Remove password',
+      protected: 'Protected',
+      password_set_desc: 'Viewers must enter a password to access this recording',
+      password_not_set_desc: 'Set a password to restrict access to this recording. Viewers will need to enter the password before watching.',
+      password_too_short: 'Password must be at least 4 characters',
+      removing: 'Removing...',
+      error: 'Error',
+
       // Status labels
       status_uploaded: 'Uploaded',
       status_audio_extracted: 'Audio',
@@ -509,6 +524,21 @@
       saving: 'Сохранение...',
       saved: 'Сохранено',
       extracting_frame: 'Извлечение кадра...',
+
+      // Password protection
+      password_protection: 'Защита паролем',
+      password_protected: 'Защищено паролем',
+      set_password: 'Установить пароль',
+      enter_password: 'Введите пароль (мин. 4 символа)',
+      new_password: 'Новый пароль',
+      change_password: 'Изменить пароль',
+      remove_password: 'Удалить пароль',
+      protected: 'Защищено',
+      password_set_desc: 'Зрители должны ввести пароль для доступа к этой записи',
+      password_not_set_desc: 'Установите пароль, чтобы ограничить доступ к записи. Зрителям нужно будет ввести пароль перед просмотром.',
+      password_too_short: 'Пароль должен содержать минимум 4 символа',
+      removing: 'Удаление...',
+      error: 'Ошибка',
 
       // Status labels
       status_uploaded: 'Загружено',
