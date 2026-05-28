@@ -1334,7 +1334,11 @@
       if (active.dataset.time === activeMomentTime) return;
       activeMomentTime = active.dataset.time;
       items.forEach(it => it.classList.toggle('active', it === active));
-      active.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      // Scroll only the list (not the page) so the active row aligns to the top.
+      // scrollIntoView would bubble up and scroll the whole document, pushing
+      // the video off-screen.
+      const delta = active.getBoundingClientRect().top - list.getBoundingClientRect().top;
+      list.scrollTo({ top: list.scrollTop + delta, behavior: 'smooth' });
     }
 
     // --- Video, timeline, frame/transcript interactions ---
