@@ -66,7 +66,8 @@ export function createTimeline(options) {
     const tick = document.createElement('div');
     tick.className = 'timeline-chapter-tick';
     tick.dataset.idx = idx;
-    const t = Math.max(0, Math.min(duration, Number(ch.time_seconds) || 0));
+    const raw = ch.time != null ? ch.time : ch.time_seconds;
+    const t = Math.max(0, Math.min(duration, Number(raw) || 0));
     tick.style.left = `${(t / duration) * 100}%`;
     tick.title = ch.title ? `${formatTime(t)} — ${ch.title}` : formatTime(t);
     tick.addEventListener('click', (e) => {
