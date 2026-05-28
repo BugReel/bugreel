@@ -7,128 +7,13 @@
   <link rel="stylesheet" href="./css/style.css">
   <script src="./js/i18n-dashboard.js"></script>
   <style>
-    /* Report-specific gallery */
-    .report-gallery {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 12px 0 4px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-    }
-    .report-gallery::-webkit-scrollbar { height: 4px; }
-    .report-gallery::-webkit-scrollbar-track { background: transparent; }
-    .report-gallery::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .report-gallery-item {
-      flex-shrink: 0;
-      width: 160px;
-      border-radius: var(--radius);
-      overflow: hidden;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: border-color 0.15s, transform 0.15s;
-      position: relative;
-    }
-    .report-gallery-item:hover {
-      border-color: var(--blue);
-      transform: translateY(-2px);
-    }
-    .report-gallery-item img {
-      width: 100%;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-      display: block;
-    }
-    .report-gallery-item .gallery-time {
-      position: absolute;
-      bottom: 4px;
-      left: 4px;
-      background: rgba(0,0,0,0.75);
-      color: white;
-      font-size: 0.6rem;
-      font-weight: 600;
-      padding: 1px 5px;
-      border-radius: 3px;
-    }
-
-    /* Lightbox */
-    .lightbox {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      background: rgba(0,0,0,0.92);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .lightbox.visible { opacity: 1; }
-    .lightbox img {
-      max-width: 90vw;
-      max-height: 85vh;
-      object-fit: contain;
-      border-radius: 8px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    }
-    .lightbox-close {
-      position: absolute;
-      top: 16px;
-      right: 20px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      font-size: 1.2rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s;
-    }
-    .lightbox-close:hover { background: rgba(255,255,255,0.2); }
-    .lightbox-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      font-size: 1.2rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s;
-    }
-    .lightbox-nav:hover { background: rgba(255,255,255,0.25); }
-    .lightbox-prev { left: 16px; }
-    .lightbox-next { right: 16px; }
-    .lightbox-caption {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      white-space: nowrap;
-      backdrop-filter: blur(8px);
-    }
-    .lightbox-counter {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      color: rgba(255,255,255,0.5);
-      font-size: 0.8rem;
+    /* Key Moments panel on the share page. The shared .keyframes-index is
+       absolutely positioned to fill an owner-page column sized to the video;
+       here it lives in normal flow, so pin it static with a capped height. */
+    .report-moments .keyframes-index {
+      position: static;
+      inset: auto;
+      max-height: 60vh;
     }
 
     /* Header logo: when applyBranding() swaps in a deployment logo image,
@@ -338,6 +223,7 @@
       renderDescription, escapeHTML, icons, timeAgo
     } from './js/shared.js';
     import { createTimeline } from './js/timeline.js';
+    import { buildMoments, renderMomentsPanel, setupMomentsList } from './js/moments.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
 
@@ -353,8 +239,6 @@
     const shareToken = extractParam('/share/') || extractParam('/report/');
     // Will be set after loading the recording (real recording ID for API calls)
     let recordingId = null;
-    let lightboxFrames = [];
-    let lightboxIndex = 0;
 
     if (!shareToken) {
       content.innerHTML = `<div class="empty-state">${icons.alertTriangle}<p>No recording ID in URL</p></div>`;
@@ -397,7 +281,8 @@
       const displaySummary = (preferAi ? r.ai_summary : card?.summary) || r.ai_summary || card?.summary || '';
       const displayType = (preferAi ? r.ai_type : card?.type) || r.ai_type || null;
       const validFrames = (frames || []).filter(f => f.filename);
-      lightboxFrames = validFrames;
+      const aiChapters = r.ai_chapters || [];
+      const moments = buildMoments(validFrames, aiChapters);
 
       content.innerHTML = `
         <div class="container page">
@@ -436,22 +321,11 @@
 
               <!-- Timeline -->
               ${validFrames.length ? `<div id="timelineContainer"></div>` : ''}
-
-              <!-- Screenshot gallery under video -->
-              ${validFrames.length ? `
-                <div class="report-gallery" id="gallery">
-                  ${validFrames.map((f, i) => `
-                    <div class="report-gallery-item" data-index="${i}">
-                      <img src="${frameUrl(shareToken, f.filename)}" alt="Frame ${i + 1}" loading="lazy">
-                      <span class="gallery-time">${formatTimecode(f.time_seconds)}</span>
-                    </div>
-                  `).join('')}
-                </div>
-              ` : ''}
             </div>
 
-            <!-- Right: analysis -->
+            <!-- Right: key moments + analysis -->
             <div>
+              ${moments.length ? `<div class="report-moments mb-24">${renderMomentsPanel(moments, { recordingId: shareToken, allowDelete: false })}</div>` : ''}
               ${renderReportAnalysis(analysis, card, { preferAi, summary: displaySummary })}
             </div>
           </div>
@@ -487,20 +361,10 @@
           </div>
         </div>
 
-        <!-- Lightbox -->
-        <div class="lightbox" id="lightbox" style="display:none;">
-          <button class="lightbox-close" id="lb-close">&times;</button>
-          <button class="lightbox-nav lightbox-prev" id="lb-prev">${icons.chevronLeft}</button>
-          <button class="lightbox-nav lightbox-next" id="lb-next">${icons.chevronRight}</button>
-          <img id="lb-img" src="" alt="">
-          <div class="lightbox-caption" id="lb-caption"></div>
-          <div class="lightbox-counter" id="lb-counter"></div>
-        </div>
       `;
 
-      setupTimeline(validFrames, r.duration_seconds);
-      setupGallery(validFrames);
-      setupLightbox();
+      setupTimeline(validFrames, r.duration_seconds, aiChapters);
+      setupMomentsList({ video: document.getElementById('videoPlayer') });
       loadComments();
       setupCommentForm();
       // Branding is fetched in parallel with the recording (see load()) and
@@ -556,7 +420,7 @@
       return html;
     }
 
-    function setupTimeline(frames, duration) {
+    function setupTimeline(frames, duration, chapters = []) {
       const container = document.getElementById('timelineContainer');
       const video = document.getElementById('videoPlayer');
       if (!container || !video || !frames.length) return;
@@ -565,6 +429,7 @@
         container,
         videoElement: video,
         frames,
+        chapters,
         duration: duration || 60,
         // Anonymous viewers can only access frame URLs via share_token; pass it
         // here (instead of the resolved REC-… id) so timeline thumbnails load
@@ -575,69 +440,6 @@
           video.currentTime = time;
         },
       });
-    }
-
-    function setupGallery(frames) {
-      const gallery = document.getElementById('gallery');
-      if (!gallery) return;
-
-      gallery.querySelectorAll('.report-gallery-item').forEach(item => {
-        item.addEventListener('click', () => {
-          openLightbox(parseInt(item.dataset.index));
-        });
-      });
-    }
-
-    function setupLightbox() {
-      const lb = document.getElementById('lightbox');
-      if (!lb) return;
-
-      document.getElementById('lb-close').addEventListener('click', closeLightbox);
-      document.getElementById('lb-prev').addEventListener('click', () => navigateLightbox(-1));
-      document.getElementById('lb-next').addEventListener('click', () => navigateLightbox(1));
-
-      lb.addEventListener('click', (e) => {
-        if (e.target === lb) closeLightbox();
-      });
-
-      document.addEventListener('keydown', (e) => {
-        if (lb.style.display === 'none') return;
-        if (e.key === 'Escape') closeLightbox();
-        if (e.key === 'ArrowLeft') navigateLightbox(-1);
-        if (e.key === 'ArrowRight') navigateLightbox(1);
-      });
-    }
-
-    function openLightbox(index) {
-      lightboxIndex = index;
-      const lb = document.getElementById('lightbox');
-      lb.style.display = '';
-      updateLightbox();
-      requestAnimationFrame(() => lb.classList.add('visible'));
-    }
-
-    function closeLightbox() {
-      const lb = document.getElementById('lightbox');
-      lb.classList.remove('visible');
-      setTimeout(() => { lb.style.display = 'none'; }, 200);
-    }
-
-    function navigateLightbox(dir) {
-      lightboxIndex = (lightboxIndex + dir + lightboxFrames.length) % lightboxFrames.length;
-      updateLightbox();
-    }
-
-    function updateLightbox() {
-      const f = lightboxFrames[lightboxIndex];
-      if (!f) return;
-      document.getElementById('lb-img').src = frameUrl(shareToken, f.filename);
-      document.getElementById('lb-caption').textContent =
-        `${formatTimecode(f.time_seconds)}${f.description ? ' — ' + f.description : ''}`;
-      document.getElementById('lb-counter').textContent =
-        `${lightboxIndex + 1} / ${lightboxFrames.length}`;
-
-      document.getElementById('lb-prev').style.display = lightboxFrames.length > 1 ? '' : 'none';
-      document.getElementById('lb-next').style.display = lightboxFrames.length > 1 ? '' : 'none';
     }
 
     // --- Video Comments ---

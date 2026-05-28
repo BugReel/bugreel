@@ -32,6 +32,7 @@
       renderDescription, escapeHTML, icons, timeAgo, getBranding
     } from '../js/shared.js';
     import { createTimeline } from '../js/timeline.js';
+    import { buildMoments, renderMomentRow } from '../js/moments.js';
     import { renderViewAnalytics } from '../js/analytics.js';
     import { showEmbedModal } from '../js/embed-modal.js';
     import { initQuotaWidget } from '../js/quota.js';
@@ -230,7 +231,7 @@
                 ${moments.length > 0
                   ? (() => {
                       const mixed = moments.some(m => m.source === 'manual') && moments.some(m => m.source !== 'manual');
-                      return moments.map(m => renderMomentRow(r, m, mixed)).join('');
+                      return moments.map(m => renderMomentRow(m, { recordingId: r.id, showBadge: mixed, allowDelete: true })).join('');
                     })()
                   : `<div class="keyframes-empty text-dim">${t('no_key_frames', 'No key frames')}</div>`}
               </div>
@@ -743,63 +744,6 @@
     // server-extracted thumb (`thumb` filename) or fall back to an AI glyph.
     // Near-duplicate frame/chapter pairs (within 3s) collapse to the frame,
     // which is richer (editable, has a detail line).
-    function buildMoments(frames, chapters) {
-      const DEDUP = 3.0;
-      const norm = s => (s || '').trim().toLowerCase();
-      const fromFrames = (frames || []).map(f => ({
-        time: Number(f.time_seconds) || 0,
-        title: f.description || '',
-        detail: f.detail || '',
-        thumb: f.filename || null,
-        source: f.is_manual ? 'manual' : 'ai',
-        frameId: f.id,
-      }));
-      // Drop a chapter if a frame sits within DEDUP seconds OR shares its title —
-      // legacy chapter-derived frames keep the same AI title but a slightly
-      // different timestamp, so a time-only check leaves visible duplicates.
-      const fromChapters = (chapters || [])
-        .filter(c => !fromFrames.some(f =>
-          Math.abs(f.time - (Number(c.time) || 0)) <= DEDUP ||
-          (norm(f.title) && norm(f.title) === norm(c.title))))
-        .map(c => ({
-          time: Number(c.time) || 0,
-          title: c.title || '',
-          detail: '',
-          thumb: c.thumb || null,
-          source: 'ai',
-          frameId: null,
-        }));
-      return [...fromFrames, ...fromChapters].sort((a, b) => a.time - b.time);
-    }
-
-    // showBadge — only true when the list mixes manual + AI moments. A per-row
-    // badge on every row of an all-AI (or all-manual) list is redundant noise.
-    function renderMomentRow(r, m, showBadge) {
-      const badge = !showBadge
-        ? ''
-        : m.source === 'manual'
-          ? `<span class="moment-badge moment-badge-manual" title="${t('added_manually', 'Added manually')}">${icons.image}</span>`
-          : `<span class="moment-badge moment-badge-ai" title="${t('ai_selected', 'AI-selected')}">${icons.sparkle} AI</span>`;
-      const thumb = m.thumb
-        ? `<img class="keyframe-thumb" src="${frameUrl(r.id, m.thumb)}" alt="" loading="lazy" />`
-        : `<div class="keyframe-thumb keyframe-thumb-placeholder">${icons.sparkle}</div>`;
-      const del = m.frameId != null
-        ? `<button class="keyframe-delete" data-frame-id="${m.frameId}" title="Delete">
-             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-           </button>`
-        : '';
-      return `
-        <div class="keyframe-item moment-item" data-frame-id="${m.frameId ?? ''}" data-time="${m.time}" data-source="${m.source}">
-          ${thumb}
-          <div class="keyframe-info">
-            <div class="keyframe-title">${escapeHTML(m.title)}</div>
-            ${m.detail ? `<div class="keyframe-detail">${escapeHTML(m.detail)}</div>` : ''}
-            <span class="moment-meta">${badge}<span class="keyframe-time">${formatTimecode(m.time)}</span></span>
-          </div>
-          ${del}
-        </div>`;
-    }
-
     // --- AI Pack: type-specific extracted artifacts (action items / concepts) ---
     // Chapters are NOT rendered here anymore — they live in the unified moments
     // registry (right panel). Action items / key concepts appear based on ai_type.
