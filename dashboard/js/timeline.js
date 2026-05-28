@@ -45,29 +45,51 @@ export function createTimeline(options) {
   progress.className = 'timeline-progress';
   track.appendChild(progress);
 
-  // Create markers
+  // --- Shared hover thumbnail preview ---
+  // One floating element reused by every mark. Both frames (filename) and
+  // chapters (thumb) carry a preview image served by /frames/:filename.
+  const preview = document.createElement('div');
+  preview.className = 'timeline-thumb-preview';
+  preview.style.display = 'none';
+  preview.innerHTML = '<img alt=""><span class="timeline-thumb-preview-cap"></span>';
+
+  function thumbUrl(filename) {
+    return `/api/recordings/${encodeURIComponent(recordingId)}/frames/${encodeURIComponent(filename)}`;
+  }
+  function showPreview(markerEl, filename, label) {
+    if (!filename || !recordingId) return;
+    preview.querySelector('img').src = thumbUrl(filename);
+    const cap = preview.querySelector('.timeline-thumb-preview-cap');
+    if (cap) cap.textContent = label || '';
+    preview.style.left = markerEl.style.left;
+    preview.style.display = '';
+  }
+  function hidePreview() { preview.style.display = 'none'; }
+
+  // Editable frame mark — thin blue tick, draggable; preview on hover.
   function createMarkerEl(frame) {
     const marker = document.createElement('div');
     marker.className = 'timeline-marker';
-    if (frame.filename && recordingId) {
-      marker.classList.add('has-thumb');
-      marker.style.backgroundImage = `url(/api/recordings/${encodeURIComponent(recordingId)}/frames/${encodeURIComponent(frame.filename)})`;
-    } else if (recordingId) {
-      marker.classList.add('pending-thumb');
-    }
+    if (!frame.filename) marker.classList.add('pending');
     marker.dataset.id = frame.id;
+    marker.dataset.time = frame.time_seconds;
     marker.style.left = `${(frame.time_seconds / duration) * 100}%`;
     marker.title = frame.description || `${formatTime(frame.time_seconds)}`;
+    if (frame.filename) {
+      marker.addEventListener('mouseenter', () => showPreview(marker, frame.filename, frame.description));
+      marker.addEventListener('mouseleave', hidePreview);
+    }
     return marker;
   }
 
-  // Chapter ticks (thin vertical markers, no thumb, click-to-seek)
+  // Chapter tick — thin amber marker, read-only, click-to-seek; preview on hover.
   function createChapterEl(ch, idx) {
     const tick = document.createElement('div');
     tick.className = 'timeline-chapter-tick';
     tick.dataset.idx = idx;
     const raw = ch.time != null ? ch.time : ch.time_seconds;
     const t = Math.max(0, Math.min(duration, Number(raw) || 0));
+    tick.dataset.time = t;
     tick.style.left = `${(t / duration) * 100}%`;
     tick.title = ch.title ? `${formatTime(t)} — ${ch.title}` : formatTime(t);
     tick.addEventListener('click', (e) => {
@@ -75,6 +97,10 @@ export function createTimeline(options) {
       hideTooltip();
       videoElement.currentTime = t;
     });
+    if (ch.thumb) {
+      tick.addEventListener('mouseenter', () => showPreview(tick, ch.thumb, ch.title));
+      tick.addEventListener('mouseleave', hidePreview);
+    }
     return tick;
   }
 
@@ -106,34 +132,27 @@ export function createTimeline(options) {
 
   container.appendChild(track);
   container.appendChild(tooltip);
+  container.appendChild(preview);
   container.appendChild(labels);
 
-  // --- Video progress + auto-highlight active keyframe ---
-  let autoHighlightEnabled = true;
+  // --- Video progress + highlight the current mark (frame or chapter) ---
   videoElement.addEventListener('timeupdate', () => {
     const ct = videoElement.currentTime;
-    const pct = duration > 0 ? (ct / duration) * 100 : 0;
-    progress.style.width = `${pct}%`;
-
-    // Auto-highlight the keyframe whose time range covers current playback
-    if (!autoHighlightEnabled || currentFrames.length === 0) return;
-    const sorted = [...currentFrames].sort((a, b) => a.time_seconds - b.time_seconds);
-    let activeFrame = null;
-    for (let i = 0; i < sorted.length; i++) {
-      const nextTime = sorted[i + 1] ? sorted[i + 1].time_seconds : duration;
-      if (ct >= sorted[i].time_seconds && ct < nextTime) {
-        activeFrame = sorted[i];
-        break;
-      }
-    }
-    if (activeFrame && activeFrame.id !== activeMarkerId) {
-      selectMarker(activeFrame.id);
-      if (onKeyframeSelect) onKeyframeSelect(activeFrame.id, activeFrame.time_seconds);
-    }
+    progress.style.width = `${duration > 0 ? (ct / duration) * 100 : 0}%`;
+    setActiveByTime(ct);
   });
 
-  // Re-enable auto-highlight when video starts playing
-  videoElement.addEventListener('play', () => { autoHighlightEnabled = true; });
+  // Highlight the nearest mark at or before the current time, across both
+  // frames and chapters, so the timeline tracks playback uniformly.
+  function setActiveByTime(ct) {
+    const marks = track.querySelectorAll('.timeline-marker, .timeline-chapter-tick');
+    let best = null, bestT = -Infinity;
+    marks.forEach(el => {
+      const tt = parseFloat(el.dataset.time);
+      if (!isNaN(tt) && tt <= ct + 0.4 && tt >= bestT) { bestT = tt; best = el; }
+    });
+    marks.forEach(el => el.classList.toggle('active', el === best));
+  }
 
   // --- Click on track → seek + show tooltip ---
   track.addEventListener('click', (e) => {
@@ -188,7 +207,6 @@ export function createTimeline(options) {
     const frame = currentFrames.find(f => f.id === frameId);
     if (!frame) return;
 
-    autoHighlightEnabled = false; // disable auto-highlight on manual click
     selectMarker(frameId);
     videoElement.currentTime = frame.time_seconds;
     if (onKeyframeSelect) onKeyframeSelect(frameId, frame.time_seconds);
@@ -268,9 +286,9 @@ export function createTimeline(options) {
   // --- Select / highlight a marker ---
   function selectMarker(frameId) {
     activeMarkerId = frameId;
-    track.querySelectorAll('.timeline-marker').forEach(m => {
-      m.classList.toggle('active', parseInt(m.dataset.id) === frameId);
-    });
+    track.querySelectorAll('.timeline-marker, .timeline-chapter-tick').forEach(m => m.classList.remove('active'));
+    const el = track.querySelector(`.timeline-marker[data-id="${frameId}"]`);
+    if (el) el.classList.add('active');
   }
 
   const resizeObserver = new ResizeObserver(() => {});
