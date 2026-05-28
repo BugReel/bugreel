@@ -1416,8 +1416,19 @@ a.detail-meta-item:hover svg {
   flex-direction: column;
 }
 
+/* The panel is absolutely positioned inside this wrapper so it contributes no
+   content height to the grid row — the row height is driven by the video
+   column, and the panel fills it and scrolls internally instead of stretching
+   the page. */
+.keyframes-col {
+  position: relative;
+  min-height: 0;
+}
+
 /* Key Frames Index Panel */
 .keyframes-index {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -2964,7 +2975,13 @@ select.edit-field {
     grid-template-columns: 1fr;
   }
 
+  /* Single-column stack: drop the absolute trick, let the panel flow normally. */
+  .keyframes-col {
+    position: static;
+  }
+
   .keyframes-index {
+    position: static;
     max-height: 300px;
   }
 
@@ -3029,7 +3046,13 @@ select.edit-field {
     grid-template-columns: 1fr;
   }
 
+  /* Single-column stack: drop the absolute trick, let the panel flow normally. */
+  .keyframes-col {
+    position: static;
+  }
+
   .keyframes-index {
+    position: static;
     max-height: 300px;
   }
 

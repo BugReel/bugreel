@@ -217,15 +217,20 @@
           </div>
 
           <!-- RIGHT: Unified moments registry (manual/AI frames + AI chapters) -->
-          <div class="keyframes-index" id="keyframesIndex">
-            <div class="keyframes-index-header">
-              <span>${t('key_moments', 'Key Moments')}</span>
-              <span class="text-dim text-xs">${moments.length}</span>
-            </div>
-            <div class="keyframes-index-list" id="keyframesList">
-              ${moments.length > 0
-                ? moments.map(m => renderMomentRow(r, m)).join('')
-                : `<div class="keyframes-empty text-dim">${t('no_key_frames', 'No key frames')}</div>`}
+          <div class="keyframes-col">
+            <div class="keyframes-index" id="keyframesIndex">
+              <div class="keyframes-index-header">
+                <span>${t('key_moments', 'Key Moments')}</span>
+                <span class="text-dim text-xs">${moments.length}</span>
+              </div>
+              <div class="keyframes-index-list" id="keyframesList">
+                ${moments.length > 0
+                  ? (() => {
+                      const mixed = moments.some(m => m.source === 'manual') && moments.some(m => m.source !== 'manual');
+                      return moments.map(m => renderMomentRow(r, m, mixed)).join('');
+                    })()
+                  : `<div class="keyframes-empty text-dim">${t('no_key_frames', 'No key frames')}</div>`}
+              </div>
             </div>
           </div>
         </div>
@@ -709,6 +714,7 @@
     // which is richer (editable, has a detail line).
     function buildMoments(frames, chapters) {
       const DEDUP = 3.0;
+      const norm = s => (s || '').trim().toLowerCase();
       const fromFrames = (frames || []).map(f => ({
         time: Number(f.time_seconds) || 0,
         title: f.description || '',
@@ -717,8 +723,13 @@
         source: f.is_manual ? 'manual' : 'ai',
         frameId: f.id,
       }));
+      // Drop a chapter if a frame sits within DEDUP seconds OR shares its title —
+      // legacy chapter-derived frames keep the same AI title but a slightly
+      // different timestamp, so a time-only check leaves visible duplicates.
       const fromChapters = (chapters || [])
-        .filter(c => !fromFrames.some(f => Math.abs(f.time - (Number(c.time) || 0)) <= DEDUP))
+        .filter(c => !fromFrames.some(f =>
+          Math.abs(f.time - (Number(c.time) || 0)) <= DEDUP ||
+          (norm(f.title) && norm(f.title) === norm(c.title))))
         .map(c => ({
           time: Number(c.time) || 0,
           title: c.title || '',
@@ -730,10 +741,14 @@
       return [...fromFrames, ...fromChapters].sort((a, b) => a.time - b.time);
     }
 
-    function renderMomentRow(r, m) {
-      const badge = m.source === 'manual'
-        ? `<span class="moment-badge moment-badge-manual" title="${t('added_manually', 'Added manually')}">${icons.image}</span>`
-        : `<span class="moment-badge moment-badge-ai" title="${t('ai_selected', 'AI-selected')}">${icons.sparkle} AI</span>`;
+    // showBadge — only true when the list mixes manual + AI moments. A per-row
+    // badge on every row of an all-AI (or all-manual) list is redundant noise.
+    function renderMomentRow(r, m, showBadge) {
+      const badge = !showBadge
+        ? ''
+        : m.source === 'manual'
+          ? `<span class="moment-badge moment-badge-manual" title="${t('added_manually', 'Added manually')}">${icons.image}</span>`
+          : `<span class="moment-badge moment-badge-ai" title="${t('ai_selected', 'AI-selected')}">${icons.sparkle} AI</span>`;
       const thumb = m.thumb
         ? `<img class="keyframe-thumb" src="${frameUrl(r.id, m.thumb)}" alt="" loading="lazy" />`
         : `<div class="keyframe-thumb keyframe-thumb-placeholder">${icons.sparkle}</div>`;
