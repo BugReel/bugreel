@@ -243,10 +243,16 @@
           <div class="column-panel">
             <div class="column-panel-header">
               <span class="column-panel-label">${icons.sparkle} ${t('description', 'Description')}</span>
-              ${card ? `<button class="column-edit-btn" id="btnEditDesc" title="Edit">${icons.pencil}</button>` : ''}
+              ${(card && !preferAi) ? `<button class="column-edit-btn" id="btnEditDesc" title="Edit">${icons.pencil}</button>` : ''}
             </div>
             <div class="column-panel-body">
-              ${Object.keys(analysis).length > 0 ? renderAnalysisFields(analysis) : `<div class="text-dim">${t('no_analysis', 'No analysis data')}</div>`}
+              ${preferAi
+                ? (displaySummary
+                    ? `<div class="analysis-field"><p>${escapeHTML(displaySummary)}</p></div>`
+                    : `<div class="text-dim">${t('no_analysis', 'No analysis data')}</div>`)
+                : (Object.keys(analysis).length > 0
+                    ? renderAnalysisFields(analysis)
+                    : `<div class="text-dim">${t('no_analysis', 'No analysis data')}</div>`)}
             </div>
           </div>
 
@@ -1026,16 +1032,21 @@
       const video = document.getElementById('videoPlayer');
       if (!list || !video) return;
 
-      // Click on keyframe item → seek video
+      // Click on a moment → seek video. Highlight follows from the timeupdate
+      // sync below (and immediately here for instant feedback).
       list.querySelectorAll('.keyframe-item').forEach(item => {
         item.addEventListener('click', (e) => {
           if (e.target.closest('.keyframe-delete')) return;
           const time = parseFloat(item.dataset.time);
           video.currentTime = time;
           video.play();
-          highlightKeyframe(parseInt(item.dataset.frameId));
+          syncMomentHighlight(time);
         });
       });
+
+      // Follow playback: highlight + scroll the list to the current moment.
+      activeMomentTime = null;
+      video.addEventListener('timeupdate', () => syncMomentHighlight(video.currentTime));
 
       // Delete buttons
       list.querySelectorAll('.keyframe-delete').forEach(btn => {
@@ -1304,16 +1315,26 @@
       });
     }
 
-    function highlightKeyframe(frameId) {
+    // Highlight the moment matching the current playback time. Time-based (not
+    // frameId-based) so chapters — which have no frame id — participate too, and
+    // the list follows playback continuously. The list is time-sorted, so the
+    // active moment is the last one at or before the current time.
+    let activeMomentTime = null;
+    function syncMomentHighlight(currentTime) {
       const list = document.getElementById('keyframesList');
       if (!list) return;
-      list.querySelectorAll('.keyframe-item').forEach(item => {
-        const isActive = parseInt(item.dataset.frameId) === frameId;
-        item.classList.toggle('active', isActive);
-        if (isActive) {
-          item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
-      });
+      const items = list.querySelectorAll('.keyframe-item');
+      if (!items.length) return;
+      let active = items[0];
+      for (const item of items) {
+        const tt = parseFloat(item.dataset.time);
+        if (!isNaN(tt) && tt <= currentTime + 0.4) active = item;
+        else break;
+      }
+      if (active.dataset.time === activeMomentTime) return;
+      activeMomentTime = active.dataset.time;
+      items.forEach(it => it.classList.toggle('active', it === active));
+      active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
 
     // --- Video, timeline, frame/transcript interactions ---
@@ -1346,7 +1367,7 @@
             }
           },
           onKeyframeSelect: (frameId, time) => {
-            highlightKeyframe(frameId);
+            syncMomentHighlight(time);
           },
           onKeyframeDelete: async (frameId) => {
             const status = document.getElementById('timelineStatus');
