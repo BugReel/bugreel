@@ -96,6 +96,8 @@ export function createTimeline(options) {
       e.stopPropagation();
       hideTooltip();
       videoElement.currentTime = t;
+      setActiveByTime(t);
+      if (onKeyframeSelect) onKeyframeSelect(null, t);
     });
     if (ch.thumb) {
       tick.addEventListener('mouseenter', () => showPreview(tick, ch.thumb, ch.title));
