@@ -80,6 +80,8 @@
       const aiChapters = Array.isArray(r.ai_chapters) ? r.ai_chapters : [];
       const aiActionItems = r.ai_action_items || null;
       const aiConcepts = r.ai_key_concepts || null;
+      // Unified "moments" registry = manual/AI key frames + AI chapters, one list.
+      const moments = buildMoments(frames, aiChapters);
       // Title/summary/type priority: ai_* wins when ai_type is set, otherwise
       // fall back to legacy card.* fields. The legacy card is only created for
       // bug-like recordings; for lesson/tutorial/meeting/demo a stale card
@@ -214,26 +216,16 @@
             </div>
           </div>
 
-          <!-- RIGHT: Key Frames Index -->
+          <!-- RIGHT: Unified moments registry (manual/AI frames + AI chapters) -->
           <div class="keyframes-index" id="keyframesIndex">
             <div class="keyframes-index-header">
               <span>${t('key_moments', 'Key Moments')}</span>
-              <span class="text-dim text-xs">${frames.length}</span>
+              <span class="text-dim text-xs">${moments.length}</span>
             </div>
             <div class="keyframes-index-list" id="keyframesList">
-              ${frames.length > 0 ? frames.map(f => `
-                <div class="keyframe-item" data-frame-id="${f.id}" data-time="${f.time_seconds}">
-                  <img class="keyframe-thumb" src="${frameUrl(r.id, f.filename)}" alt="" loading="lazy" />
-                  <div class="keyframe-info">
-                    <div class="keyframe-title">${escapeHTML(f.description || '')}</div>
-                    ${f.detail ? `<div class="keyframe-detail">${escapeHTML(f.detail)}</div>` : ''}
-                    <span class="keyframe-time">${formatTimecode(f.time_seconds)}</span>
-                  </div>
-                  <button class="keyframe-delete" data-frame-id="${f.id}" title="Delete">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
-                </div>
-              `).join('') : `<div class="keyframes-empty text-dim">${t('no_key_frames', 'No key frames')}</div>`}
+              ${moments.length > 0
+                ? moments.map(m => renderMomentRow(r, m)).join('')
+                : `<div class="keyframes-empty text-dim">${t('no_key_frames', 'No key frames')}</div>`}
             </div>
           </div>
         </div>
@@ -709,31 +701,64 @@
       }, 3000);
     }
 
-    // --- AI Pack: chapters + type-specific extracted artifacts ---
-    // Rendered for ANY recording (not just bug reports). Chapters always appear
-    // if present; action items / key concepts appear based on ai_type.
+    // --- Unified moments registry ---
+    // Merges manual/AI key frames (frames table) + AI chapters into one
+    // time-sorted list. Frames carry a real thumbnail; chapters carry a
+    // server-extracted thumb (`thumb` filename) or fall back to an AI glyph.
+    // Near-duplicate frame/chapter pairs (within 3s) collapse to the frame,
+    // which is richer (editable, has a detail line).
+    function buildMoments(frames, chapters) {
+      const DEDUP = 3.0;
+      const fromFrames = (frames || []).map(f => ({
+        time: Number(f.time_seconds) || 0,
+        title: f.description || '',
+        detail: f.detail || '',
+        thumb: f.filename || null,
+        source: f.is_manual ? 'manual' : 'ai',
+        frameId: f.id,
+      }));
+      const fromChapters = (chapters || [])
+        .filter(c => !fromFrames.some(f => Math.abs(f.time - (Number(c.time) || 0)) <= DEDUP))
+        .map(c => ({
+          time: Number(c.time) || 0,
+          title: c.title || '',
+          detail: '',
+          thumb: c.thumb || null,
+          source: 'ai',
+          frameId: null,
+        }));
+      return [...fromFrames, ...fromChapters].sort((a, b) => a.time - b.time);
+    }
+
+    function renderMomentRow(r, m) {
+      const badge = m.source === 'manual'
+        ? `<span class="moment-badge moment-badge-manual" title="${t('added_manually', 'Added manually')}">${icons.image}</span>`
+        : `<span class="moment-badge moment-badge-ai" title="${t('ai_selected', 'AI-selected')}">${icons.sparkle} AI</span>`;
+      const thumb = m.thumb
+        ? `<img class="keyframe-thumb" src="${frameUrl(r.id, m.thumb)}" alt="" loading="lazy" />`
+        : `<div class="keyframe-thumb keyframe-thumb-placeholder">${icons.sparkle}</div>`;
+      const del = m.frameId != null
+        ? `<button class="keyframe-delete" data-frame-id="${m.frameId}" title="Delete">
+             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+           </button>`
+        : '';
+      return `
+        <div class="keyframe-item moment-item" data-frame-id="${m.frameId ?? ''}" data-time="${m.time}" data-source="${m.source}">
+          ${thumb}
+          <div class="keyframe-info">
+            <div class="keyframe-title">${escapeHTML(m.title)}</div>
+            ${m.detail ? `<div class="keyframe-detail">${escapeHTML(m.detail)}</div>` : ''}
+            <span class="moment-meta">${badge}<span class="keyframe-time">${formatTimecode(m.time)}</span></span>
+          </div>
+          ${del}
+        </div>`;
+    }
+
+    // --- AI Pack: type-specific extracted artifacts (action items / concepts) ---
+    // Chapters are NOT rendered here anymore — they live in the unified moments
+    // registry (right panel). Action items / key concepts appear based on ai_type.
     function renderAiPack(r, chapters, actionItems, concepts) {
       const blocks = [];
-
-      if (Array.isArray(chapters) && chapters.length > 0) {
-        const items = chapters.map(c => `
-          <button class="ai-chapter-row" data-time="${Number(c.time) || 0}">
-            <span class="ai-chapter-time">${formatTimecode(Number(c.time) || 0)}</span>
-            <span class="ai-chapter-title">${escapeHTML(c.title || '')}</span>
-          </button>
-        `).join('');
-        blocks.push(`
-          <div class="column-panel ai-pack-panel">
-            <div class="column-panel-header">
-              <span class="column-panel-label">${icons.layers} ${t('chapters', 'Chapters')}</span>
-              <span class="text-dim text-xs">${chapters.length}</span>
-            </div>
-            <div class="column-panel-body ai-chapters-list">
-              ${items}
-            </div>
-          </div>
-        `);
-      }
 
       if (actionItems) {
         const itemHtml = (arr, emptyMsg) => arr && arr.length
@@ -1100,18 +1125,68 @@
       const sendBtn = document.getElementById('btnAiSend');
       const errEl = document.getElementById('aiChatError');
 
-      function renderMessage(role, content) {
-        const safe = escapeHTML(content || '');
-        // Newlines → <br>, [T:123.4] citations → clickable seek buttons.
-        const withBreaks = safe.replace(/\n/g, '<br>');
-        const withLinks = withBreaks.replace(/\[T:(\d+(?:\.\d+)?)\]/g, (_m, sec) => {
+      // [T:123.4] citations → clickable seek buttons. Operates on already-escaped HTML.
+      function linkifyTimecodes(html) {
+        return html.replace(/\[T:(\d+(?:\.\d+)?)\]/g, (_m, sec) => {
           const ts = parseFloat(sec);
           return `<button class="ai-time-link" data-time="${ts}">${formatTimecode(ts)}</button>`;
         });
+      }
+
+      // Inline markdown on already-escaped text: bold, italic, inline code.
+      function mdInline(escaped) {
+        return escaped
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>');
+      }
+
+      // Minimal, XSS-safe markdown → HTML for free-form AI answers:
+      // headings, bullet/numbered lists, paragraphs + inline marks.
+      function renderMarkdown(raw) {
+        const lines = escapeHTML(raw || '').split('\n');
+        const out = [];
+        let listTag = null;
+        let para = [];
+        const closeList = () => { if (listTag) { out.push(`</${listTag}>`); listTag = null; } };
+        const flushPara = () => {
+          if (para.length) { out.push('<p>' + mdInline(para.join('<br>')) + '</p>'); para = []; }
+        };
+        for (const line of lines) {
+          const trimmed = line.trim();
+          let m;
+          if (!trimmed) { flushPara(); closeList(); continue; }
+          if ((m = trimmed.match(/^#{1,6}\s+(.*)$/))) {
+            flushPara(); closeList();
+            out.push('<p class="ai-md-h">' + mdInline(m[1]) + '</p>');
+          } else if ((m = trimmed.match(/^[-*]\s+(.*)$/))) {
+            flushPara();
+            if (listTag !== 'ul') { closeList(); out.push('<ul class="ai-md-list">'); listTag = 'ul'; }
+            out.push('<li>' + mdInline(m[1]) + '</li>');
+          } else if ((m = trimmed.match(/^(\d+)\.\s+(.*)$/))) {
+            flushPara();
+            if (listTag !== 'ol') { closeList(); out.push('<ol class="ai-md-list">'); listTag = 'ol'; }
+            // Carry the source ordinal so numbering survives lists split by bullets.
+            out.push(`<li value="${m[1]}">` + mdInline(m[2]) + '</li>');
+          } else {
+            closeList();
+            para.push(trimmed);
+          }
+        }
+        flushPara(); closeList();
+        return out.join('');
+      }
+
+      function renderMessage(role, content) {
+        // Assistant answers are markdown from GPT; user messages stay literal.
+        const body = role === 'assistant'
+          ? linkifyTimecodes(renderMarkdown(content || ''))
+          : escapeHTML(content || '').replace(/\n/g, '<br>');
         const avatar = role === 'user' ? icons.user : icons.sparkle;
         return `<div class="ai-chat-msg ai-chat-msg-${role}">
           <div class="ai-chat-msg-avatar">${avatar}</div>
-          <div class="ai-chat-msg-body">${withLinks}</div>
+          <div class="ai-chat-msg-body">${body}</div>
         </div>`;
       }
 

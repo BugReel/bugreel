@@ -1534,6 +1534,36 @@ a.detail-meta-item:hover svg {
   border-radius: 3px;
 }
 
+/* AI-glyph placeholder for chapters without a thumbnail (legacy recordings) */
+.keyframe-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--amber);
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+}
+.keyframe-thumb-placeholder svg { width: 18px; height: 18px; }
+
+/* Source badge (✦AI / screenshot) in the unified moments list */
+.moment-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.moment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.moment-badge svg { width: 10px; height: 10px; }
+.moment-badge-ai { color: var(--amber); background: var(--amber-dim); }
+.moment-badge-manual { color: var(--blue); background: var(--blue-dim); }
+
 .keyframe-delete {
   position: absolute;
   top: 6px;
@@ -3988,6 +4018,30 @@ select.edit-field {
 .ai-chat-msg-user .ai-chat-msg-body {
   background: var(--blue-dim, rgba(106, 169, 255, 0.1));
 }
+.ai-chat-msg-body > :first-child { margin-top: 0; }
+.ai-chat-msg-body > :last-child { margin-bottom: 0; }
+.ai-chat-msg-body p { margin: 0 0 8px; }
+.ai-chat-msg-body p.ai-md-h { font-weight: 700; color: var(--text, #fff); margin-top: 4px; }
+.ai-chat-msg-body strong { font-weight: 700; color: var(--text, #fff); }
+.ai-chat-msg-body em { font-style: italic; }
+.ai-chat-msg-body code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: var(--bg3, rgba(255, 255, 255, 0.08));
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.ai-chat-msg-body ul.ai-md-list,
+.ai-chat-msg-body ol.ai-md-list {
+  margin: 0 0 8px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ai-chat-msg-body ul.ai-md-list { list-style: disc; }
+.ai-chat-msg-body ol.ai-md-list { list-style: decimal; }
+.ai-chat-msg-body li { line-height: 1.5; }
 .ai-chat-pending .ai-chat-msg-body {
   opacity: 0.7;
 }

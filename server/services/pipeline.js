@@ -257,8 +257,9 @@ async function processPipeline(recordingId) {
 
   // 5. Extract key frames. Source depends on recording type:
   //    - bug/feature/enhancement: GPT keyFrames (existing behaviour)
-  //    - meeting/lesson/etc.: derive from chapters (one frame per chapter)
   //    - manual markers always merged in, take priority.
+  // Chapters are NOT turned into frames here — they get their own per-chapter
+  // thumbnails in step 5b and merge into the unified moments list on the client.
   console.log(`[${recordingId}] Extracting key frames...`);
   const framesDir = path.join(recDir, 'frames');
   fs.mkdirSync(framesDir, { recursive: true });
@@ -279,16 +280,6 @@ async function processPipeline(recordingId) {
       detail: f.detail || '',
       isManual: false,
     }));
-  } else if (Array.isArray(classification.chapters)) {
-    // Derive frames from chapters. Skip the very first chapter at t=0 (often a blank intro).
-    gptFrames = classification.chapters
-      .map((c, i) => ({
-        time: clampTime(i === 0 && (Number(c.time) || 0) < 2 ? 2 : c.time),
-        description: c.title || '',
-        detail: '',
-        isManual: false,
-      }))
-      .filter(f => f.time > 0);
   }
 
   const DEDUP_THRESHOLD = 3.0;
@@ -318,13 +309,41 @@ async function processPipeline(recordingId) {
   db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('frames_extracted', recordingId);
   console.log(`[${recordingId}] Extracted ${mergedFrames.length} frames`);
 
+  // 5b. Per-chapter thumbnails. Each chapter gets one frame so the client can
+  // render the unified moments list (chapters + manual frames) with previews.
+  // Stored in the same frames dir + served by /frames/:filename. The thumb
+  // filename is written back into ai_chapters_json (no schema change needed).
+  let chapterThumbs = [];
+  if (Array.isArray(classification.chapters) && classification.chapters.length > 0) {
+    const chapters = classification.chapters.slice(0, 50);
+    for (let i = 0; i < chapters.length; i++) {
+      const ch = chapters[i];
+      const t = clampTime(ch.time);
+      const filename = `ch_${String(i + 1).padStart(3, '0')}_${t.toFixed(1)}s.jpg`;
+      try {
+        await extractFrame(videoPath, t, path.join(framesDir, filename));
+        chapters[i] = { ...ch, thumb: filename };
+      } catch (err) {
+        console.warn(`[${recordingId}] chapter thumb ${i} failed: ${err.message}`);
+        chapters[i] = { ...ch };
+      }
+    }
+    chapterThumbs = chapters;
+    db.prepare('UPDATE recordings SET ai_chapters_json = ? WHERE id = ?')
+      .run(JSON.stringify(chapters), recordingId);
+    console.log(`[${recordingId}] Chapter thumbs: ${chapters.filter(c => c.thumb).length}/${chapters.length}`);
+  }
+
   // 6. Smart thumbnail — prefer the first non-manual AI frame (most representative),
-  // fall back to first manual marker, then to the frame at ~25% of duration.
+  // fall back to first chapter thumb, then first manual marker, then ~25% of duration.
   let thumbnailFilename = null;
   const aiFrame = frameFilenames.find(f => !f.isManual);
   const anyFrame = frameFilenames[0];
+  const firstChapterThumb = chapterThumbs.find(c => c.thumb)?.thumb || null;
   if (aiFrame) {
     thumbnailFilename = aiFrame.filename;
+  } else if (firstChapterThumb) {
+    thumbnailFilename = firstChapterThumb;
   } else if (anyFrame) {
     thumbnailFilename = anyFrame.filename;
   } else if (duration > 0) {
