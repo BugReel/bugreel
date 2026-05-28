@@ -1334,7 +1334,7 @@
       if (active.dataset.time === activeMomentTime) return;
       activeMomentTime = active.dataset.time;
       items.forEach(it => it.classList.toggle('active', it === active));
-      active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      active.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
 
     // --- Video, timeline, frame/transcript interactions ---
