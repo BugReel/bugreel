@@ -32,8 +32,10 @@ export function passwordCheckPage(req, res, next) {
   // Recording not found or no password — continue normally
   if (!recording || !recording.password_hash) return next();
 
-  // Authenticated dashboard user — bypass password check
-  if (req.user) return next();
+  // Real authenticated dashboard user — bypass password check.
+  // A synthetic proxy placeholder (anonymous visitor behind the auth proxy)
+  // must NOT bypass — otherwise the gate is defeated for every public viewer.
+  if (req.user && !req.user.synthetic) return next();
 
   // Check for valid access cookie (always use real recording ID)
   if (hasValidAccess(req, recording.id)) return next();
@@ -65,10 +67,19 @@ export function passwordCheckAPI(req, res, next) {
   const match = req.path.match(/^\/api\/recordings\/([^/]+)/);
   if (!match) return next();
 
-  const recordingId = decodeURIComponent(match[1]);
+  let recordingId = decodeURIComponent(match[1]);
 
-  // Skip status/config-type endpoints that don't contain recording data
-  if (recordingId === 'status' || recordingId === 'by-token') return next();
+  // Skip status/config-type endpoints that carry no recording data.
+  if (recordingId === 'status') return next();
+
+  // by-token returns full recording metadata (title, frames, chapters), so it
+  // must be gated too. The share_token lives one segment deeper — use it as
+  // the lookup key so the password check below resolves the real recording.
+  if (recordingId === 'by-token') {
+    const tok = req.path.match(/^\/api\/recordings\/by-token\/([^/]+)/);
+    if (!tok) return next();
+    recordingId = decodeURIComponent(tok[1]);
+  }
 
   const db = getDB();
   // Support both recording ID and share_token (UUID)
@@ -80,8 +91,10 @@ export function passwordCheckAPI(req, res, next) {
   // Recording not found or no password — continue normally
   if (!recording || !recording.password_hash) return next();
 
-  // Authenticated dashboard user — bypass password check
-  if (req.user) return next();
+  // Real authenticated dashboard user — bypass password check.
+  // A synthetic proxy placeholder (anonymous visitor behind the auth proxy)
+  // must NOT bypass — otherwise the gate is defeated for every public viewer.
+  if (req.user && !req.user.synthetic) return next();
 
   // Check for valid access cookie (always use real recording ID)
   if (hasValidAccess(req, recording.id)) return next();
@@ -116,7 +129,7 @@ export function passwordCheckData(req, res, next) {
   const recording = db.prepare('SELECT id, password_hash FROM recordings WHERE id = ?').get(recordingId);
 
   if (!recording || !recording.password_hash) return next();
-  if (req.user) return next();
+  if (req.user && !req.user.synthetic) return next();
   if (hasValidAccess(req, recordingId)) return next();
 
   return res.status(403).json({ error: 'Password required' });

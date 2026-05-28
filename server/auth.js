@@ -255,11 +255,16 @@ export function authGuard(req, res, next) {
   if (process.env.TRUST_PROXY_AUTH === 'true') {
     return authenticateRequest(req, res, () => {
       if (!req.user) {
+        // No proxy auth headers → genuinely anonymous visitor (e.g. a public
+        // share page). Synthesize a placeholder so downstream handlers that
+        // read req.user don't crash, but tag it so password/ownership gates
+        // can tell it apart from a real authenticated user.
         req.user = {
           id: 'proxy-user',
           name: decodeProxyHeader(req.headers['x-user-name']) || 'User',
           email: decodeProxyHeader(req.headers['x-user-email']) || '',
           role: 'admin',
+          synthetic: true,
         };
       }
       next();
