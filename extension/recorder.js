@@ -230,23 +230,19 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
       surfaceSwitching: 'include',    // Allow switching captured surface during recording
     };
 
-    // CaptureController: prevent Chrome from stealing focus after screen selection (macOS fix).
-    // Without setFocusBehavior('no-focus-change') Chrome applies default 'focus-captured-surface',
-    // which on monitor capture keeps Chrome as the foreground app and blocks the user from
-    // cmd-tabbing to minimized apps for the whole recording. The call is spec-documented as
-    // tab/window only and throws on monitor surfaces — swallow that throw, the attempt itself
-    // is enough to hint Chrome not to steal focus on the ones where it's legal.
-    if (typeof CaptureController !== 'undefined') {
-      const controller = new CaptureController();
-      displayMediaOptions.controller = controller;
-      captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
-      try { controller.setFocusBehavior('no-focus-change'); } catch (e) {
-        // Expected for monitor captures — Chromium requires tab/window. Ignore.
-        console.debug('[BugReel] setFocusBehavior:', e.message);
-      }
-    } else {
-      captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
-    }
+    // NOTE — do NOT attach a CaptureController here. Attaching one opts the capture
+    // into the Conditional Focus API, whose default is 'focus-captured-surface'.
+    // setFocusBehavior('no-focus-change') can override that ONLY for tab/window
+    // surfaces — for a monitor (entire-screen) capture it throws InvalidStateError
+    // by spec ("you can't focus a monitor"), so the override never lands and Chrome
+    // is forced to hold itself in the foreground for the whole recording. That is
+    // exactly the "I record my whole screen and can't cmd-tab to another app" bug.
+    // Plain getDisplayMedia (no controller) uses Chrome's normal default, which does
+    // NOT trap focus on monitor capture — the usual screen-sharing behaviour where
+    // you can freely switch apps. Trade-off: for window / specific-tab picks we no
+    // longer suppress focus change, which is acceptable (and was the behaviour before
+    // Conditional Focus existed). Entire-screen — the dominant case — must not trap.
+    captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
     hasSystemAudio = captureStream.getAudioTracks().length > 0;
   }
 
