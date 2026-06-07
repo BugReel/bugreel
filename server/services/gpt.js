@@ -499,6 +499,91 @@ async function extractKeyConceptsChunked(transcript, chapters, urlEvents, action
   };
 }
 
+const VISION_SELECT_PROMPT =
+  'These are sequential frames from a screen recording. Each frame is preceded by its label [frame t=<sec>s]. ' +
+  'The user recorded their screen and narrates what they are doing. ' +
+  'Pick the KEY frames: every distinct, meaningful screen state (a different page/card/modal/important step — ' +
+  'before an action, the action itself, the result). ' +
+  'DISCARD: blank screens, loading spinners, and duplicates of the same state. ' +
+  'There is no fixed limit — return as many as there are genuinely distinct states (a long video has more). ' +
+  'For each chosen frame return the EXACT timecode from its [frame t=Xs] label, a short title (3-6 words), and ' +
+  'detail (1-2 sentences describing what is CONCRETELY visible — names, IDs, statuses, elements; not vague). ' +
+  'Write title/detail in the same language as the on-screen text or narration. ' +
+  'Return strict JSON: {"frames":[{"time":<sec>,"title":"<title>","detail":"<what is visible>"}]}';
+
+/**
+ * Vision-based key-frame selection: the model SEES candidate frames and picks the
+ * distinct meaningful screen states (+ captions), instead of guessing timestamps
+ * from transcript text. Processed in windows so it scales to any video length.
+ * See docs/frame-selection-vision.md.
+ *
+ * @param {Array<{time: number, path: string}>} candidates - dense candidate frames (from extractCandidates)
+ * @param {string} transcriptText - plain transcript for context (truncated)
+ * @param {{model: string, reasoning: string, windowSize: number}} opts
+ * @returns {Promise<Array<{time: number, description: string, detail: string}>>} - empty on failure (caller falls back)
+ */
+export async function selectFramesVision(candidates, transcriptText, opts) {
+  if (!candidates || candidates.length === 0) return [];
+  const { model, reasoning, windowSize } = opts;
+  const isReasoningModel = /gpt-5/.test(model) || /^o\d/.test(model);
+  const ctx = (transcriptText || '').slice(0, 4000);
+
+  const picks = [];
+  for (let start = 0; start < candidates.length; start += windowSize) {
+    const window = candidates.slice(start, start + windowSize);
+    const content = [{ type: 'text', text:
+      VISION_SELECT_PROMPT + (ctx ? `\n\n--- Narration transcript (context) ---\n${ctx}` : '') }];
+    for (const c of window) {
+      let b64;
+      try { b64 = fs.readFileSync(c.path).toString('base64'); }
+      catch { continue; }
+      content.push({ type: 'text', text: `\n[frame t=${c.time}s]` });
+      content.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}`, detail: 'high' } });
+    }
+    const body = {
+      model,
+      messages: [{ role: 'user', content }],
+      response_format: { type: 'json_object' },
+    };
+    if (isReasoningModel) body.reasoning_effort = reasoning;
+    else body.temperature = 0.2;
+
+    let res;
+    try {
+      res = await fetch(config.gpt.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.gpt.apiKey}` },
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      console.error(`[selectFramesVision] request failed (window ${start}): ${err.message}`);
+      continue;
+    }
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      console.error(`[selectFramesVision] ${model} error ${res.status} (window ${start}): ${t.slice(0, 300)}`);
+      continue;
+    }
+    let parsed;
+    try {
+      const data = await res.json();
+      parsed = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+    } catch (err) {
+      console.error(`[selectFramesVision] bad JSON (window ${start}): ${err.message}`);
+      continue;
+    }
+    for (const f of (parsed.frames || [])) {
+      const time = Number(f.time);
+      if (isNaN(time)) continue;
+      const detail = String(f.detail || f.caption || '').slice(0, 400);
+      const description = String(f.title || '').slice(0, 120) || detail.slice(0, 80);
+      picks.push({ time, description, detail });
+    }
+  }
+  picks.sort((a, b) => a.time - b.time);
+  return picks;
+}
+
 /**
  * Extract learning goals, key concepts and practical steps from a tutorial/lesson.
  * Should only be called when classifyAndSummarize returned type in

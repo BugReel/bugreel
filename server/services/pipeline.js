@@ -2,9 +2,9 @@ import path from 'path';
 import fs from 'fs';
 import { getDB } from '../db.js';
 import { config } from '../config.js';
-import { extractAudio, extractFrame, compressVideo, trimVideo, segmentVideo } from './ffmpeg.js';
+import { extractAudio, extractFrame, extractCandidates, compressVideo, trimVideo, segmentVideo } from './ffmpeg.js';
 import { transcribe } from './whisper.js';
-import { analyzeTranscript, classifyAndSummarize, extractActionItems, extractKeyConcepts } from './gpt.js';
+import { analyzeTranscript, classifyAndSummarize, extractActionItems, extractKeyConcepts, selectFramesVision } from './gpt.js';
 
 // Recording types that get the legacy bug-card + YouTrack export flow.
 const BUG_LIKE_TYPES = new Set(['bug', 'feature', 'enhancement']);
@@ -272,9 +272,51 @@ async function processPipeline(recordingId) {
   const maxTime = duration > 0 ? Math.max(duration - 0.1, 0) : Infinity;
   const clampTime = t => Math.min(Math.max(Number(t) || 0, 0), maxTime);
 
+  // Vision-based moment selection: the model SEES dense candidate frames and picks
+  // the distinct meaningful screen states (+ captions) instead of guessing timestamps
+  // from transcript text. Used for (a) bug-card key frames and (b) snapping chapter
+  // thumbnails to a meaningful nearby frame. Degrades gracefully on any failure.
+  // Canon: docs/frame-selection-vision.md.
+  let visionMoments = [];
+  if (config.frameSelect.enabled && duration > 0) {
+    const candDir = path.join(framesDir, '_cand');
+    try {
+      const interval = Math.max(
+        config.frameSelect.candidateInterval,
+        duration / config.frameSelect.maxCandidates
+      );
+      const candidates = await extractCandidates(videoPath, candDir, interval, config.frameSelect.candidateWidth);
+      console.log(`[${recordingId}] Vision frame-select: ${candidates.length} candidates (every ${interval.toFixed(1)}s)`);
+      visionMoments = await selectFramesVision(candidates, transcript.text, config.frameSelect);
+      console.log(`[${recordingId}] Vision selected ${visionMoments.length} moments`);
+    } catch (err) {
+      console.error(`[${recordingId}] Vision frame-select failed, falling back: ${err.message}`);
+    } finally {
+      try { fs.rmSync(candDir, { recursive: true, force: true }); } catch {}
+    }
+  }
+
+  // Snap a timestamp to the nearest meaningful vision moment within the configured
+  // window (used for chapter thumbnails — a chapter boundary often lands on a
+  // transition/blank frame). Returns the original time if no moment is near.
+  const snapToMoment = (t) => {
+    if (!visionMoments.length) return t;
+    let best = t, bestD = Infinity;
+    for (const m of visionMoments) {
+      const d = Math.abs(m.time - t);
+      if (d < bestD) { bestD = d; best = m.time; }
+    }
+    return bestD <= config.frameSelect.chapterSnapWindow ? best : t;
+  };
+
+  // Key frames source (bug-like recordings only — analysis is null for other types):
+  // prefer vision moments, fall back to the blind text-based keyFrames.
   let gptFrames = [];
-  if (analysis && Array.isArray(analysis.keyFrames)) {
-    gptFrames = analysis.keyFrames.map(f => ({
+  if (analysis) {
+    const source = visionMoments.length > 0
+      ? visionMoments
+      : (Array.isArray(analysis.keyFrames) ? analysis.keyFrames : []);
+    gptFrames = source.map(f => ({
       time: clampTime(f.time),
       description: f.description || '',
       detail: f.detail || '',
@@ -283,12 +325,29 @@ async function processPipeline(recordingId) {
   }
 
   const DEDUP_THRESHOLD = 3.0;
-  const mergedFrames = [
+  let mergedFrames = [
     ...manualMarkers.map(m => ({ time: m.ts, description: 'Manual screenshot', detail: '', isManual: true })),
     ...gptFrames.filter(gpt =>
       !manualMarkers.some(m => Math.abs(m.ts - gpt.time) <= DEDUP_THRESHOLD)
     )
-  ].sort((a, b) => a.time - b.time).slice(0, config.maxScreenshots);
+  ].sort((a, b) => a.time - b.time);
+
+  // Cross-source dedup (near-identical times, e.g. vision-window boundaries)
+  const deduped = [];
+  for (const f of mergedFrames) {
+    if (!deduped.some(d => Math.abs(d.time - f.time) <= DEDUP_THRESHOLD)) deduped.push(f);
+  }
+  mergedFrames = deduped;
+
+  // Count is decided by the vision model (long video = more moments); maxScreenshots>0
+  // is an explicit env cap, otherwise only a runaway safety ceiling applies.
+  const ceiling = config.maxScreenshots > 0
+    ? config.maxScreenshots
+    : (config.maxScreenshotsCeiling > 0 ? config.maxScreenshotsCeiling : mergedFrames.length);
+  if (mergedFrames.length > ceiling) {
+    console.log(`[${recordingId}] Capping ${mergedFrames.length} -> ${ceiling} frames (safety ceiling)`);
+    mergedFrames = mergedFrames.slice(0, ceiling);
+  }
 
   if (manualMarkers.length > 0) {
     console.log(`[${recordingId}] Manual markers: ${manualMarkers.length}, AI frames: ${gptFrames.length}, merged: ${mergedFrames.length}`);
@@ -318,10 +377,12 @@ async function processPipeline(recordingId) {
     const chapters = classification.chapters.slice(0, 50);
     for (let i = 0; i < chapters.length; i++) {
       const ch = chapters[i];
-      const t = clampTime(ch.time);
-      const filename = `ch_${String(i + 1).padStart(3, '0')}_${t.toFixed(1)}s.jpg`;
+      // ch.time stays the navigation seek point; the THUMBNAIL is snapped to the
+      // nearest meaningful vision moment so it isn't a transition/blank frame.
+      const tThumb = clampTime(snapToMoment(clampTime(ch.time)));
+      const filename = `ch_${String(i + 1).padStart(3, '0')}_${tThumb.toFixed(1)}s.jpg`;
       try {
-        await extractFrame(videoPath, t, path.join(framesDir, filename));
+        await extractFrame(videoPath, tThumb, path.join(framesDir, filename));
         chapters[i] = { ...ch, thumb: filename };
       } catch (err) {
         console.warn(`[${recordingId}] chapter thumb ${i} failed: ${err.message}`);

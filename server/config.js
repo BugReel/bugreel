@@ -20,6 +20,20 @@ export const config = {
     apiKey: process.env.GPT_API_KEY || '',
     model: process.env.GPT_MODEL || 'gpt-4o',
   },
+  // Vision-based key-frame selection. The model SEES dense candidate frames and
+  // picks the distinct, meaningful screen states (+ captions) instead of guessing
+  // timestamps from transcript text. Fixes blank/transition thumbnails on
+  // screen-share recordings (demos, lessons). See docs/frame-selection-vision.md.
+  frameSelect: {
+    enabled: (process.env.FRAME_SELECT_ENABLED ?? '1') !== '0',
+    model: process.env.FRAME_SELECT_MODEL || 'gpt-5-mini',
+    reasoning: process.env.FRAME_SELECT_REASONING || 'minimal',
+    candidateInterval: parseFloat(process.env.FRAME_SELECT_INTERVAL || '4'), // sec between candidates
+    maxCandidates: parseInt(process.env.FRAME_SELECT_MAX_CANDIDATES || '600'), // safety: interval auto-stretches past this
+    windowSize: parseInt(process.env.FRAME_SELECT_WINDOW || '50'), // candidates per vision call
+    candidateWidth: parseInt(process.env.FRAME_SELECT_WIDTH || '1280'), // px — readability of UI text
+    chapterSnapWindow: parseFloat(process.env.FRAME_SELECT_CHAPTER_SNAP || '20'), // sec: snap chapter thumb to nearest vision moment within this window
+  },
   youtrack: {
     url: process.env.YOUTRACK_URL || '',
     token: process.env.YOUTRACK_TOKEN || '',
@@ -27,7 +41,11 @@ export const config = {
   },
   maxVideoSize: parseInt(process.env.MAX_VIDEO_SIZE || '104857600'),
   maxVideoDuration: parseInt(process.env.MAX_VIDEO_DURATION || '300'),
-  maxScreenshots: parseInt(process.env.MAX_SCREENSHOTS || '10'),
+  // 0 = no fixed limit (the vision model decides count — a long video has more
+  // distinct moments). A positive value is a safety ceiling against runaway, not
+  // a working cap.
+  maxScreenshots: parseInt(process.env.MAX_SCREENSHOTS || '0'),
+  maxScreenshotsCeiling: parseInt(process.env.MAX_SCREENSHOTS_CEILING || '200'),
   dashboardPassword: process.env.DASHBOARD_PASSWORD || '',
   dashboardUrl: process.env.DASHBOARD_URL || '',
   licenseKey: process.env.LICENSE_KEY || '',

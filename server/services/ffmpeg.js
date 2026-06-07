@@ -119,6 +119,36 @@ export async function extractFrame(videoPath, timeSeconds, outputPath) {
 }
 
 /**
+ * Densely extract candidate frames for vision-based key-frame selection.
+ * One ffmpeg pass (fps filter) instead of N seeks — fast even for long videos.
+ * Frames are downscaled to `width` (readability of UI text vs token cost) and
+ * written as c_0001.jpg, c_0002.jpg … Candidate i corresponds to time ≈ i*intervalSec.
+ *
+ * @param {string} videoPath
+ * @param {string} outDir - directory for candidate JPEGs (created if missing)
+ * @param {number} intervalSec - seconds between candidates
+ * @param {number} width - target width in px (height auto, keeps aspect)
+ * @returns {Promise<Array<{time: number, path: string}>>}
+ */
+export async function extractCandidates(videoPath, outDir, intervalSec, width) {
+  fs.mkdirSync(outDir, { recursive: true });
+  const fps = 1 / intervalSec;
+  try {
+    await execAsync(
+      `ffmpeg -y -i "${videoPath}" -vf "fps=${fps},scale='min(${width},iw)':-2" -vsync vfr -q:v 5 "${path.join(outDir, 'c_%04d.jpg')}"`,
+      { timeout: 600000 }
+    );
+  } catch (err) {
+    throw new Error(`ffmpeg extractCandidates failed: ${err.stderr || err.message}`);
+  }
+  const files = fs.readdirSync(outDir)
+    .filter(f => /^c_\d+\.jpg$/.test(f))
+    .sort();
+  // ffmpeg fps filter emits the first frame at t≈0, then every intervalSec.
+  return files.map((f, i) => ({ time: +(i * intervalSec).toFixed(1), path: path.join(outDir, f) }));
+}
+
+/**
  * Trim video to a specific time range. Re-encodes for frame-accurate seeking
  * (MediaRecorder WebM has sparse keyframes — stream copy can't seek accurately).
  * Uses same compression settings as compressVideo, so result is already compressed.
