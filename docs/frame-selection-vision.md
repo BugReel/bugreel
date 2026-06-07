@@ -48,7 +48,9 @@ runaway safety ceiling only — not a working cap.
 ~16k tokens per ~3-min recording (one window) on gpt-5-mini ≈ a fraction of a cent.
 Windowed, so a 20-min video is a few calls. Gated by `frameSelect.enabled`.
 
-## Follow-up
+## Shared helper
 
-- `routes/cards.js` re-extracts frames on manual edit using the old blind `keyFrames` —
-  not yet switched to vision (lower-traffic edit path).
+`services/frame-select.js` (`computeVisionMoments`) is the single source of truth for the
+extract-candidates → vision-select pass. Both the initial pipeline run (`pipeline.js`) and
+the manual reanalyze path (`routes/cards.js`) call it, so they can never drift. It returns
+`[]` on any failure and the caller falls back to the blind text `keyFrames`.

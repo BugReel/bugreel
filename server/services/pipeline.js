@@ -2,9 +2,10 @@ import path from 'path';
 import fs from 'fs';
 import { getDB } from '../db.js';
 import { config } from '../config.js';
-import { extractAudio, extractFrame, extractCandidates, compressVideo, trimVideo, segmentVideo } from './ffmpeg.js';
+import { extractAudio, extractFrame, compressVideo, trimVideo, segmentVideo } from './ffmpeg.js';
 import { transcribe } from './whisper.js';
-import { analyzeTranscript, classifyAndSummarize, extractActionItems, extractKeyConcepts, selectFramesVision } from './gpt.js';
+import { analyzeTranscript, classifyAndSummarize, extractActionItems, extractKeyConcepts } from './gpt.js';
+import { computeVisionMoments } from './frame-select.js';
 
 // Recording types that get the legacy bug-card + YouTrack export flow.
 const BUG_LIKE_TYPES = new Set(['bug', 'feature', 'enhancement']);
@@ -277,24 +278,7 @@ async function processPipeline(recordingId) {
   // from transcript text. Used for (a) bug-card key frames and (b) snapping chapter
   // thumbnails to a meaningful nearby frame. Degrades gracefully on any failure.
   // Canon: docs/frame-selection-vision.md.
-  let visionMoments = [];
-  if (config.frameSelect.enabled && duration > 0) {
-    const candDir = path.join(framesDir, '_cand');
-    try {
-      const interval = Math.max(
-        config.frameSelect.candidateInterval,
-        duration / config.frameSelect.maxCandidates
-      );
-      const candidates = await extractCandidates(videoPath, candDir, interval, config.frameSelect.candidateWidth);
-      console.log(`[${recordingId}] Vision frame-select: ${candidates.length} candidates (every ${interval.toFixed(1)}s)`);
-      visionMoments = await selectFramesVision(candidates, transcript.text, config.frameSelect);
-      console.log(`[${recordingId}] Vision selected ${visionMoments.length} moments`);
-    } catch (err) {
-      console.error(`[${recordingId}] Vision frame-select failed, falling back: ${err.message}`);
-    } finally {
-      try { fs.rmSync(candDir, { recursive: true, force: true }); } catch {}
-    }
-  }
+  const visionMoments = await computeVisionMoments(videoPath, framesDir, transcript.text, duration, recordingId);
 
   // Snap a timestamp to the nearest meaningful vision moment within the configured
   // window (used for chapter thumbnails — a chapter boundary often lands on a

@@ -6,6 +6,7 @@ import { config } from '../config.js';
 import { createIssue, attachFile, searchIssues, addComment } from '../services/youtrack.js';
 import { analyzeTranscript } from '../services/gpt.js';
 import { extractFrame } from '../services/ffmpeg.js';
+import { computeVisionMoments } from '../services/frame-select.js';
 import { formatDescription } from '../services/pipeline.js';
 import { getIntegration } from '../integrations/registry.js';
 
@@ -260,29 +261,40 @@ router.post('/recordings/:id/reanalyze', async (req, res) => {
       .run(analysis.title || card.title, analysis.type || card.type, analysis.summary || card.summary, description, card.id);
   }
 
-  // Re-extract frames if keyFrames changed
-  if (analysis.keyFrames?.length) {
+  // Re-extract frames. Prefer vision moments (the model SEES the screen and picks
+  // distinct meaningful states); fall back to the blind text-based keyFrames if vision
+  // is disabled/unavailable. Mirrors the initial pipeline pass — single source of truth
+  // is services/frame-select.js. Canon: docs/frame-selection-vision.md.
+  {
     const recDir = path.join(config.dataDir, req.params.id);
     const videoPath = path.join(recDir, 'video.webm');
     const framesDir = path.join(recDir, 'frames');
     if (fs.existsSync(videoPath)) {
       fs.mkdirSync(framesDir, { recursive: true });
-      // Delete old frames from DB
-      db.prepare('DELETE FROM frames WHERE recording_id = ?').run(req.params.id);
-      // Extract new frames
       const maxTime = duration > 0 ? Math.max(duration - 0.1, 0) : Infinity;
-      for (let i = 0; i < analysis.keyFrames.length; i++) {
-        const kf = analysis.keyFrames[i];
-        kf.time = Math.min(Math.max(kf.time, 0), maxTime);
-        const idx = String(i + 1).padStart(3, '0');
-        const filename = `${idx}_${kf.time.toFixed(1)}s.jpg`;
-        const framePath = path.join(framesDir, filename);
-        try {
-          await extractFrame(videoPath, kf.time, framePath);
-          db.prepare('INSERT INTO frames (recording_id, filename, time_seconds, description) VALUES (?, ?, ?, ?)')
-            .run(req.params.id, filename, kf.time, kf.description || '');
-        } catch (err) {
-          console.error(`[${req.params.id}] Frame extraction failed at ${kf.time}s: ${err.message}`);
+      const clampTime = t => Math.min(Math.max(Number(t) || 0, 0), maxTime);
+
+      const visionMoments = await computeVisionMoments(videoPath, framesDir, transcript.text, duration, req.params.id);
+      const source = visionMoments.length > 0
+        ? visionMoments
+        : (Array.isArray(analysis.keyFrames) ? analysis.keyFrames : []);
+
+      if (source.length) {
+        // Delete old frames from DB
+        db.prepare('DELETE FROM frames WHERE recording_id = ?').run(req.params.id);
+        for (let i = 0; i < source.length; i++) {
+          const kf = source[i];
+          const t = clampTime(kf.time);
+          const idx = String(i + 1).padStart(3, '0');
+          const filename = `${idx}_${t.toFixed(1)}s.jpg`;
+          const framePath = path.join(framesDir, filename);
+          try {
+            await extractFrame(videoPath, t, framePath);
+            db.prepare('INSERT INTO frames (recording_id, filename, time_seconds, description) VALUES (?, ?, ?, ?)')
+              .run(req.params.id, filename, t, kf.description || '');
+          } catch (err) {
+            console.error(`[${req.params.id}] Frame extraction failed at ${t}s: ${err.message}`);
+          }
         }
       }
     }
