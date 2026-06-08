@@ -500,44 +500,78 @@ async function extractKeyConceptsChunked(transcript, chapters, urlEvents, action
 }
 
 const VISION_SELECT_PROMPT =
-  'These are sequential frames from a screen recording. Each frame is preceded by its label [frame t=<sec>s]. ' +
-  'The user recorded their screen and narrates what they are doing. ' +
-  'Pick the KEY frames: every distinct, meaningful screen state (a different page/card/modal/important step — ' +
-  'before an action, the action itself, the result). ' +
-  'DISCARD: blank screens, loading spinners, and duplicates of the same state. ' +
-  'There is no fixed limit — return as many as there are genuinely distinct states (a long video has more). ' +
-  'For each chosen frame return the EXACT timecode from its [frame t=Xs] label, a short title (3-6 words), and ' +
-  'detail (1-2 sentences describing what is CONCRETELY visible — names, IDs, statuses, elements; not vague). ' +
-  'Write title/detail in the same language as the on-screen text or narration. ' +
-  'Return strict JSON: {"frames":[{"time":<sec>,"title":"<title>","detail":"<what is visible>"}]}';
+  'These are sequential frames from a screen recording. The user recorded their screen and ' +
+  'NARRATES out loud. Before each frame you get its label [frame t=<sec>s] and the words spoken ' +
+  'around that moment (speech: «…»).\n\n' +
+  'KEY RULE: lead the selection from the SPEECH, not from the picture. The narration is the ' +
+  'primary signal. For each meaningful moment the user talks about (a step they take, a problem ' +
+  'they point out, a result they show), pick the frame that shows exactly the screen they are ' +
+  'talking about at that moment.\n\n' +
+  'For each chosen moment return:\n' +
+  '- time: the EXACT timecode from the [frame t=Xs] label of the frame that shows what is being discussed;\n' +
+  '- title: a short title (3-6 words) — the POINT of this moment in the user\'s words (what they ' +
+  'are doing or what is wrong here). If the user is reporting a problem, phrase it as the concrete ' +
+  'thing to fix;\n' +
+  '- detail: 1-2 sentences that TIE the user\'s words to this screen — what they say about what is ' +
+  'visible here and, if relevant, what exactly is wrong. Ground it in concrete on-screen specifics ' +
+  '(names, IDs, statuses, elements). This is NOT a neutral description of the picture — it is the ' +
+  'meaning of what the user says about this screen.\n\n' +
+  'DISCARD: blank screens, loading spinners, frames unrelated to what is being said, duplicates of ' +
+  'the same state. No fixed limit — as many as there are distinct moments in the narration (a long ' +
+  'video has more). If there is no speech at a frame but it clearly illustrates what is discussed, ' +
+  'you may keep it, but still explain the link in detail.\n' +
+  'Write title/detail in the same language as the on-screen text or narration.\n\n' +
+  'Return strict JSON: {"frames":[{"time":<sec>,"title":"<title>","detail":"<what the user says ' +
+  'about this screen>"}]}';
 
 /**
- * Vision-based key-frame selection: the model SEES candidate frames and picks the
- * distinct meaningful screen states (+ captions), instead of guessing timestamps
- * from transcript text. Processed in windows so it scales to any video length.
- * See docs/frame-selection-vision.md.
+ * Collect the words spoken in a [t-before, t+after] window around a frame, so the vision model
+ * can ground each caption in WHAT THE USER SAYS about that screen (not a standalone description).
+ */
+function speechAround(words, t, before, after) {
+  if (!Array.isArray(words) || words.length === 0) return '';
+  const lo = t - before, hi = t + after;
+  const seg = [];
+  for (const w of words) {
+    const s = Number(w.start);
+    if (isNaN(s)) continue;
+    if (s >= lo && s <= hi) seg.push(w.word);
+  }
+  return seg.join(' ').replace(/\s+/g, ' ').trim().slice(0, 600);
+}
+
+/**
+ * Vision-based key-frame selection: the model SEES candidate frames and picks the distinct
+ * meaningful moments (+ captions), led by the NARRATION (each frame carries the words spoken
+ * around it), instead of describing the picture in isolation. Processed in windows so it scales
+ * to any video length. See docs/frame-selection-vision.md.
  *
  * @param {Array<{time: number, path: string}>} candidates - dense candidate frames (from extractCandidates)
- * @param {string} transcriptText - plain transcript for context (truncated)
- * @param {{model: string, reasoning: string, windowSize: number}} opts
+ * @param {{ text?: string, words?: Array<{word: string, start: number, end: number}> }|string} transcript - for context + per-frame speech alignment
+ * @param {{model: string, reasoning: string, windowSize: number, speechBefore: number, speechAfter: number}} opts
  * @returns {Promise<Array<{time: number, description: string, detail: string}>>} - empty on failure (caller falls back)
  */
-export async function selectFramesVision(candidates, transcriptText, opts) {
+export async function selectFramesVision(candidates, transcript, opts) {
   if (!candidates || candidates.length === 0) return [];
-  const { model, reasoning, windowSize } = opts;
+  const { model, reasoning, windowSize, speechBefore = 5, speechAfter = 6 } = opts;
   const isReasoningModel = /gpt-5/.test(model) || /^o\d/.test(model);
-  const ctx = (transcriptText || '').slice(0, 4000);
+  // transcript may be a plain string (legacy) or an object {text, words}
+  const text = typeof transcript === 'string' ? transcript : (transcript?.text || '');
+  const words = (transcript && typeof transcript === 'object') ? transcript.words : null;
+  const ctx = text.slice(0, 4000);
 
   const picks = [];
   for (let start = 0; start < candidates.length; start += windowSize) {
     const window = candidates.slice(start, start + windowSize);
     const content = [{ type: 'text', text:
-      VISION_SELECT_PROMPT + (ctx ? `\n\n--- Narration transcript (context) ---\n${ctx}` : '') }];
+      VISION_SELECT_PROMPT + (ctx ? `\n\n--- Full narration transcript (overall context) ---\n${ctx}` : '') }];
     for (const c of window) {
       let b64;
       try { b64 = fs.readFileSync(c.path).toString('base64'); }
       catch { continue; }
-      content.push({ type: 'text', text: `\n[frame t=${c.time}s]` });
+      const sp = speechAround(words, c.time, speechBefore, speechAfter);
+      const label = `\n[frame t=${c.time}s]` + (sp ? ` speech: «${sp}»` : ' (no speech at this moment)');
+      content.push({ type: 'text', text: label });
       content.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}`, detail: 'high' } });
     }
     const body = {

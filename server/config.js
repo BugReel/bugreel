@@ -33,6 +33,11 @@ export const config = {
     windowSize: parseInt(process.env.FRAME_SELECT_WINDOW || '50'), // candidates per vision call
     candidateWidth: parseInt(process.env.FRAME_SELECT_WIDTH || '1280'), // px — readability of UI text
     chapterSnapWindow: parseFloat(process.env.FRAME_SELECT_CHAPTER_SNAP || '20'), // sec: snap chapter thumb to nearest vision moment within this window
+    // Speech window around each frame: attach the words spoken near that moment so the model
+    // captions a frame by WHAT THE USER SAYS about that screen, not a standalone description.
+    // See docs/frame-selection-vision.md.
+    speechBefore: parseFloat(process.env.FRAME_SELECT_SPEECH_BEFORE || '5'), // sec of speech before frame
+    speechAfter: parseFloat(process.env.FRAME_SELECT_SPEECH_AFTER || '6'), // sec of speech after frame
   },
   youtrack: {
     url: process.env.YOUTRACK_URL || '',

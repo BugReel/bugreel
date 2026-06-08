@@ -274,7 +274,7 @@ router.post('/recordings/:id/reanalyze', async (req, res) => {
       const maxTime = duration > 0 ? Math.max(duration - 0.1, 0) : Infinity;
       const clampTime = t => Math.min(Math.max(Number(t) || 0, 0), maxTime);
 
-      const visionMoments = await computeVisionMoments(videoPath, framesDir, transcript.text, duration, req.params.id);
+      const visionMoments = await computeVisionMoments(videoPath, framesDir, transcript, duration, req.params.id);
       const source = visionMoments.length > 0
         ? visionMoments
         : (Array.isArray(analysis.keyFrames) ? analysis.keyFrames : []);
@@ -290,8 +290,8 @@ router.post('/recordings/:id/reanalyze', async (req, res) => {
           const framePath = path.join(framesDir, filename);
           try {
             await extractFrame(videoPath, t, framePath);
-            db.prepare('INSERT INTO frames (recording_id, filename, time_seconds, description) VALUES (?, ?, ?, ?)')
-              .run(req.params.id, filename, t, kf.description || '');
+            db.prepare('INSERT INTO frames (recording_id, filename, time_seconds, description, detail) VALUES (?, ?, ?, ?, ?)')
+              .run(req.params.id, filename, t, kf.description || '', kf.detail || '');
           } catch (err) {
             console.error(`[${req.params.id}] Frame extraction failed at ${t}s: ${err.message}`);
           }
@@ -335,10 +335,24 @@ router.post('/cards/:id/export-youtrack', async (req, res) => {
   let richDescription = card.description || '';
 
   if (frames.length) {
-    richDescription += `\n\n**Screenshots:**\n`;
+    // Checklist of moments: each item = one step/action with the screenshot below it and the
+    // narration-grounded caption (what the user says about that screen / what is wrong) in italics.
+    // Without this the `detail` (and even the title) stayed in alt-text only — an invisible "wall
+    // of screenshots". Canon: docs/frame-selection-vision.md.
+    richDescription += `\n\n## Checklist\n`;
+    richDescription += `_Each item is one moment. Caption under the screenshot is what the narrator says about it._\n\n`;
+    let n = 0;
     for (const frame of frames) {
+      n++;
       const frameImgUrl = `${dashboardUrl}/api/recordings/${encodeURIComponent(card.rec_id)}/frames/${encodeURIComponent(frame.filename)}`;
-      richDescription += `![${frame.description || formatTimecode(frame.time_seconds)}](${frameImgUrl})\n`;
+      const tc = formatTimecode(frame.time_seconds);
+      const title = (frame.description || '').trim() || tc;
+      richDescription += `- [ ] **${n}. ${tc} — ${title}**\n\n`;
+      richDescription += `  ![${title}](${frameImgUrl})\n`;
+      if (frame.detail && frame.detail.trim()) {
+        richDescription += `  *${frame.detail.trim()}*\n`;
+      }
+      richDescription += `\n`;
     }
   }
 

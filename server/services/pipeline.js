@@ -278,7 +278,7 @@ async function processPipeline(recordingId) {
   // from transcript text. Used for (a) bug-card key frames and (b) snapping chapter
   // thumbnails to a meaningful nearby frame. Degrades gracefully on any failure.
   // Canon: docs/frame-selection-vision.md.
-  const visionMoments = await computeVisionMoments(videoPath, framesDir, transcript.text, duration, recordingId);
+  const visionMoments = await computeVisionMoments(videoPath, framesDir, transcript, duration, recordingId);
 
   // Snap a timestamp to the nearest meaningful vision moment within the configured
   // window (used for chapter thumbnails — a chapter boundary often lands on a

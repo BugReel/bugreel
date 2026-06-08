@@ -5,11 +5,13 @@ import { extractCandidates } from './ffmpeg.js';
 import { selectFramesVision } from './gpt.js';
 
 // Vision-based moment selection: the model SEES dense candidate frames and picks the
-// distinct meaningful screen states (+ captions) instead of guessing timestamps from
-// transcript text. Single source of truth for the initial pipeline pass and the manual
-// reanalyze path. Degrades gracefully to [] on any failure (caller falls back to the
-// blind text-based keyFrames). Canon: docs/frame-selection-vision.md.
-export async function computeVisionMoments(videoPath, framesDir, transcriptText, duration, logId = '') {
+// distinct meaningful moments (+ captions), LED BY THE NARRATION (each frame carries the
+// words spoken around it), instead of describing the picture in isolation. Single source of
+// truth for the initial pipeline pass and the manual reanalyze path. Degrades gracefully to
+// [] on any failure (caller falls back to the blind text-based keyFrames).
+// Canon: docs/frame-selection-vision.md.
+// @param {{text?, words?}|string} transcript — pass the full object so per-frame speech aligns.
+export async function computeVisionMoments(videoPath, framesDir, transcript, duration, logId = '') {
   if (!config.frameSelect.enabled || !(duration > 0)) return [];
   const tag = logId ? `[${logId}] ` : '';
   const candDir = path.join(framesDir, '_cand');
@@ -20,7 +22,7 @@ export async function computeVisionMoments(videoPath, framesDir, transcriptText,
     );
     const candidates = await extractCandidates(videoPath, candDir, interval, config.frameSelect.candidateWidth);
     console.log(`${tag}Vision frame-select: ${candidates.length} candidates (every ${interval.toFixed(1)}s)`);
-    const moments = await selectFramesVision(candidates, transcriptText, config.frameSelect);
+    const moments = await selectFramesVision(candidates, transcript, config.frameSelect);
     console.log(`${tag}Vision selected ${moments.length} moments`);
     return moments;
   } catch (err) {
