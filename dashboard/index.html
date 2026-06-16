@@ -104,6 +104,7 @@
 
     function renderOnboarding() {
       const installUrl = window.__branding?.extension_install_url || '/install.html';
+      const connectUrl = window.__branding?.extension_connect_url || '/settings';
       return `
         <div class="onboarding">
           <h2 class="onboarding-title">${t('onboarding_title', 'Make your first recording in 3 steps')}</h2>
@@ -125,7 +126,10 @@
               <p>${t('onboarding_step3_desc', 'Click the extension icon → Record. When you stop, the video lands here with a shareable link.')}</p>
             </div>
           </div>
-          <p class="onboarding-hint">${t('onboarding_token_hint', 'Need a token? Generate one in <a href="/settings">Settings → Extension token</a>.')}</p>
+          <div class="onboarding-connect">
+            <p class="onboarding-connect-text">${t('onboarding_connect_text', 'Already installed the extension? Connect it to your account so your recordings are saved here and open on any device.')}</p>
+            <a class="onboarding-cta" href="${escapeHTML(connectUrl)}">${t('onboarding_connect_cta', 'Connect to your account')} →</a>
+          </div>
         </div>
       `;
     }

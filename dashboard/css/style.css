@@ -2396,6 +2396,19 @@ select.edit-field {
   color: var(--text2);
   text-decoration: underline;
 }
+.onboarding-connect {
+  text-align: center;
+  max-width: 920px;
+  margin: 4px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--surface2);
+}
+.onboarding-connect-text {
+  font-size: 0.9rem;
+  color: var(--text2);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
 @media (max-width: 720px) {
   .onboarding-steps { grid-template-columns: 1fr; }
   .onboarding-title { font-size: 1.3rem; }
