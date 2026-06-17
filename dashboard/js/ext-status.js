@@ -55,6 +55,7 @@ const ICON = {
   alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
   chevron: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
   x: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+  puzzle: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.7 2.7 0 0 1 0 5.4H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.7 2.7 0 0 1 5.4 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"></path></svg>',
 };
 
 function lang() {
@@ -117,11 +118,15 @@ export function subscribeExtStatus(fn) {
 // ── Header badge ─────────────────────────────────────────────────────────────
 function badgeHTML(state) {
   const s = S();
+  // Happy path (checking/linked) collapses to an icon + status dot — the verbose
+  // "Extension connected" text is reassurance noise once it's true, so it lives
+  // in the tooltip. The warn states stay a full pill: there the label is the
+  // actionable call ("connect" / "install"), so it must read at a glance.
   if (state === 'checking') {
-    return `<span class="ext-badge ext-badge--checking" role="status"><span class="ext-badge-dot"></span><span class="ext-badge-label">${s.checking}</span></span>`;
+    return `<span class="ext-badge ext-badge--checking ext-badge--compact" role="status" title="${s.checking}" aria-label="${s.checking}">${ICON.puzzle}<span class="ext-badge-dot"></span></span>`;
   }
   if (state === 'linked') {
-    return `<span class="ext-badge ext-badge--linked" role="status"><span class="ext-badge-dot"></span><span class="ext-badge-label">${s.linked}</span></span>`;
+    return `<span class="ext-badge ext-badge--linked ext-badge--compact" role="status" title="${s.linked}" aria-label="${s.linked}">${ICON.puzzle}<span class="ext-badge-dot"></span></span>`;
   }
   const href = state === 'unlinked' ? connectUrl() : installUrl();
   const label = state === 'unlinked' ? s.unlinked : s.undetected;

@@ -182,6 +182,15 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   gap: 32px;
 }
 
+/* Right-hand meta cluster: grouped tight (14px) so it reads as one unit and the
+   space between nav and account stays as intentional breathing room. */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
 .logo {
   display: flex;
   align-items: center;
@@ -247,7 +256,6 @@ h4 { font-size: 0.95rem; font-weight: 600; }
 #quota-widget {
   align-items: center;
   gap: 8px;
-  margin-left: auto;
   font-size: 0.75rem;
   color: var(--text2);
   cursor: pointer;
@@ -436,6 +444,44 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   margin-top: 2px;
   word-break: break-all;
 }
+/* Storage detail relocated from the header pill into the dropdown */
+.user-menu-quota {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.user-menu-quota .umq-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+.user-menu-quota .umq-label { color: var(--text3); }
+.user-menu-quota .umq-value { color: var(--text2); font-weight: 500; }
+.user-menu-quota .umq-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface2);
+  margin-top: 8px;
+  overflow: hidden;
+}
+.user-menu-quota .umq-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
+.user-menu-quota .umq-bar-fill.green { background: var(--green); }
+.user-menu-quota .umq-bar-fill.amber { background: var(--amber); }
+.user-menu-quota .umq-bar-fill.red { background: var(--red); }
+
+/* Generic label↔control row in the dropdown (language switch lives here) */
+.user-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.user-menu-row-label { font-size: 12px; color: var(--text3); }
+.user-menu-dropdown .lang-switcher { height: 28px; }
+
 .user-menu-logout {
   width: 100%;
   padding: 10px 14px;
@@ -892,6 +938,11 @@ h4 { font-size: 0.95rem; font-weight: 600; }
 .ext-badge .ext-badge-label { display: inline; }
 .ext-badge--linked { color: var(--green); background: var(--green-dim); border-color: rgba(34,197,94,0.3); }
 .ext-badge--linked .ext-badge-dot { background: var(--green); }
+
+/* Compact (icon + status dot, no label) — used for the healthy checking/linked
+   states so the connected extension reads as a quiet glyph, not a sentence. */
+.ext-badge--compact { padding: 6px 9px; gap: 5px; }
+.ext-badge--compact svg { width: 15px; height: 15px; display: block; }
 .ext-badge--warn { color: var(--amber); background: var(--amber-dim); border-color: rgba(245,158,11,0.3); }
 .ext-badge--warn .ext-badge-dot { background: var(--amber); }
 .ext-badge--checking { color: var(--text3); background: var(--surface2); }

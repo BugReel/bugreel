@@ -321,28 +321,34 @@ export function renderHeader(activePage) {
             </a>
           `).join('')}
         </nav>
-        <div id="ext-status-host" class="ext-status-host"></div>
-        <div id="quota-widget" style="display:none"></div>
-        <button id="feedback-btn" class="feedback-btn" style="display:none" title="${t('feedback_button', 'Report a problem')}" aria-label="${t('feedback_button', 'Report a problem')}">
-          ${icons.messageCircle}
-        </button>
-        <div class="lang-switcher" role="group" aria-label="Language">
-          <button type="button" class="lang-btn ${currentLang === 'en' ? 'active' : ''}" aria-pressed="${currentLang === 'en'}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
-          <button type="button" class="lang-btn ${currentLang === 'ru' ? 'active' : ''}" aria-pressed="${currentLang === 'ru'}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>
-        </div>
-        <div id="user-menu" class="user-menu" style="display:none">
-          <button id="user-menu-btn" class="user-menu-btn" type="button" aria-haspopup="true" aria-expanded="false">
-            <span id="user-menu-avatar" class="user-menu-avatar"></span>
-            <span id="user-menu-name"></span>
+        <div class="header-actions">
+          <div id="ext-status-host" class="ext-status-host"></div>
+          <div id="quota-widget" style="display:none"></div>
+          <button id="feedback-btn" class="feedback-btn" style="display:none" title="${t('feedback_button', 'Report a problem')}" aria-label="${t('feedback_button', 'Report a problem')}">
+            ${icons.messageCircle}
           </button>
-          <div id="user-menu-dropdown" class="user-menu-dropdown" hidden>
-            <div class="user-menu-info">
-              <div id="user-menu-fullname" class="user-menu-fullname"></div>
-              <div id="user-menu-email" class="user-menu-email"></div>
-            </div>
-            <button id="user-menu-logout" class="user-menu-logout" type="button">
-              ${t('nav_logout', 'Log out')}
+          <div id="user-menu" class="user-menu" style="display:none">
+            <button id="user-menu-btn" class="user-menu-btn" type="button" aria-haspopup="true" aria-expanded="false">
+              <span id="user-menu-avatar" class="user-menu-avatar"></span>
+              <span id="user-menu-name"></span>
             </button>
+            <div id="user-menu-dropdown" class="user-menu-dropdown" hidden>
+              <div class="user-menu-info">
+                <div id="user-menu-fullname" class="user-menu-fullname"></div>
+                <div id="user-menu-email" class="user-menu-email"></div>
+              </div>
+              <div id="user-menu-quota" class="user-menu-quota" hidden></div>
+              <div class="user-menu-row">
+                <span class="user-menu-row-label">${t('nav_language', 'Language')}</span>
+                <div class="lang-switcher" role="group" aria-label="Language">
+                  <button type="button" class="lang-btn ${currentLang === 'en' ? 'active' : ''}" aria-pressed="${currentLang === 'en'}" onclick="window.__dashboardI18n.setLang('en')">EN</button>
+                  <button type="button" class="lang-btn ${currentLang === 'ru' ? 'active' : ''}" aria-pressed="${currentLang === 'ru'}" onclick="window.__dashboardI18n.setLang('ru')">RU</button>
+                </div>
+              </div>
+              <button id="user-menu-logout" class="user-menu-logout" type="button">
+                ${t('nav_logout', 'Log out')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

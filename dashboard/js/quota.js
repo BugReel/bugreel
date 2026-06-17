@@ -67,15 +67,13 @@ function usageColor(percent) {
   return 'green';
 }
 
-/** Render the compact header widget into #quota-widget */
+/** Render the compact header widget into #quota-widget + detail into the avatar menu */
 function _renderHeaderWidget(data) {
-  const el = document.getElementById('quota-widget');
-  if (!el) return;
-
   const used = data.total_storage_bytes || 0;
   const limit = data.limits?.max_storage_bytes || 0;
   const percent = limit > 0 ? Math.min(used / limit, 1) : 0;
   const color = usageColor(percent);
+  const pct = Math.round(percent * 100);
 
   const usedStr = formatBytes(used);
   const limitStr = limit > 0 ? formatBytes(limit) : '∞';
@@ -84,16 +82,33 @@ function _renderHeaderWidget(data) {
   const planLabels = { free: 'Free', standard: 'Standard', pro: 'Pro', business: 'Business' };
   const planLabel = planLabels[plan] || plan;
 
-  el.innerHTML = `
-    <span class="quota-plan-badge quota-plan-${plan}">${planLabel}</span>
-    <span class="quota-text">${usedStr} / ${limitStr}</span>
-    <div class="quota-bar">
-      <div class="quota-bar-fill ${color}" style="width:${Math.round(percent * 100)}%"></div>
-    </div>
-  `;
-  el.style.display = 'flex';
-  el.title = planLabel + ' — ' + t('quota_storage', 'Storage') + ': ' + usedStr + ' / ' + limitStr;
-  el.onclick = () => { window.location.href = `${basePath}/settings-page`; };
+  // Header pill: plan badge + bar only. The "X / Y" figure moves to the avatar
+  // dropdown so the top bar stays quiet; the exact numbers are one hover/tap away.
+  const el = document.getElementById('quota-widget');
+  if (el) {
+    el.innerHTML = `
+      <span class="quota-plan-badge quota-plan-${plan}">${planLabel}</span>
+      <div class="quota-bar">
+        <div class="quota-bar-fill ${color}" style="width:${pct}%"></div>
+      </div>
+    `;
+    el.style.display = 'flex';
+    el.title = planLabel + ' — ' + t('quota_storage', 'Storage') + ': ' + usedStr + ' / ' + limitStr;
+    el.onclick = () => { window.location.href = `${basePath}/settings-page`; };
+  }
+
+  // Detailed storage line inside the avatar dropdown.
+  const dd = document.getElementById('user-menu-quota');
+  if (dd) {
+    dd.innerHTML = `
+      <div class="umq-row">
+        <span class="umq-label">${t('quota_storage', 'Storage')}</span>
+        <span class="umq-value">${usedStr} / ${limitStr}</span>
+      </div>
+      <div class="umq-bar"><div class="umq-bar-fill ${color}" style="width:${pct}%"></div></div>
+    `;
+    dd.hidden = false;
+  }
 }
 
 /**
