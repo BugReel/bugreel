@@ -34,6 +34,41 @@
   try { configuredOrigin = new URL(serverUrl).origin; } catch { return; }
   if (location.origin !== configuredOrigin) return;
 
+  // ── Universal: tell the page whether the extension is installed + linked ──
+  // Lets a server page render a live connection indicator. The page posts
+  // {source:'extension-bridge-page', type:'status-request'} and/or just listens
+  // for {source:'extension-bridge', type:'status', installed, linked, isGuest}.
+  // We also announce proactively on load and whenever the token changes, so a
+  // self-connect (below) flips the page from "not linked" to "connected" live.
+  function announceStatus() {
+    try {
+      chrome.storage.local.get(['extensionToken', 'userIsGuest'], (s) => {
+        try {
+          window.postMessage({
+            source: 'extension-bridge',
+            type: 'status',
+            installed: true,
+            linked: !!(s && s.extensionToken),
+            isGuest: !!(s && s.userIsGuest === true),
+          }, location.origin);
+        } catch {}
+      });
+    } catch {}
+  }
+  window.addEventListener('message', (ev) => {
+    if (ev.source !== window || ev.origin !== location.origin) return;
+    const m = ev.data;
+    if (m && typeof m === 'object' && m.source === 'extension-bridge-page' && m.type === 'status-request') {
+      announceStatus();
+    }
+  });
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && (changes.extensionToken || changes.userIsGuest)) announceStatus();
+    });
+  } catch {}
+  announceStatus();
+
   // ── Path 1: passive handoff on /auth/* token-issuing pages ──
   if (location.pathname.startsWith('/auth/')) {
     window.addEventListener('message', async (ev) => {
