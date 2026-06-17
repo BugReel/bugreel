@@ -1,12 +1,18 @@
 import { Router } from 'express';
 import { initUpload, uploadChunk, completeUpload, getStatus, cancelUpload } from '../services/chunked-upload.js';
+import { decodeHeaderValue } from '../utils.js';
 
 const router = Router();
 
 // POST /api/upload/init — create upload session
 router.post('/upload/init', (req, res) => {
   try {
-    const author = req.headers['x-user-name'] || req.headers['x-user-email'] || req.body.author || 'Unknown';
+    // Proxy URL-encodes non-ASCII identity headers (headers must be ASCII) —
+    // decode so Cyrillic/accented names persist as real text. Same precedence
+    // as POST /upload (non-chunked path).
+    const author = decodeHeaderValue(req.headers['x-user-name'])
+      || decodeHeaderValue(req.headers['x-user-email'])
+      || req.body.author || 'Unknown';
     // Stable owner id — same precedence as POST /upload (non-chunked path):
     // trusted X-User-Id from the Cloud Layer proxy, then req.user from local
     // auth. Without this, completeUpload would persist user_id=NULL and

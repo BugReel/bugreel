@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { getDB, generateRecordingId } from '../db.js';
 import { enqueuePipeline, getQueueStatus } from '../services/pipeline.js';
 import { concatRecorderSegments } from '../services/ffmpeg.js';
+import { decodeHeaderValue } from '../utils.js';
 
 const router = Router();
 
@@ -68,8 +69,12 @@ router.post('/upload', (req, res, next) => {
       return res.status(500).json({ error: 'concat_failed', message: err.message });
     }
   }
-  // Prefer user identity from Cloud Layer proxy headers, fall back to form body
-  const author = req.headers['x-user-name'] || req.headers['x-user-email'] || req.body.author || 'Unknown';
+  // Prefer user identity from Cloud Layer proxy headers, fall back to form body.
+  // Headers must be ASCII, so a proxy URL-encodes non-ASCII names — decode here
+  // so Cyrillic/accented names persist as real text, not "%D0%9A..." escapes.
+  const author = decodeHeaderValue(req.headers['x-user-name'])
+    || decodeHeaderValue(req.headers['x-user-email'])
+    || req.body.author || 'Unknown';
   // Stable owner id: trusted X-User-Id from proxy, or req.user from local auth.
   // Used to scope recordings per user — author is just a display label that
   // can collide (e.g. multiple "Guest" upgrades).

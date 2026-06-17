@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import { config } from './config.js';
+import { decodeHeaderValue } from './utils.js';
 
 // DB lives inside dataDir (same directory as recordings)
 const dbDir = config.dataDir;
@@ -240,6 +241,25 @@ export function initDB() {
     for (const row of noToken) {
       update.run(crypto.randomUUID(), row.id);
     }
+  }
+
+  // One-time backfill: decode author names that were stored percent-encoded.
+  // A reverse proxy URL-encodes non-ASCII identity headers (X-User-Name) because
+  // header values must be ASCII, and earlier builds persisted the raw escape
+  // sequence (e.g. "%D0%9A%D1%81..."). Decode them in place. Idempotent: a
+  // already-decoded name has no %XX triplet, so decodeHeaderValue returns it
+  // unchanged and the UPDATE never fires. See server/utils.js.
+  const looksEncoded = /%[0-9A-Fa-f]{2}/;
+  for (const [table, col] of [['recordings', 'author'], ['upload_sessions', 'author']]) {
+    let fixed = 0;
+    const rows = db.prepare(`SELECT rowid, ${col} AS v FROM ${table} WHERE ${col} LIKE '%\\%%' ESCAPE '\\'`).all();
+    const upd = db.prepare(`UPDATE ${table} SET ${col} = ? WHERE rowid = ?`);
+    for (const row of rows) {
+      if (!looksEncoded.test(row.v || '')) continue;
+      const decoded = decodeHeaderValue(row.v);
+      if (decoded && decoded !== row.v) { upd.run(decoded, row.rowid); fixed++; }
+    }
+    if (fixed > 0) console.log(`Decoded ${fixed} percent-encoded ${table}.${col} value(s)`);
   }
 
   // Migration: add password_hash to users if missing (for existing DBs)
