@@ -391,13 +391,20 @@ async function refreshAuthStateFromStorage() {
 
 refreshAuthStateFromStorage();
 
-// React to background-side updates (e.g. postMessage handoff after email upgrade)
+// React to background-side updates (e.g. postMessage handoff after email upgrade,
+// or the content-script self-connect storing a token from a logged-in tab)
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   if (changes.extensionToken || changes.userIsGuest) {
     refreshAuthStateFromStorage();
   }
 });
+
+// Returning to this tab re-checks auth — covers any case where the storage
+// change landed while this page was backgrounded (e.g. the user connected in
+// another tab and switched back here).
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !authDone) refreshAuthStateFromStorage(); });
+window.addEventListener('focus', () => { if (!authDone) refreshAuthStateFromStorage(); });
 
 // --- Done ---
 
