@@ -11,6 +11,7 @@
   <div id="header"></div>
 
   <main class="container page">
+    <div id="ext-banner-host"></div>
     <div id="guest-banner-host"></div>
     <div class="page-header">
       <h1 data-i18n="index_title">Recordings</h1>
@@ -51,6 +52,7 @@
     import { getRecordings, deleteRecording } from './js/api.js';
     import { renderHeader, initUserMenu, getCurrentUser, formatDate, formatDuration, statusLabel, icons, escapeHTML, basePath, getBranding, applyBrandingHides } from './js/shared.js';
     import { initQuotaWidget, retentionBadge, renderGuestBanner } from './js/quota.js';
+    import { renderExtBanner } from './js/ext-status.js';
 
     const t = window.__dashboardI18n?.t || ((k, f) => f || k);
     const YOUTRACK_URL = window.__BUGREEL_CONFIG__?.youtrackUrl || '';
@@ -59,6 +61,9 @@
     document.getElementById('header').innerHTML = renderHeader('recordings');
     initQuotaWidget();
     initUserMenu();
+    // Extension-connection banner — shown only while the extension isn't
+    // installed/linked, so a new user immediately sees what's missing.
+    renderExtBanner(document.getElementById('ext-banner-host'));
 
     // State
     let currentOffset = 0;

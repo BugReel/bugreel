@@ -48,6 +48,11 @@ function getBrandingConfig() {
     hide_integrations: !!config.branding.hideIntegrations,
     hide_cards: !!config.branding.hideCards,
     hide_branding: !!config.branding.hideBranding,
+    // Host-product URLs (empty on self-host). A SaaS wrapper points these at
+    // its own pages: account/billing cabinet + extension install/connect flow.
+    settings_url: config.branding.settingsUrl,
+    extension_install_url: config.branding.extensionInstallUrl,
+    extension_connect_url: config.branding.extensionConnectUrl,
   };
 }
 

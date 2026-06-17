@@ -3,6 +3,11 @@
  * Lucide-style SVG icons rendered inline (no emoji)
  */
 
+// Side-effect import: auto-mounts the extension-connection badge into the
+// header's #ext-status-host wherever renderHeader() is used. Self-contained
+// (must not import from this file) to keep the import acyclic.
+import './ext-status.js';
+
 // --- i18n helper (loaded via i18n-dashboard.js before this module) ---
 const t = window.__dashboardI18n?.t || ((k, f) => f || k);
 
@@ -316,6 +321,7 @@ export function renderHeader(activePage) {
             </a>
           `).join('')}
         </nav>
+        <div id="ext-status-host" class="ext-status-host"></div>
         <div id="quota-widget" style="display:none"></div>
         <button id="feedback-btn" class="feedback-btn" style="display:none" title="${t('feedback_button', 'Report a problem')}" aria-label="${t('feedback_button', 'Report a problem')}">
           ${icons.messageCircle}
@@ -453,6 +459,14 @@ function fetchBranding() {
     if (b.name) document.title = document.title.replace(/BugReel/g, b.name);
 
     window.__branding = b;
+
+    // Point the "Settings" nav at the host product's account page when it has
+    // one (a SaaS wrapper keeps billing/profile/extension outside Core's
+    // instance-settings page). Self-host leaves this empty → Core's own
+    // settings-page stays the target.
+    if (b.settings_url) {
+      document.querySelectorAll('[data-nav-key="settings"]').forEach(el => { el.setAttribute('href', b.settings_url); });
+    }
 
     // Hide nav items disabled by white-label flags (e.g. host product doesn't
     // expose analytics or guide). Map flag → nav data-key.

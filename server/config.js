@@ -72,6 +72,12 @@ export const config = {
     // branding as a single instance-wide value, so exposing the editor would let
     // one tenant rebrand the whole deployment — hide it and pin branding via env.
     hideBranding: /^(1|true|yes)$/i.test(process.env.BRAND_HIDE_BRANDING || ''),
+    // Host-product URLs surfaced in the dashboard (empty on self-host). A SaaS
+    // wrapper sets these to route "Settings" to its account cabinet and to point
+    // the extension status badge/banner at its install + connect pages.
+    settingsUrl: process.env.ACCOUNT_SETTINGS_URL || '',
+    extensionInstallUrl: process.env.EXTENSION_INSTALL_URL || '',
+    extensionConnectUrl: process.env.EXTENSION_CONNECT_URL || '',
   },
 
   // Analytics — inject counters into dashboard and embed pages.
