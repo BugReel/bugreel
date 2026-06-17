@@ -930,7 +930,7 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   flex-shrink: 0;
   transition: filter var(--transition);
 }
-.ext-banner-cta:hover { filter: brightness(1.08); }
+.ext-banner-cta:hover { filter: brightness(1.1); color: #1a1206; }
 .ext-banner-dismiss {
   background: none;
   border: none;
