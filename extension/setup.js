@@ -280,6 +280,28 @@ document.getElementById('btn-connect-token')?.addEventListener('click', async ()
   }
 });
 
+// One-click connect: open the grant page in a new tab. When the user signs in
+// there, the server's auth page hands the token back to the extension via the
+// content-script bridge, and storage.onChanged re-renders this page as connected.
+document.getElementById('btn-open-grant')?.addEventListener('click', async () => {
+  const { serverUrl } = await chrome.storage.local.get('serverUrl');
+  if (!serverUrl) {
+    // No server configured — fall back to manual token paste so the user isn't stuck.
+    document.getElementById('manual-token-form')?.classList.remove('hidden');
+    setResult('token-result', 'err', t('setup_serverUrlNotConfigured', 'Server URL not configured. Set it in the extension popup first, then return here.'));
+    return;
+  }
+  const url = `${serverUrl.replace(/\/$/, '')}/auth/extension-grant`;
+  try { chrome.tabs.create({ url }); } catch { window.open(url, '_blank'); }
+});
+
+// Reveal the manual token-paste form (fallback path).
+document.getElementById('link-manual-token')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('manual-token-form')?.classList.remove('hidden');
+  e.currentTarget.classList.add('hidden');
+});
+
 // Render guest-mode UI: hide token paste form, show upgrade CTA
 function renderGuestMode(token, serverUrl) {
   const guestBlock = document.getElementById('guest-block');

@@ -155,20 +155,27 @@
           </div>
         </div>
 
-        <!-- Token paste form: default for first-time connect, or fallback for "have an account" -->
+        <!-- Connect: one-click handoff is primary; manual token paste is a fallback -->
         <div id="token-block">
-          <p data-i18n="step_connect_desc">Link your BugReel account so recordings are associated with you.</p>
-          <div class="auth-instructions" style="margin-top:8px;">
-            <div style="margin-bottom:4px;" data-i18n-html="step_connect_instruction_1">1. Open your BugReel dashboard and log in</div>
-            <div style="margin-bottom:4px;" data-i18n-html="step_connect_instruction_2">2. Go to <strong>Settings</strong> and click <strong>Generate Extension Token</strong></div>
-            <div style="margin-bottom:4px;" data-i18n="step_connect_instruction_3">3. Copy the token and paste it below</div>
-          </div>
-          <div style="margin-top:12px;">
-            <input type="text" id="input-token" data-i18n="placeholder_extension_token" data-i18n-attr="placeholder" placeholder="Paste extension token here..." style="width:100%;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:ui-monospace,monospace;outline:none;" />
-          </div>
-          <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
-            <button class="btn btn-blue" id="btn-connect-token" data-i18n="button_connect">Connect</button>
-            <span id="token-result" class="result"></span>
+          <p data-i18n="step_connect_desc">Link your account so recordings are saved to you and open on any device.</p>
+          <button class="btn btn-blue" id="btn-open-grant" data-i18n="button_connect_account">Connect to your account</button>
+          <p style="font-size:12px;color:#94a3b8;margin-top:8px;" data-i18n="connect_auto_hint">A page will open — sign in and the extension connects automatically.</p>
+          <div style="margin-top:14px;border-top:1px solid #334155;padding-top:12px;">
+            <a href="#" id="link-manual-token" style="font-size:12px;color:#64748b;text-decoration:underline;cursor:pointer;" data-i18n="link_manual_token">Connect manually with a token</a>
+            <div id="manual-token-form" class="hidden" style="margin-top:12px;">
+              <div class="auth-instructions" style="margin-top:8px;">
+                <div style="margin-bottom:4px;" data-i18n-html="step_connect_instruction_1">1. Open your BugReel dashboard and log in</div>
+                <div style="margin-bottom:4px;" data-i18n-html="step_connect_instruction_2">2. Go to <strong>Settings</strong> and click <strong>Generate Extension Token</strong></div>
+                <div style="margin-bottom:4px;" data-i18n="step_connect_instruction_3">3. Copy the token and paste it below</div>
+              </div>
+              <div style="margin-top:12px;">
+                <input type="text" id="input-token" data-i18n="placeholder_extension_token" data-i18n-attr="placeholder" placeholder="Paste extension token here..." style="width:100%;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:ui-monospace,monospace;outline:none;" />
+              </div>
+              <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+                <button class="btn btn-blue" id="btn-connect-token" data-i18n="button_connect">Connect</button>
+                <span id="token-result" class="result"></span>
+              </div>
+            </div>
           </div>
         </div>
 

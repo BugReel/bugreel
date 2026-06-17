@@ -180,7 +180,16 @@
     "message": "Connect Your Account"
   },
   "step_connect_desc": {
-    "message": "Link your BugReel account so recordings are associated with you."
+    "message": "Link your account so recordings are saved to you and open on any device."
+  },
+  "button_connect_account": {
+    "message": "Connect to your account"
+  },
+  "connect_auto_hint": {
+    "message": "A page will open — sign in and the extension connects automatically."
+  },
+  "link_manual_token": {
+    "message": "Connect manually with a token"
   },
   "step_connect_instruction_1": {
     "message": "1. Open your BugReel dashboard and log in"
@@ -216,7 +225,7 @@
     "message": "Save permanently"
   },
   "link_have_account": {
-    "message": "Already have an account? Connect with token"
+    "message": "Already have an account? Connect it"
   },
   "step_done_title": {
     "message": "Done"
