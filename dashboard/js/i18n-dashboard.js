@@ -19,6 +19,7 @@
 
       // Navigation
       nav_recordings: 'Recordings',
+      nav_record: 'Record',
       nav_analytics: 'Stats',
       nav_guide: 'Guide',
       nav_cards: 'Cards',
@@ -440,6 +441,30 @@
       ai_transcription: 'AI transcription',
       recordings: 'Recordings',
 
+      // In-browser recorder page
+      rec_page_title: 'Record',
+      rec_idle_heading: 'Screen recorder',
+      rec_hint: 'You will be asked to choose a screen, window, or tab to capture.',
+      rec_requesting: 'Waiting for screen selection…',
+      rec_start: 'Start recording',
+      rec_stop: 'Stop recording',
+      rec_pause: 'Pause',
+      rec_resume: 'Resume',
+      rec_preview_title: 'Recording ready',
+      rec_save: 'Save & upload',
+      rec_discard: 'Discard',
+      rec_back: 'Back',
+      rec_err_denied_heading: 'Access denied',
+      rec_err_denied: 'Screen access was denied. Please click "Start recording" and allow screen sharing when prompted.',
+      rec_err_unsupported_heading: 'Browser not supported',
+      rec_err_unsupported: 'Your browser does not support WebM recording. Please use Chrome or Firefox.',
+      rec_uploading: 'Uploading…',
+      rec_done: 'Done! Redirecting…',
+      rec_copy_link: 'Copy link',
+      rec_copied: 'Copied!',
+      rec_err_upload: 'Upload failed',
+      rec_retry: 'Retry upload',
+
       // Misc
       no_recording_id: 'No recording ID in URL',
       card_not_found: 'Card not found',
@@ -450,6 +475,7 @@
 
       // Navigation
       nav_recordings: 'Записи',
+      nav_record: 'Записать',
       nav_analytics: 'Статистика',
       nav_guide: 'Руководство',
       nav_cards: 'Карточки',
@@ -912,6 +938,30 @@
       retention: 'Хранение записей',
       ai_transcription: 'AI-транскрипция',
       recordings: 'Записей',
+
+      // In-browser recorder page
+      rec_page_title: 'Запись',
+      rec_idle_heading: 'Запись экрана',
+      rec_hint: 'Вам предложат выбрать экран, окно или вкладку для захвата.',
+      rec_requesting: 'Ожидание выбора экрана…',
+      rec_start: 'Начать запись',
+      rec_stop: 'Остановить запись',
+      rec_pause: 'Пауза',
+      rec_resume: 'Продолжить',
+      rec_preview_title: 'Запись готова',
+      rec_save: 'Сохранить и загрузить',
+      rec_discard: 'Удалить',
+      rec_back: 'Назад',
+      rec_err_denied_heading: 'Доступ запрещён',
+      rec_err_denied: 'Доступ к экрану запрещён. Нажмите «Начать запись» и разрешите захват экрана в диалоге браузера.',
+      rec_err_unsupported_heading: 'Браузер не поддерживается',
+      rec_err_unsupported: 'Ваш браузер не поддерживает запись в формате WebM. Используйте Chrome или Firefox.',
+      rec_uploading: 'Загрузка…',
+      rec_done: 'Готово! Переходим…',
+      rec_copy_link: 'Скопировать ссылку',
+      rec_copied: 'Скопировано!',
+      rec_err_upload: 'Ошибка загрузки',
+      rec_retry: 'Повторить загрузку',
 
       // Misc
       no_recording_id: 'Нет ID записи в URL',

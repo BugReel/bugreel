@@ -130,6 +130,9 @@ app.get('*', (req, res) => {
   if (req.path === '/analytics') {
     return res.sendFile(path.join(dashboardDir, 'analytics.html'));
   }
+  if (req.path === '/record') {
+    return res.sendFile(path.join(dashboardDir, 'record.html'));
+  }
   if (req.path === '/guide') {
     return res.sendFile(path.join(dashboardDir, 'guide.html'));
   }

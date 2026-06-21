@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="rec_page_title">Record - BugReel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/i18n-dashboard.js"></script>
+  <style>
+    /* ── Recorder layout ───────────────────────────────────────── */
+    .recorder-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    /* State panels — only the active one is shown */
+    .rec-panel { display: none; }
+    .rec-panel.active { display: block; }
+
+    /* ── Idle panel ────────────────────────────────────────────── */
+    .rec-idle-card {
+      text-align: center;
+      padding: 56px 32px;
+    }
+    .rec-idle-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--blue);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+    .rec-idle-icon svg {
+      width: 36px;
+      height: 36px;
+    }
+    .rec-idle-card h2 {
+      margin: 0 0 8px;
+      font-size: 1.4rem;
+    }
+    .rec-hint {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin: 0 0 32px;
+    }
+
+    /* ── Recording / Paused panel ──────────────────────────────── */
+    .rec-active-card {
+      padding: 24px;
+    }
+    .rec-preview-live {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .rec-preview-live video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .rec-status-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .rec-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0;
+    }
+    .rec-dot.paused {
+      background: var(--amber, #f59e0b);
+      animation: none;
+    }
+    @keyframes rec-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .rec-dot.recording { animation: rec-blink 1s ease-in-out infinite; }
+    .rec-timer {
+      font-size: 1.5rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .rec-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Preview panel ─────────────────────────────────────────── */
+    .rec-preview-card {
+      padding: 24px;
+    }
+    .rec-preview-video {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .rec-preview-video video {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .rec-preview-meta {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+    }
+    .rec-preview-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Upload progress panel ─────────────────────────────────── */
+    .rec-uploading-card {
+      text-align: center;
+      padding: 48px 32px;
+    }
+    .rec-uploading-card h3 {
+      margin: 0 0 24px;
+    }
+    .rec-progress-track {
+      background: var(--border, #e5e7eb);
+      border-radius: 9999px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .rec-progress-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .rec-progress-text {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Copy-link row (shown after upload, before redirect) ───── */
+    .rec-done-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .rec-done-link input {
+      border: 1px solid var(--border, #d1d5db);
+      border-radius: var(--radius);
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      min-width: 260px;
+      max-width: 400px;
+      width: 100%;
+      background: var(--bg-alt, #f9fafb);
+      color: var(--text);
+    }
+
+    /* ── Error panel ───────────────────────────────────────────── */
+    .rec-error-card {
+      text-align: center;
+      padding: 48px 32px;
+    }
+    .rec-error-icon {
+      color: var(--red);
+      margin-bottom: 16px;
+    }
+    .rec-error-icon svg {
+      width: 48px;
+      height: 48px;
+    }
+    .rec-error-card h2 {
+      margin: 0 0 8px;
+    }
+    .rec-error-msg {
+      color: var(--text-dim);
+      margin: 0 0 24px;
+    }
+  </style>
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container page">
+    <div class="page-header">
+      <h1 data-i18n="rec_page_title">Record</h1>
+    </div>
+
+    <div class="recorder-wrap">
+
+      <!-- ① IDLE STATE -->
+      <div id="rec-panel-idle" class="rec-panel card rec-idle-card">
+        <div class="rec-idle-icon">
+          <!-- circle-dot record icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </div>
+        <h2 data-i18n="rec_idle_heading">Screen recorder</h2>
+        <p class="rec-hint" data-i18n="rec_hint">You will be asked to choose a screen, window, or tab to capture.</p>
+        <button id="rec-btn-start" class="btn btn-primary" type="button">
+          <span data-i18n="rec_start">Start recording</span>
+        </button>
+      </div>
+
+      <!-- ② REQUESTING STATE (spinner while getDisplayMedia is resolving) -->
+      <div id="rec-panel-requesting" class="rec-panel card rec-idle-card">
+        <div class="loading"><div class="spinner"></div></div>
+        <p class="rec-hint" style="margin-top:16px" data-i18n="rec_requesting">Waiting for screen selection…</p>
+      </div>
+
+      <!-- ③ RECORDING / PAUSED STATE -->
+      <div id="rec-panel-recording" class="rec-panel card rec-active-card">
+        <div class="rec-preview-live">
+          <video id="rec-live-video" muted playsinline autoplay></video>
+        </div>
+        <div class="rec-status-row">
+          <div id="rec-dot" class="rec-dot recording"></div>
+          <span id="rec-timer" class="rec-timer">00:00</span>
+        </div>
+        <div class="rec-controls">
+          <button id="rec-btn-pause" class="btn btn-secondary" type="button">
+            <span data-i18n="rec_pause">Pause</span>
+          </button>
+          <button id="rec-btn-resume" class="btn btn-secondary" type="button" style="display:none">
+            <span data-i18n="rec_resume">Resume</span>
+          </button>
+          <button id="rec-btn-stop" class="btn btn-danger" type="button">
+            <span data-i18n="rec_stop">Stop recording</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ④ PREVIEW STATE -->
+      <div id="rec-panel-preview" class="rec-panel card rec-preview-card">
+        <h3 data-i18n="rec_preview_title">Recording ready</h3>
+        <div class="rec-preview-video">
+          <video id="rec-preview-video" controls></video>
+        </div>
+        <p id="rec-preview-meta" class="rec-preview-meta"></p>
+        <div class="rec-preview-actions">
+          <button id="rec-btn-save" class="btn btn-primary" type="button">
+            <span data-i18n="rec_save">Save &amp; upload</span>
+          </button>
+          <button id="rec-btn-discard" class="btn btn-secondary" type="button">
+            <span data-i18n="rec_discard">Discard</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ⑤ UPLOADING STATE -->
+      <div id="rec-panel-uploading" class="rec-panel card rec-uploading-card">
+        <h3 data-i18n="rec_uploading">Uploading…</h3>
+        <div class="rec-progress-track">
+          <div id="rec-progress-bar" class="rec-progress-fill"></div>
+        </div>
+        <p id="rec-progress-text" class="rec-progress-text">0%</p>
+        <div id="rec-done-link-row" class="rec-done-link" style="display:none">
+          <input id="rec-done-link-input" type="text" readonly>
+          <button id="rec-btn-copy-link" class="btn btn-secondary" type="button">
+            <span data-i18n="rec_copy_link">Copy link</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ⑥ ERROR STATE (denied / unsupported / upload error) -->
+      <div id="rec-panel-error" class="rec-panel card rec-error-card">
+        <div class="rec-error-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <h2 id="rec-error-heading"></h2>
+        <p id="rec-error-msg" class="rec-error-msg"></p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button id="rec-btn-retry-upload" class="btn btn-primary" type="button" style="display:none">
+            <span data-i18n="rec_retry">Retry upload</span>
+          </button>
+          <button id="rec-btn-error-back" class="btn btn-secondary" type="button">
+            <span data-i18n="rec_back">Back</span>
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /.recorder-wrap -->
+  </main>
+
+  <script type="module">
+    import { renderHeader, initUserMenu } from './js/shared.js';
+    import { initQuotaWidget } from './js/quota.js';
+    import './js/recorder-page.js';
+
+    const t = window.__dashboardI18n?.t || ((k, f) => f || k);
+    document.getElementById('header').innerHTML = renderHeader('record');
+    initQuotaWidget();
+    initUserMenu();
+
+    // Update page <title> with i18n value
+    document.title = `${t('rec_page_title', 'Record')} - BugReel`;
+  </script>
+</body>
+</html>
