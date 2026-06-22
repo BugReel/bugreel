@@ -99,6 +99,103 @@
       flex-wrap: wrap;
     }
 
+    /* ── Idle audio options + pre-flight mic meter ─────────────────── */
+    .rec-idle-options {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin: 0 0 20px;
+    }
+    .rec-opt {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .rec-opt input { width: 16px; height: 16px; cursor: pointer; }
+    .rec-mic-test {
+      border: 1px solid var(--border, #d1d5db);
+      background: var(--bg-alt, #f9fafb);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 5px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .rec-mic-test:hover { border-color: var(--blue); }
+    .rec-mic-meter {
+      width: 120px;
+      height: 8px;
+      border-radius: 9999px;
+      background: var(--border, #e5e7eb);
+      overflow: hidden;
+    }
+    .rec-mic-meter-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--green, #16a34a);
+      border-radius: 9999px;
+      transition: width 0.08s linear;
+    }
+    .rec-idle-msg {
+      color: var(--amber, #b45309);
+      font-size: 0.85rem;
+      margin: 0 0 20px;
+    }
+
+    /* ── Live capture-status chips (during recording) ──────────────── */
+    .rec-capture-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .rec-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 10px;
+      border-radius: 9999px;
+      background: var(--bg-alt, #f3f4f6);
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      border: 1px solid var(--border, #e5e7eb);
+    }
+    .rec-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim, #9ca3af);
+      flex-shrink: 0;
+    }
+    .rec-chip.on {
+      color: var(--text);
+      border-color: var(--green, #16a34a);
+    }
+    .rec-chip.on .rec-chip-dot { background: var(--green, #16a34a); }
+    .rec-chip.off { opacity: 0.7; }
+    .rec-chip.off .rec-chip-label { text-decoration: line-through; }
+    .rec-mic-live {
+      width: 48px;
+      height: 6px;
+      border-radius: 9999px;
+      background: var(--border, #e5e7eb);
+      overflow: hidden;
+    }
+    .rec-chip.off .rec-mic-live { display: none; }
+    .rec-mic-live-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--green, #16a34a);
+      border-radius: 9999px;
+      transition: width 0.08s linear;
+    }
+
     /* ── Preview panel ─────────────────────────────────────────── */
     .rec-preview-card {
       padding: 24px;
@@ -254,6 +351,23 @@
         </div>
         <h2 data-i18n="rec_idle_heading">Screen recorder</h2>
         <p class="rec-hint" data-i18n="rec_hint">You will be asked to choose a screen, window, or tab to capture.</p>
+
+        <!-- Audio options + pre-flight mic check, so the user knows the mic works
+             BEFORE committing to a recording. -->
+        <div class="rec-idle-options">
+          <label class="rec-opt">
+            <input type="checkbox" id="rec-opt-mic" checked>
+            <span data-i18n="rec_opt_mic">Record microphone</span>
+          </label>
+          <button id="rec-mic-test" class="rec-mic-test" type="button">
+            <span data-i18n="rec_mic_test">Test mic</span>
+          </button>
+          <div id="rec-mic-meter" class="rec-mic-meter" style="display:none" aria-hidden="true">
+            <div id="rec-mic-meter-bar" class="rec-mic-meter-bar"></div>
+          </div>
+        </div>
+        <p id="rec-idle-msg" class="rec-idle-msg" style="display:none"></p>
+
         <button id="rec-btn-start" class="btn btn-primary" type="button">
           <span data-i18n="rec_start">Start recording</span>
         </button>
@@ -274,6 +388,25 @@
           <div id="rec-dot" class="rec-dot recording"></div>
           <span id="rec-timer" class="rec-timer">00:00</span>
         </div>
+
+        <!-- Live capture status: confirms screen/mic/system-audio are actually being
+             captured. The mic chip carries a live level bar that moves as you speak. -->
+        <div class="rec-capture-status" id="rec-capture-status">
+          <span class="rec-chip on" id="rec-chip-screen">
+            <span class="rec-chip-dot"></span>
+            <span data-i18n="rec_chip_screen">Screen</span>
+          </span>
+          <span class="rec-chip" id="rec-chip-mic">
+            <span class="rec-chip-dot"></span>
+            <span class="rec-chip-label" data-i18n="rec_chip_mic">Microphone</span>
+            <span class="rec-mic-live"><span id="rec-mic-live-bar" class="rec-mic-live-bar"></span></span>
+          </span>
+          <span class="rec-chip" id="rec-chip-sysaudio">
+            <span class="rec-chip-dot"></span>
+            <span class="rec-chip-label" data-i18n="rec_chip_sysaudio">System audio</span>
+          </span>
+        </div>
+
         <div class="rec-controls">
           <button id="rec-btn-pause" class="btn btn-secondary" type="button">
             <span data-i18n="rec_pause">Pause</span>

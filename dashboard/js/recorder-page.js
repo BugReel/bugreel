@@ -27,6 +27,18 @@ let recordingBlob = null;   // Final Blob (set in finalizeRecording; kept until 
 let blobUrl       = null;   // Object URL for the preview <video>
 let pendingShareUrl = null; // Share URL held back behind the guest claim gate
 
+/* ── Audio capture state ──────────────────────────────────────────────────── */
+let micStream       = null; // getUserMedia mic stream (mixed into the recording)
+let audioContext    = null; // AudioContext used to mix mic + system audio
+let micLevelCtx     = null; // separate AudioContext driving the live mic meter
+let micLevelAnalyser= null;
+let micLevelRaf     = null; // rAF handle for the in-recording mic meter
+let micTestStream   = null; // getUserMedia stream for the pre-flight mic test
+let micTestCtx      = null;
+let micTestRaf      = null;
+let hasMicTrack       = false; // mic actually captured this session
+let hasSystemAudioTrack = false; // system/tab audio actually captured this session
+
 /* ── Timer state (performance.now() deltas, freezes on pause) ────────────── */
 let timerStart    = 0;      // performance.now() when last (re)started
 let timerAccum    = 0;      // ms accumulated before current segment
@@ -70,6 +82,15 @@ const claimForm       = $('rec-claim-form');
 const claimEmail      = $('rec-claim-email');
 const claimSubmit     = $('rec-claim-submit');
 const claimMsg        = $('rec-claim-msg');
+
+const optMic          = $('rec-opt-mic');
+const micTestBtn      = $('rec-mic-test');
+const micMeter        = $('rec-mic-meter');
+const micMeterBar     = $('rec-mic-meter-bar');
+const idleMsg         = $('rec-idle-msg');
+const chipMic         = $('rec-chip-mic');
+const chipSysAudio    = $('rec-chip-sysaudio');
+const micLiveBar      = $('rec-mic-live-bar');
 
 /* ── Supported MIME type (copied from extension/recorder.js getSupportedMimeType) ── */
 function pickMime() {
@@ -137,16 +158,160 @@ function getRecordedDurationSec() {
 
 /* ── Cleanup helpers ──────────────────────────────────────────────────────── */
 function releaseTracks() {
+  stopMicLevelMonitor();
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
     mediaStream = null;
   }
+  if (micStream) {
+    micStream.getTracks().forEach(track => track.stop());
+    micStream = null;
+  }
+  if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
   if (liveVideo) liveVideo.srcObject = null;
 }
 
 function revokeBlobUrl() {
   if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
   if (previewVideo) previewVideo.src = '';
+}
+
+/* ── Audio: mic capture, mixing, live level meters ────────────────────────── */
+
+// Average frequency energy → 0..100 level. Mirrors the extension's mic meter.
+function computeLevel(analyser, dataArray) {
+  analyser.getByteFrequencyData(dataArray);
+  let sum = 0;
+  for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+  return Math.min(100, Math.round((sum / dataArray.length) * 1.5));
+}
+
+/* Pre-flight mic test (idle panel) — lets the user confirm the mic picks up
+   sound BEFORE starting a recording. Toggles on/off. */
+function setMicTestLabel(testing) {
+  const span = micTestBtn?.querySelector('span');
+  if (span) span.textContent = testing
+    ? t('rec_mic_test_stop', 'Stop test')
+    : t('rec_mic_test', 'Test mic');
+}
+
+async function toggleMicTest() {
+  if (micTestStream) { stopMicTest(); return; }
+  if (idleMsg) idleMsg.style.display = 'none';
+  try {
+    micTestStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (_) {
+    if (idleMsg) {
+      idleMsg.textContent = t('rec_mic_denied', 'Microphone unavailable — the recording will have no voice-over.');
+      idleMsg.style.display = '';
+    }
+    return;
+  }
+  try {
+    micTestCtx = new AudioContext();
+    const analyser = micTestCtx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.5;
+    micTestCtx.createMediaStreamSource(micTestStream).connect(analyser);
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    if (micMeter) micMeter.style.display = '';
+    const loop = () => {
+      if (micMeterBar) micMeterBar.style.width = computeLevel(analyser, dataArray) + '%';
+      micTestRaf = requestAnimationFrame(loop);
+    };
+    loop();
+    setMicTestLabel(true);
+  } catch (_) {
+    stopMicTest();
+  }
+}
+
+function stopMicTest() {
+  if (micTestRaf) { cancelAnimationFrame(micTestRaf); micTestRaf = null; }
+  if (micTestStream) { micTestStream.getTracks().forEach(tr => tr.stop()); micTestStream = null; }
+  if (micTestCtx) { micTestCtx.close().catch(() => {}); micTestCtx = null; }
+  if (micMeterBar) micMeterBar.style.width = '0%';
+  if (micMeter) micMeter.style.display = 'none';
+  setMicTestLabel(false);
+}
+
+/* Build the recording stream: screen video + (mic and/or system audio).
+   getDisplayMedia({audio:true}) only yields SYSTEM/tab audio — the microphone
+   must be captured separately via getUserMedia and mixed in. */
+async function buildRecordStream(displayStream) {
+  const wantMic = optMic ? optMic.checked : true;
+  micStream = null;
+  if (wantMic) {
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (_) {
+      micStream = null; // denied / no device — record without voice-over
+    }
+  }
+
+  const captureHasAudio = displayStream.getAudioTracks().length > 0;
+  hasMicTrack = !!(micStream && micStream.getAudioTracks().length > 0);
+  hasSystemAudioTrack = captureHasAudio;
+
+  const videoTrack = displayStream.getVideoTracks()[0];
+
+  if (hasMicTrack && captureHasAudio) {
+    audioContext = new AudioContext();
+    const dest = audioContext.createMediaStreamDestination();
+    audioContext.createMediaStreamSource(displayStream).connect(dest);
+    audioContext.createMediaStreamSource(micStream).connect(dest);
+    return new MediaStream([videoTrack, dest.stream.getAudioTracks()[0]]);
+  }
+  if (captureHasAudio) return new MediaStream([videoTrack, ...displayStream.getAudioTracks()]);
+  if (hasMicTrack)     return new MediaStream([videoTrack, micStream.getAudioTracks()[0]]);
+  return new MediaStream([videoTrack]);
+}
+
+// Reflect what is actually being captured in the status chips.
+function updateCaptureChips() {
+  if (chipMic) {
+    chipMic.classList.toggle('on', hasMicTrack);
+    chipMic.classList.toggle('off', !hasMicTrack);
+    const label = chipMic.querySelector('.rec-chip-label');
+    if (label) label.textContent = hasMicTrack
+      ? t('rec_chip_mic', 'Microphone')
+      : t('rec_chip_mic_off', 'Mic off');
+  }
+  if (chipSysAudio) {
+    chipSysAudio.classList.toggle('on', hasSystemAudioTrack);
+    chipSysAudio.classList.toggle('off', !hasSystemAudioTrack);
+    const label = chipSysAudio.querySelector('.rec-chip-label');
+    if (label) label.textContent = hasSystemAudioTrack
+      ? t('rec_chip_sysaudio', 'System audio')
+      : t('rec_chip_no_sysaudio', 'No system audio');
+  }
+}
+
+// Live mic meter shown next to the mic chip during recording.
+function startMicLevelMonitor(stream) {
+  stopMicLevelMonitor();
+  try {
+    micLevelCtx = new AudioContext();
+    micLevelAnalyser = micLevelCtx.createAnalyser();
+    micLevelAnalyser.fftSize = 256;
+    micLevelAnalyser.smoothingTimeConstant = 0.5;
+    micLevelCtx.createMediaStreamSource(stream).connect(micLevelAnalyser);
+    const dataArray = new Uint8Array(micLevelAnalyser.frequencyBinCount);
+    const loop = () => {
+      if (micLiveBar) micLiveBar.style.width = computeLevel(micLevelAnalyser, dataArray) + '%';
+      micLevelRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch (_) {
+    // meter is best-effort — recording still proceeds
+  }
+}
+
+function stopMicLevelMonitor() {
+  if (micLevelRaf) { cancelAnimationFrame(micLevelRaf); micLevelRaf = null; }
+  if (micLevelCtx) { micLevelCtx.close().catch(() => {}); micLevelCtx = null; }
+  micLevelAnalyser = null;
+  if (micLiveBar) micLiveBar.style.width = '0%';
 }
 
 /* ── Error panel ──────────────────────────────────────────────────────────── */
@@ -344,6 +509,7 @@ async function startRecording() {
     return;
   }
 
+  stopMicTest(); // release the pre-flight test stream before we capture for real
   showPanel('requesting');
   chunks = [];
 
@@ -366,15 +532,20 @@ async function startRecording() {
   mediaStream = stream;
   attachTrackEndedListener(stream);
 
-  // Live preview
+  // Live preview (display stream only — element is muted, so no echo)
   if (liveVideo) {
     liveVideo.srcObject = stream;
     // autoplay attribute on the element handles playback
   }
 
+  // Capture the microphone separately and mix it in — getDisplayMedia alone
+  // never includes the mic, only system/tab audio.
+  const recordStream = await buildRecordStream(stream);
+  updateCaptureChips();
+
   const mimeType = pickMime();
   try {
-    mediaRecorder = new MediaRecorder(stream, {
+    mediaRecorder = new MediaRecorder(recordStream, {
       mimeType,
       videoBitsPerSecond: 1_500_000,
     });
@@ -397,6 +568,9 @@ async function startRecording() {
 
   // timeslice: collect a chunk every 4 seconds so we don't hold everything in RAM
   mediaRecorder.start(4000);
+
+  // Live mic meter — lets the user SEE the mic responding while recording
+  if (hasMicTrack && micStream) startMicLevelMonitor(micStream);
 
   // Update UI
   if (dotEl) { dotEl.className = 'rec-dot recording'; }
@@ -470,6 +644,8 @@ if (btnDiscard)     btnDiscard.addEventListener('click',     discardRecording);
 if (btnErrBack)     btnErrBack.addEventListener('click',     () => showPanel('idle'));
 if (btnRetryUpload) btnRetryUpload.addEventListener('click', startUpload);
 if (claimForm)      claimForm.addEventListener('submit', handleClaimSubmit);
+if (micTestBtn)     micTestBtn.addEventListener('click', toggleMicTest);
+if (optMic)         optMic.addEventListener('change', () => { if (!optMic.checked) stopMicTest(); });
 
 if (btnCopyLink) {
   btnCopyLink.addEventListener('click', () => {
