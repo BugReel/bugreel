@@ -10,12 +10,13 @@
  */
 
 import { chunkedUploadFromPage } from './page-uploader.js';
+import { getCurrentUserAsync } from './shared.js';
 
 /* ── i18n helper ──────────────────────────────────────────────────────────── */
 const t = window.__dashboardI18n?.t || ((k, f) => f || k);
 
 /* ── State machine ────────────────────────────────────────────────────────── */
-/** @type {'idle'|'requesting'|'recording'|'paused'|'stopping'|'preview'|'uploading'|'error'} */
+/** @type {'idle'|'requesting'|'recording'|'paused'|'stopping'|'preview'|'uploading'|'done'|'error'} */
 let state = 'idle';
 
 /* ── Recording state ──────────────────────────────────────────────────────── */
@@ -24,6 +25,7 @@ let mediaRecorder = null;   // MediaRecorder instance
 let chunks        = [];     // Blob chunks collected via ondataavailable
 let recordingBlob = null;   // Final Blob (set in finalizeRecording; kept until redirect/discard)
 let blobUrl       = null;   // Object URL for the preview <video>
+let pendingShareUrl = null; // Share URL held back behind the guest claim gate
 
 /* ── Timer state (performance.now() deltas, freezes on pause) ────────────── */
 let timerStart    = 0;      // performance.now() when last (re)started
@@ -63,6 +65,11 @@ const progressBar     = $('rec-progress-bar');
 const progressText    = $('rec-progress-text');
 const doneLinkRow     = $('rec-done-link-row');
 const doneLinkInput   = $('rec-done-link-input');
+const claimRow        = $('rec-claim-row');
+const claimForm       = $('rec-claim-form');
+const claimEmail      = $('rec-claim-email');
+const claimSubmit     = $('rec-claim-submit');
+const claimMsg        = $('rec-claim-msg');
 
 /* ── Supported MIME type (copied from extension/recorder.js getSupportedMimeType) ── */
 function pickMime() {
@@ -193,7 +200,9 @@ async function startUpload() {
   // Move to uploading panel
   showPanel('uploading');
   setProgress(0);
-  if (doneLinkRow) doneLinkRow.style.display = 'none';
+  if (doneLinkRow)  doneLinkRow.style.display = 'none';
+  if (claimRow)     claimRow.style.display    = 'none';
+  if (progressText) progressText.style.display = '';
 
   const durationSec = getRecordedDurationSec();
 
@@ -203,25 +212,32 @@ async function startUpload() {
       onProgress: (percent) => setProgress(percent),
     });
 
-    // Ensure progress bar shows 100% before redirect
+    // Ensure progress bar shows 100% before we hand over the link
     setProgress(100);
+
+    // Upload is persisted server-side now — release the beforeunload guard so
+    // neither the auto-redirect nor the guest claim gate triggers a "Leave?" prompt.
+    state = 'done';
 
     const shareToken = result.share_token;
     const shareUrl   = `${window.location.origin}/share/${shareToken}`;
-
-    // Show copyable link as fallback before redirect fires
-    if (doneLinkInput) doneLinkInput.value = shareUrl;
-    if (doneLinkRow)   doneLinkRow.style.display = '';
-    if (progressText)  progressText.textContent  = t('rec_done', 'Done! Redirecting…');
 
     // Release blob memory — upload is complete, we no longer need it
     revokeBlobUrl();
     recordingBlob = null;
 
-    // Redirect after a short pause so the user sees the link
-    setTimeout(() => {
-      window.location.href = shareUrl;
-    }, 1500);
+    // Guest users must claim the recording (enter email) before we reveal the
+    // share link. Registered users get the link immediately, then redirect.
+    let isGuest = false;
+    try { isGuest = !!(await getCurrentUserAsync())?.is_guest; } catch (_) {}
+
+    if (isGuest) {
+      showClaimGate(shareUrl);
+    } else {
+      revealShareLink(shareUrl);
+      if (progressText) progressText.textContent = t('rec_done', 'Done! Redirecting…');
+      setTimeout(() => { window.location.href = shareUrl; }, 1500);
+    }
 
   } catch (err) {
     console.error('[recorder-page] upload error:', err);
@@ -230,6 +246,79 @@ async function startUpload() {
       err.message || t('rec_err_upload', 'Upload failed'),
       true, // showRetry
     );
+  }
+}
+
+/* ── Share link reveal + guest claim gate ─────────────────────────────────── */
+function revealShareLink(url) {
+  if (doneLinkInput) doneLinkInput.value = url;
+  if (doneLinkRow)   doneLinkRow.style.display = '';
+}
+
+function showClaimGate(shareUrl) {
+  pendingShareUrl = shareUrl;
+  if (progressText) progressText.style.display = 'none';
+  if (claimEmail)   claimEmail.placeholder = t('rec_claim_email_ph', 'you@example.com');
+  if (claimRow)     claimRow.style.display = '';
+  claimEmail?.focus();
+}
+
+function setClaimMsg(text, { isError = false, html = null } = {}) {
+  if (!claimMsg) return;
+  if (html != null) claimMsg.innerHTML = html;
+  else              claimMsg.textContent = text;
+  claimMsg.style.display = (text || html) ? '' : 'none';
+  claimMsg.style.color = isError ? 'var(--danger, #dc2626)' : 'var(--text-dim)';
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+async function handleClaimSubmit(e) {
+  e.preventDefault();
+  const email = (claimEmail?.value || '').trim();
+  if (!EMAIL_RE.test(email)) {
+    setClaimMsg(t('rec_claim_email_invalid', 'Enter a valid email address.'), { isError: true });
+    return;
+  }
+  const label = claimSubmit?.querySelector('span');
+  const origLabel = label?.textContent;
+  if (claimSubmit) claimSubmit.disabled = true;
+  if (label) label.textContent = t('rec_claim_sending', 'Sending…');
+  setClaimMsg('');
+
+  try {
+    const res = await fetch('/api/auth/upgrade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && data.ok) {
+      // Email accepted — reveal the link now (optimistic); confirmation email
+      // sent in parallel. Retention extends only after they click that link.
+      if (claimForm) claimForm.style.display = 'none';
+      revealShareLink(pendingShareUrl);
+      setClaimMsg(t('rec_claim_confirm', 'Your link is ready. Check your email to confirm and keep your recording.'));
+      return;
+    }
+
+    if (res.status === 409 || data.error === 'email_taken') {
+      const loginUrl = data.login_url || '/login';
+      setClaimMsg('', {
+        isError: true,
+        html: `${t('rec_claim_taken', 'This email is already registered.')} `
+            + `<a href="${loginUrl}">${t('rec_claim_login', 'Log in')}</a>`,
+      });
+    } else {
+      setClaimMsg(t('rec_claim_err', 'Something went wrong. Please try again.'), { isError: true });
+    }
+  } catch (_) {
+    setClaimMsg(t('rec_claim_err', 'Something went wrong. Please try again.'), { isError: true });
+  } finally {
+    if (claimSubmit) claimSubmit.disabled = false;
+    if (label && origLabel) label.textContent = origLabel;
   }
 }
 
@@ -380,6 +469,7 @@ if (btnSave)        btnSave.addEventListener('click',        startUpload);
 if (btnDiscard)     btnDiscard.addEventListener('click',     discardRecording);
 if (btnErrBack)     btnErrBack.addEventListener('click',     () => showPanel('idle'));
 if (btnRetryUpload) btnRetryUpload.addEventListener('click', startUpload);
+if (claimForm)      claimForm.addEventListener('submit', handleClaimSubmit);
 
 if (btnCopyLink) {
   btnCopyLink.addEventListener('click', () => {

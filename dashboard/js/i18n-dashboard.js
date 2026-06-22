@@ -464,6 +464,17 @@
       rec_copied: 'Copied!',
       rec_err_upload: 'Upload failed',
       rec_retry: 'Retry upload',
+      // Guest claim gate (email before link)
+      rec_claim_heading: 'Save your recording',
+      rec_claim_sub: 'Enter your email to get the share link — guest recordings are removed after a while.',
+      rec_claim_email_ph: 'you@example.com',
+      rec_claim_submit: 'Get link',
+      rec_claim_sending: 'Sending…',
+      rec_claim_confirm: 'Your link is ready. Check your email to confirm and keep your recording.',
+      rec_claim_taken: 'This email is already registered.',
+      rec_claim_login: 'Log in',
+      rec_claim_email_invalid: 'Enter a valid email address.',
+      rec_claim_err: 'Something went wrong. Please try again.',
 
       // Misc
       no_recording_id: 'No recording ID in URL',
@@ -962,6 +973,17 @@
       rec_copied: 'Скопировано!',
       rec_err_upload: 'Ошибка загрузки',
       rec_retry: 'Повторить загрузку',
+      // Guest claim gate (email before link)
+      rec_claim_heading: 'Сохраните запись',
+      rec_claim_sub: 'Оставьте email, чтобы получить ссылку. Записи гостя удаляются со временем.',
+      rec_claim_email_ph: 'you@example.com',
+      rec_claim_submit: 'Получить ссылку',
+      rec_claim_sending: 'Отправляем…',
+      rec_claim_confirm: 'Ссылка готова. Подтвердите email в письме, чтобы сохранить запись.',
+      rec_claim_taken: 'Этот email уже зарегистрирован.',
+      rec_claim_login: 'Войти',
+      rec_claim_email_invalid: 'Введите корректный email.',
+      rec_claim_err: 'Что-то пошло не так. Попробуйте ещё раз.',
 
       // Misc
       no_recording_id: 'Нет ID записи в URL',

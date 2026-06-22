@@ -155,6 +155,41 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* ── Guest claim gate (email before link, for guest users) ─── */
+    .rec-claim {
+      margin-top: 18px;
+      text-align: center;
+    }
+    .rec-claim-heading {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+    }
+    .rec-claim-sub {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin: 0 auto 14px;
+      max-width: 420px;
+    }
+    .rec-claim-form {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .rec-claim-form input {
+      border: 1px solid var(--border, #d1d5db);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-size: 0.95rem;
+      min-width: 240px;
+      max-width: 360px;
+    }
+    .rec-claim-msg {
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+    .rec-claim-msg a { font-weight: 600; }
+
     /* ── Copy-link row (shown after upload, before redirect) ───── */
     .rec-done-link {
       display: flex;
@@ -276,6 +311,21 @@
           <div id="rec-progress-bar" class="rec-progress-fill"></div>
         </div>
         <p id="rec-progress-text" class="rec-progress-text">0%</p>
+
+        <!-- Guest claim gate: shown to guest users after upload, before the link.
+             Generic, deployment-agnostic — no plan/brand specifics here. -->
+        <div id="rec-claim-row" class="rec-claim" style="display:none">
+          <h3 class="rec-claim-heading" data-i18n="rec_claim_heading">Save your recording</h3>
+          <p class="rec-claim-sub" data-i18n="rec_claim_sub">Enter your email to get the share link — guest recordings are removed after a while.</p>
+          <form id="rec-claim-form" class="rec-claim-form">
+            <input id="rec-claim-email" type="email" required autocomplete="email" inputmode="email">
+            <button id="rec-claim-submit" class="btn btn-primary" type="submit">
+              <span data-i18n="rec_claim_submit">Get link</span>
+            </button>
+          </form>
+          <p id="rec-claim-msg" class="rec-claim-msg" style="display:none"></p>
+        </div>
+
         <div id="rec-done-link-row" class="rec-done-link" style="display:none">
           <input id="rec-done-link-input" type="text" readonly>
           <button id="rec-btn-copy-link" class="btn btn-secondary" type="button">
