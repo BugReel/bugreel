@@ -6,18 +6,44 @@ import fs from 'fs';
 const execAsync = promisify(exec);
 
 /**
- * Extract audio track from video file as MP3.
+ * Probe whether the video file contains at least one audio stream.
+ * @param {string} videoPath
+ * @returns {Promise<boolean>}
+ */
+async function hasAudioStream(videoPath) {
+  try {
+    const { stdout } = await execAsync(
+      `ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 "${videoPath}"`
+    );
+    return stdout.trim().length > 0;
+  } catch {
+    // If ffprobe fails we conservatively assume audio is present so the
+    // existing extraction path handles it (and may surface a real error).
+    return true;
+  }
+}
+
+/**
+ * Extract audio track from video file as MP3, with graceful handling of
+ * video-only recordings (no audio stream).
+ *
  * @param {string} videoPath - path to source video
  * @param {string} audioPath - output MP3 path
- * @returns {number} duration in seconds (rounded)
+ * @returns {{ duration: number, hasAudio: boolean }}
+ *   duration: recording length in seconds (rounded), 0 if unknown.
+ *   hasAudio: false when the source has no audio stream (mp3 not written).
  */
 export async function extractAudio(videoPath, audioPath) {
-  try {
-    await execAsync(
-      `ffmpeg -y -i "${videoPath}" -vn -acodec libmp3lame -q:a 4 "${audioPath}"`
-    );
-  } catch (err) {
-    throw new Error(`ffmpeg extractAudio failed: ${err.stderr || err.message}`);
+  const audioPresent = await hasAudioStream(videoPath);
+
+  if (audioPresent) {
+    try {
+      await execAsync(
+        `ffmpeg -y -i "${videoPath}" -vn -acodec libmp3lame -q:a 4 "${audioPath}"`
+      );
+    } catch (err) {
+      throw new Error(`ffmpeg extractAudio failed: ${err.stderr || err.message}`);
+    }
   }
 
   // Get duration — try format first, fall back to stream (Chrome WebM has no format duration)
@@ -26,19 +52,21 @@ export async function extractAudio(videoPath, audioPath) {
       `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videoPath}"`
     );
     const dur = parseFloat(stdout.trim());
-    if (!isNaN(dur) && dur > 0) return Math.round(dur);
+    if (!isNaN(dur) && dur > 0) return { duration: Math.round(dur), hasAudio: audioPresent };
   } catch {}
 
-  // Fallback: get duration from audio stream of the extracted MP3
-  try {
-    const { stdout } = await execAsync(
-      `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`
-    );
-    const dur = parseFloat(stdout.trim());
-    if (!isNaN(dur) && dur > 0) return Math.round(dur);
-  } catch {}
+  if (audioPresent) {
+    // Fallback: get duration from the extracted MP3 (useful for Chrome WebM with no format duration)
+    try {
+      const { stdout } = await execAsync(
+        `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`
+      );
+      const dur = parseFloat(stdout.trim());
+      if (!isNaN(dur) && dur > 0) return { duration: Math.round(dur), hasAudio: true };
+    } catch {}
+  }
 
-  return 0; // unknown duration
+  return { duration: 0, hasAudio: audioPresent }; // unknown duration
 }
 
 /**

@@ -162,25 +162,34 @@ async function processPipeline(recordingId) {
   // 1. Extract audio first (fast — seconds, needed for transcription)
   console.log(`[${recordingId}] Extracting audio...`);
   db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('audio_extracted', recordingId);
-  const duration = await extractAudio(videoPath, audioPath);
+  const { duration, hasAudio } = await extractAudio(videoPath, audioPath);
   db.prepare('UPDATE recordings SET audio_filename = ?, duration_seconds = ? WHERE id = ?')
-    .run('audio.mp3', duration, recordingId);
-  console.log(`[${recordingId}] Audio extracted, duration=${duration}s`);
+    .run(hasAudio ? 'audio.mp3' : null, duration, recordingId);
+  if (!hasAudio) {
+    console.log(`[${recordingId}] No audio stream detected — transcription skipped`);
+  }
+  console.log(`[${recordingId}] Audio extracted, duration=${duration}s, hasAudio=${hasAudio}`);
 
-  // 2. In parallel: transcribe + compress video
-  console.log(`[${recordingId}] Starting transcription + compression in parallel...`);
+  // 2. In parallel: transcribe (when audio present) + compress video
+  console.log(`[${recordingId}] Starting ${hasAudio ? 'transcription + ' : ''}compression...`);
   db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('transcribing', recordingId);
 
+  // Empty transcript shape matching the real transcribe() return value
+  // ({ title, text, words, segments }) so downstream consumers never see undefined.
+  const EMPTY_TRANSCRIPT = { title: '', text: '', words: [], segments: [] };
+
   const [transcript, compression] = await Promise.all([
-    // Transcription (sends audio to Whisper API — network I/O)
-    transcribe(audioPath).then(result => {
-      db.prepare('UPDATE recordings SET transcript_json = ?, status = ? WHERE id = ?')
-        .run(JSON.stringify(result), 'transcribed', recordingId);
-      console.log(`[${recordingId}] Transcription complete`);
-      // Fire-and-forget usage callback to cloud (no-op for standalone deployments).
-      notifyUsage(recordingId, 'transcription', { minutes: Math.max(1, Math.round(duration / 60)) });
-      return result;
-    }),
+    // Transcription (sends audio to Whisper API — network I/O); skipped for video-only recordings.
+    hasAudio
+      ? transcribe(audioPath).then(result => {
+          db.prepare('UPDATE recordings SET transcript_json = ?, status = ? WHERE id = ?')
+            .run(JSON.stringify(result), 'transcribed', recordingId);
+          console.log(`[${recordingId}] Transcription complete`);
+          // Fire-and-forget usage callback to cloud (no-op for standalone deployments).
+          notifyUsage(recordingId, 'transcription', { minutes: Math.max(1, Math.round(duration / 60)) });
+          return result;
+        })
+      : Promise.resolve(EMPTY_TRANSCRIPT),
     // Video compression (CPU-bound ffmpeg — runs in parallel with network call)
     compressVideo(videoPath).then(result => {
       db.prepare('UPDATE recordings SET file_size_bytes = ? WHERE id = ?')

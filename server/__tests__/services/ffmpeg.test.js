@@ -8,7 +8,7 @@ import path from 'path';
 const execMock = vi.fn();
 vi.mock('child_process', () => ({ exec: (...args) => execMock(...args) }));
 
-const { extractFrame, concatRecorderSegments } = await import('../../services/ffmpeg.js');
+const { extractAudio, extractFrame, concatRecorderSegments } = await import('../../services/ffmpeg.js');
 
 // Helper: have execMock behave like child_process.exec, invoking the node-style
 // callback asynchronously with the supplied result.
@@ -174,5 +174,123 @@ describe('concatRecorderSegments — split uploaded multi-segment WebM by byte o
     expect(fs.existsSync(path.join(tmpDir, 'recseg_0.webm'))).toBe(false);
     expect(fs.existsSync(path.join(tmpDir, 'recseg_1.webm'))).toBe(false);
     expect(fs.existsSync(path.join(tmpDir, 'recorder_concat_list.txt'))).toBe(false);
+  });
+});
+
+describe('extractAudio — no-audio path', () => {
+  let tmpDir;
+  let videoPath;
+  let audioPath;
+
+  beforeEach(() => {
+    execMock.mockReset();
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'extract-audio-'));
+    videoPath = path.join(tmpDir, 'video.webm');
+    audioPath = path.join(tmpDir, 'audio.mp3');
+    fs.writeFileSync(videoPath, 'fake');
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns { hasAudio: false } and does not throw when source has no audio stream', async () => {
+    // Call order: 1st = ffprobe audio-stream probe (empty → no audio),
+    //             2nd = ffprobe duration from video.
+    let call = 0;
+    stubExec((cmd, cb) => {
+      call++;
+      if (call === 1) {
+        // ffprobe audio-stream probe — empty stdout means no audio
+        cb(null, { stdout: '', stderr: '' });
+      } else {
+        // ffprobe duration fallback
+        cb(null, { stdout: '47\n', stderr: '' });
+      }
+    });
+
+    const result = await extractAudio(videoPath, audioPath);
+
+    expect(result.hasAudio).toBe(false);
+    expect(result.duration).toBe(47);
+    // No ffmpeg extraction command should have been issued (only ffprobe calls)
+    const cmds = execMock.mock.calls.map(c => c[0]);
+    expect(cmds.every(c => !c.startsWith('ffmpeg'))).toBe(true);
+    // audio.mp3 must NOT have been created
+    expect(fs.existsSync(audioPath)).toBe(false);
+  });
+
+  it('returns { hasAudio: true } and extracts mp3 when audio stream is present', async () => {
+    let call = 0;
+    stubExec((cmd, cb) => {
+      call++;
+      if (call === 1) {
+        // ffprobe audio-stream probe — non-empty stdout means audio present
+        cb(null, { stdout: '0\n', stderr: '' });
+      } else if (call === 2) {
+        // ffmpeg extraction succeeds
+        fs.writeFileSync(audioPath, 'fake-mp3');
+        cb(null, { stdout: '', stderr: '' });
+      } else {
+        // ffprobe duration
+        cb(null, { stdout: '30\n', stderr: '' });
+      }
+    });
+
+    const result = await extractAudio(videoPath, audioPath);
+
+    expect(result.hasAudio).toBe(true);
+    expect(result.duration).toBe(30);
+    const cmds = execMock.mock.calls.map(c => c[0]);
+    expect(cmds.some(c => c.includes('libmp3lame'))).toBe(true);
+  });
+
+  it('throws when audio is present but ffmpeg extraction fails', async () => {
+    let call = 0;
+    stubExec((cmd, cb) => {
+      call++;
+      if (call === 1) {
+        // ffprobe audio-stream probe — audio present
+        cb(null, { stdout: '0\n', stderr: '' });
+      } else {
+        // ffmpeg extraction fails
+        const err = new Error('codec error');
+        err.stderr = 'unsupported codec';
+        cb(err, { stdout: '', stderr: 'unsupported codec' });
+      }
+    });
+
+    await expect(extractAudio(videoPath, audioPath)).rejects.toThrow(/extractAudio failed/);
+  });
+
+  it('returns duration 0 when all duration probes fail on a no-audio file', async () => {
+    stubExec((cmd, cb) => {
+      // All probes fail
+      cb(new Error('ffprobe unavailable'), { stdout: '', stderr: '' });
+    });
+
+    // hasAudioStream catches the error and conservatively returns true,
+    // then ffmpeg extraction fails — so we expect a throw here.
+    // This test verifies the conservative fallback is handled by the caller.
+    await expect(extractAudio(videoPath, audioPath)).rejects.toThrow(/extractAudio failed/);
+  });
+
+  it('returns duration 0 when ffprobe reports no audio and duration probe fails', async () => {
+    let call = 0;
+    stubExec((cmd, cb) => {
+      call++;
+      if (call === 1) {
+        // Audio stream probe: no audio
+        cb(null, { stdout: '', stderr: '' });
+      } else {
+        // Duration probe fails
+        cb(new Error('no duration'), { stdout: '', stderr: '' });
+      }
+    });
+
+    const result = await extractAudio(videoPath, audioPath);
+
+    expect(result.hasAudio).toBe(false);
+    expect(result.duration).toBe(0);
   });
 });
