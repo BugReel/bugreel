@@ -515,7 +515,22 @@ async function startRecording() {
 
   let stream;
   try {
-    stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    // Steer the picker toward full-screen capture and away from the current tab.
+    // Without these, the picker defaults to "this tab" → the recording is scoped to
+    // one page and the user can't switch to other windows.
+    //
+    // ⛔ Do NOT attach a CaptureController: it opts into the Conditional Focus API,
+    // whose default ('focus-captured-surface') traps Chrome in the foreground for the
+    // whole recording on monitor (entire-screen) capture — setFocusBehavior can't
+    // override it for a monitor (throws by spec). Plain getDisplayMedia does NOT trap
+    // focus on monitor capture, so you can freely cmd-tab. (See extension/recorder.js.)
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { displaySurface: 'monitor' }, // hint: prefer entire-screen
+      audio: true,                          // system/tab audio (mic is captured separately)
+      selfBrowserSurface: 'exclude',        // hide the recorder's own tab from the picker
+      monitorTypeSurfaces: 'include',       // ensure full-screen surfaces are offered
+      surfaceSwitching: 'include',          // allow switching the shared surface mid-recording
+    });
   } catch (err) {
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
       showError(
