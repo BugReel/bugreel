@@ -384,6 +384,13 @@
       guest_banner_expiring_title: 'Your oldest recording deletes in {n} day(s)',
       guest_banner_expiring_desc: 'Confirm your email to extend retention from {a} to {b} days.',
       guest_banner_cta: 'Save account',
+      guest_confirm_title: 'Almost there — confirm your email',
+      guest_confirm_desc: 'We sent a link to {email}. Click it to keep your recordings for good.',
+      guest_confirm_resend: 'Resend email',
+      guest_confirm_change: 'Change email',
+      guest_confirm_sending: 'Sending…',
+      guest_confirm_sent: 'Sent ✓',
+      guest_confirm_wait: 'Wait a moment',
       dismiss: 'Dismiss',
 
       // Subscription management
@@ -480,6 +487,7 @@
       rec_claim_submit: 'Get link',
       rec_claim_sending: 'Sending…',
       rec_claim_confirm: 'Your link is ready. Check your email to confirm and keep your recording.',
+      rec_claim_opening: 'Account created — opening your dashboard…',
       rec_claim_taken: 'This email is already registered.',
       rec_claim_login: 'Log in',
       rec_claim_email_invalid: 'Enter a valid email address.',
@@ -902,6 +910,13 @@
       guest_banner_expiring_title: 'Самая старая запись удалится через {n} дн.',
       guest_banner_expiring_desc: 'Подтвердите email — хранение увеличится с {a} до {b} дней.',
       guest_banner_cta: 'Сохранить аккаунт',
+      guest_confirm_title: 'Почти готово — подтвердите email',
+      guest_confirm_desc: 'Мы отправили ссылку на {email}. Нажмите её, чтобы записи сохранились навсегда.',
+      guest_confirm_resend: 'Отправить снова',
+      guest_confirm_change: 'Изменить email',
+      guest_confirm_sending: 'Отправляем…',
+      guest_confirm_sent: 'Отправлено ✓',
+      guest_confirm_wait: 'Подождите немного',
       dismiss: 'Закрыть',
 
       // Subscription management
@@ -998,6 +1013,7 @@
       rec_claim_submit: 'Получить ссылку',
       rec_claim_sending: 'Отправляем…',
       rec_claim_confirm: 'Ссылка готова. Подтвердите email в письме, чтобы сохранить запись.',
+      rec_claim_opening: 'Аккаунт создан — открываем личный кабинет…',
       rec_claim_taken: 'Этот email уже зарегистрирован.',
       rec_claim_login: 'Войти',
       rec_claim_email_invalid: 'Введите корректный email.',

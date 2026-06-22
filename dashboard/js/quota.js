@@ -151,10 +151,20 @@ export async function renderGuestBanner(container, recordings = []) {
   if (!container) return;
   const user = await getCurrentUserAsync();
   if (!user || !user.is_guest) return;
-  if (sessionStorage.getItem('guest-banner-dismissed') === '1') return;
 
   // Avoid double-rendering (initial load + 5s refresh interval re-rerenders the table)
   if (container.querySelector('.guest-banner')) return;
+
+  // Pending-confirmation state: the guest already submitted an email and just
+  // needs to click the link. Show a focused "confirm your email" banner with
+  // resend + change actions instead of the generic "save account" nudge.
+  if (user.pending_email) {
+    if (sessionStorage.getItem('guest-confirm-dismissed') === '1') return;
+    renderConfirmBanner(container, user);
+    return;
+  }
+
+  if (sessionStorage.getItem('guest-banner-dismissed') === '1') return;
 
   const limits = _quotaData?.limits || {};
   const maxRecordings = limits.max_recordings;
@@ -215,6 +225,72 @@ export async function renderGuestBanner(container, recordings = []) {
   `;
   banner.querySelector('.guest-banner-dismiss').addEventListener('click', () => {
     sessionStorage.setItem('guest-banner-dismissed', '1');
+    banner.remove();
+  });
+
+  container.prepend(banner);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+/**
+ * "Confirm your email" banner — shown when a guest has already submitted an
+ * email (user.pending_email) but hasn't clicked the confirmation link yet.
+ * Offers resend (re-POST the same address) and change (the upgrade page).
+ */
+function renderConfirmBanner(container, user) {
+  const email = user.pending_email;
+  const upgradeUrl = user.upgrade_url || '/auth/upgrade';
+
+  const banner = document.createElement('div');
+  banner.className = 'guest-banner guest-banner-confirm';
+  banner.innerHTML = `
+    <span class="guest-banner-icon">${icons.send}</span>
+    <div class="guest-banner-text">
+      <strong>${t('guest_confirm_title', 'Almost there — confirm your email')}</strong>
+      <span class="muted">${t('guest_confirm_desc', 'We sent a link to {email}. Click it to keep your recordings for good.')
+        .replace('{email}', `<b style="color:var(--text)">${escapeHtml(email)}</b>`)}</span>
+    </div>
+    <div class="guest-banner-actions">
+      <button class="guest-banner-cta" type="button" data-resend>${t('guest_confirm_resend', 'Resend email')}</button>
+      <a class="guest-banner-link" href="${upgradeUrl}">${t('guest_confirm_change', 'Change email')}</a>
+    </div>
+    <button class="guest-banner-dismiss" type="button" aria-label="${t('dismiss', 'Dismiss')}">${icons.x}</button>
+  `;
+
+  const resendBtn = banner.querySelector('[data-resend]');
+  const origLabel = resendBtn.textContent;
+  resendBtn.addEventListener('click', async () => {
+    resendBtn.disabled = true;
+    resendBtn.textContent = t('guest_confirm_sending', 'Sending…');
+    try {
+      const r = await fetch('/api/auth/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ email }),
+      });
+      if (r.ok) {
+        resendBtn.textContent = t('guest_confirm_sent', 'Sent ✓');
+      } else if (r.status === 429) {
+        resendBtn.textContent = t('guest_confirm_wait', 'Wait a moment');
+        setTimeout(() => { resendBtn.textContent = origLabel; resendBtn.disabled = false; }, 4000);
+      } else {
+        resendBtn.textContent = origLabel;
+        resendBtn.disabled = false;
+      }
+    } catch (_) {
+      resendBtn.textContent = origLabel;
+      resendBtn.disabled = false;
+    }
+  });
+
+  banner.querySelector('.guest-banner-dismiss').addEventListener('click', () => {
+    sessionStorage.setItem('guest-confirm-dismissed', '1');
     banner.remove();
   });
 

@@ -614,9 +614,38 @@ h4 { font-size: 0.95rem; font-weight: 600; }
   color: var(--text);
   background: var(--surface2);
 }
+.guest-banner.guest-banner-confirm {
+  background: linear-gradient(90deg, rgba(59,130,246,0.12) 0%, var(--surface) 100%);
+  border-color: var(--blue);
+}
+.guest-banner.guest-banner-confirm .guest-banner-icon {
+  background: var(--blue);
+  color: #fff;
+}
+.guest-banner.guest-banner-confirm .guest-banner-cta {
+  background: var(--blue);
+  color: #fff;
+}
+.guest-banner-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.guest-banner-link {
+  color: var(--text2);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.guest-banner-link:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
 @media (max-width: 600px) {
   .guest-banner { flex-wrap: wrap; }
   .guest-banner-cta { width: 100%; justify-content: center; }
+  .guest-banner-actions { width: 100%; justify-content: space-between; }
 }
 
 /* --- Card Component --- */

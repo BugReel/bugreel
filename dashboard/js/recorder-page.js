@@ -481,11 +481,15 @@ async function handleClaimSubmit(e) {
     const data = await res.json().catch(() => ({}));
 
     if (res.ok && data.ok) {
-      // Email accepted — reveal the link now (optimistic); confirmation email
-      // sent in parallel. Retention extends only after they click that link.
+      // Email accepted — reveal the link (optimistic), then walk the user INTO
+      // their dashboard. They're already authenticated via the session cookie,
+      // so /app/ opens with this recording listed and a "confirm your email"
+      // banner waiting — no dead-end. The confirmation email is sent in
+      // parallel; retention extends only after they click that link.
       if (claimForm) claimForm.style.display = 'none';
       revealShareLink(pendingShareUrl);
-      setClaimMsg(t('rec_claim_confirm', 'Your link is ready. Check your email to confirm and keep your recording.'));
+      setClaimMsg(t('rec_claim_opening', 'Account created — opening your dashboard…'));
+      setTimeout(() => { window.location.href = '/app/?saved=1'; }, 1800);
       return;
     }
 
