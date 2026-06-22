@@ -250,7 +250,9 @@
       color: var(--text2);
       font-size: 0.9rem;
       font-variant-numeric: tabular-nums;
+      text-align: center;
     }
+    .rec-progress-row { margin-top: 20px; }
 
     /* ── Guest claim gate (email before link, for guest users) ─── */
     .rec-claim {
@@ -420,14 +422,18 @@
         </div>
       </div>
 
-      <!-- ④ PREVIEW STATE -->
+      <!-- ④ PREVIEW + UPLOAD STATE
+           The recorded video stays on screen the whole time — upload progress,
+           the guest claim gate and the final link all appear in-place below it,
+           so the preview never disappears (matches the extension's review flow). -->
       <div id="rec-panel-preview" class="rec-panel card rec-preview-card">
-        <h3 data-i18n="rec_preview_title">Recording ready</h3>
+        <h3 id="rec-preview-title" data-i18n="rec_preview_title">Recording ready</h3>
         <div class="rec-preview-video">
           <video id="rec-preview-video" controls></video>
         </div>
         <p id="rec-preview-meta" class="rec-preview-meta"></p>
-        <div class="rec-preview-actions">
+
+        <div class="rec-preview-actions" id="rec-preview-actions">
           <button id="rec-btn-save" class="btn btn-primary" type="button">
             <span data-i18n="rec_save">Save &amp; upload</span>
           </button>
@@ -435,15 +441,14 @@
             <span data-i18n="rec_discard">Discard</span>
           </button>
         </div>
-      </div>
 
-      <!-- ⑤ UPLOADING STATE -->
-      <div id="rec-panel-uploading" class="rec-panel card rec-uploading-card">
-        <h3 data-i18n="rec_uploading">Uploading…</h3>
-        <div class="rec-progress-track">
-          <div id="rec-progress-bar" class="rec-progress-fill"></div>
+        <!-- Upload progress (revealed in-place when Save is clicked) -->
+        <div id="rec-progress-row" class="rec-progress-row" style="display:none">
+          <div class="rec-progress-track">
+            <div id="rec-progress-bar" class="rec-progress-fill"></div>
+          </div>
+          <p id="rec-progress-text" class="rec-progress-text">0%</p>
         </div>
-        <p id="rec-progress-text" class="rec-progress-text">0%</p>
 
         <!-- Guest claim gate: shown to guest users after upload, before the link.
              Generic, deployment-agnostic — no plan/brand specifics here. -->

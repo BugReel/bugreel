@@ -51,8 +51,7 @@ const panels = {
   idle:       $('rec-panel-idle'),
   requesting: $('rec-panel-requesting'),
   recording:  $('rec-panel-recording'),
-  preview:    $('rec-panel-preview'),
-  uploading:  $('rec-panel-uploading'),
+  preview:    $('rec-panel-preview'), // also hosts upload progress + claim gate + link
   error:      $('rec-panel-error'),
 };
 
@@ -68,6 +67,9 @@ const btnCopyLink     = $('rec-btn-copy-link');
 
 const liveVideo       = $('rec-live-video');
 const previewVideo    = $('rec-preview-video');
+const previewTitle    = $('rec-preview-title');
+const previewActions  = $('rec-preview-actions');
+const progressRow     = $('rec-progress-row');
 const timerEl         = $('rec-timer');
 const dotEl           = $('rec-dot');
 const previewMeta     = $('rec-preview-meta');
@@ -348,6 +350,16 @@ function finalizeRecording() {
     previewMeta.textContent = `${sizeMB} MB · ${mimeType}`;
   }
 
+  // Reset the preview-panel sub-state in case a previous upload cycle left the
+  // progress bar / claim gate / link showing and the action buttons hidden.
+  if (previewTitle)   previewTitle.textContent = t('rec_preview_title', 'Recording ready');
+  if (previewActions) previewActions.style.display = '';
+  if (progressRow)    progressRow.style.display = 'none';
+  if (claimRow)       claimRow.style.display = 'none';
+  if (claimForm)      claimForm.style.display = '';
+  if (claimMsg)       claimMsg.style.display = 'none';
+  if (doneLinkRow)    doneLinkRow.style.display = 'none';
+
   showPanel('preview');
 }
 
@@ -362,12 +374,18 @@ function setProgress(percent) {
 async function startUpload() {
   if (!recordingBlob) return;
 
-  // Move to uploading panel
-  showPanel('uploading');
+  // Upload in-place: keep the recorded video on screen, swap the action buttons
+  // for the progress bar. showPanel('preview') re-activates the panel in case we
+  // arrived here via "Retry upload" from the error panel.
+  showPanel('preview');
+  state = 'uploading'; // keep the beforeunload guard armed during upload
+  if (previewActions) previewActions.style.display = 'none';
+  if (progressRow)    progressRow.style.display = '';
+  if (doneLinkRow)    doneLinkRow.style.display = 'none';
+  if (claimRow)       claimRow.style.display    = 'none';
+  if (progressText)   progressText.style.display = '';
+  if (previewTitle)   previewTitle.textContent = t('rec_uploading', 'Uploading…');
   setProgress(0);
-  if (doneLinkRow)  doneLinkRow.style.display = 'none';
-  if (claimRow)     claimRow.style.display    = 'none';
-  if (progressText) progressText.style.display = '';
 
   const durationSec = getRecordedDurationSec();
 
@@ -387,9 +405,10 @@ async function startUpload() {
     const shareToken = result.share_token;
     const shareUrl   = `${window.location.origin}/share/${shareToken}`;
 
-    // Release blob memory — upload is complete, we no longer need it
-    revokeBlobUrl();
+    // Drop our blob reference but DO NOT revoke the object URL — it still backs the
+    // preview <video>, which we keep on screen (the upload no longer hides it).
     recordingBlob = null;
+    if (progressRow) progressRow.style.display = 'none';
 
     // Guest users must claim the recording (enter email) before we reveal the
     // share link. Registered users get the link immediately, then redirect.
@@ -397,10 +416,11 @@ async function startUpload() {
     try { isGuest = !!(await getCurrentUserAsync())?.is_guest; } catch (_) {}
 
     if (isGuest) {
+      if (previewTitle) previewTitle.textContent = t('rec_preview_title', 'Recording ready');
       showClaimGate(shareUrl);
     } else {
+      if (previewTitle) previewTitle.textContent = t('rec_done', 'Done! Redirecting…');
       revealShareLink(shareUrl);
-      if (progressText) progressText.textContent = t('rec_done', 'Done! Redirecting…');
       setTimeout(() => { window.location.href = shareUrl; }, 1500);
     }
 
