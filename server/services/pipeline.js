@@ -319,9 +319,12 @@ async function processPipeline(recordingId) {
 
   const DEDUP_THRESHOLD = 3.0;
   let mergedFrames = [
-    ...manualMarkers.map(m => ({ time: m.ts, description: 'Manual screenshot', detail: '', isManual: true })),
+    // Clamp manual marker timestamps too: a marker clicked near the end can land
+    // past the final (possibly trimmed) duration, and an out-of-range seek yields
+    // an empty frame. clampTime keeps it inside [0, duration).
+    ...manualMarkers.map(m => ({ time: clampTime(m.ts), description: 'Manual screenshot', detail: '', isManual: true })),
     ...gptFrames.filter(gpt =>
-      !manualMarkers.some(m => Math.abs(m.ts - gpt.time) <= DEDUP_THRESHOLD)
+      !manualMarkers.some(m => Math.abs(clampTime(m.ts) - gpt.time) <= DEDUP_THRESHOLD)
     )
   ].sort((a, b) => a.time - b.time);
 
@@ -352,7 +355,17 @@ async function processPipeline(recordingId) {
     const filename = `${String(i + 1).padStart(3, '0')}_${frame.time.toFixed(1)}s.jpg`;
     const framePath = path.join(framesDir, filename);
 
-    await extractFrame(videoPath, frame.time, framePath);
+    // A single unextractable key frame (e.g. a timestamp near EOF on a
+    // sparse-keyframe WebM, where even the clamped seek decodes nothing) must
+    // NOT abort the whole pipeline — transcript, title, summary and chapters are
+    // already persisted. Skip the bad frame and keep going, mirroring the
+    // chapter-thumbnail and fallback-thumbnail loops below.
+    try {
+      await extractFrame(videoPath, frame.time, framePath);
+    } catch (err) {
+      console.warn(`[${recordingId}] key frame ${i} at ${frame.time.toFixed(1)}s failed, skipping: ${err.message}`);
+      continue;
+    }
     frameFilenames.push({ filename, time: frame.time, isManual: frame.isManual });
 
     db.prepare('INSERT INTO frames (recording_id, time_seconds, description, detail, filename, is_manual) VALUES (?, ?, ?, ?, ?, ?)')
