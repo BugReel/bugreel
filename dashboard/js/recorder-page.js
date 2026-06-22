@@ -433,7 +433,7 @@ function setClaimMsg(text, { isError = false, html = null } = {}) {
   if (html != null) claimMsg.innerHTML = html;
   else              claimMsg.textContent = text;
   claimMsg.style.display = (text || html) ? '' : 'none';
-  claimMsg.style.color = isError ? 'var(--danger, #dc2626)' : 'var(--text-dim)';
+  claimMsg.style.color = isError ? 'var(--red)' : 'var(--text2)';
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
