@@ -710,10 +710,6 @@ async function startNewRecording() {
         timerPausedElapsed = s.pausedElapsed || 0;
         showState('recording');
         startTimer();
-        // NOTE: the macOS focus-trap fix (minimize the browser on desktop record start)
-        // lives in background.js startRecording() — NOT here. This popup is destroyed
-        // when the OS screen-picker opens, so any window-management code here would
-        // never execute.
       }
     } else {
       btnStart.disabled = false;
