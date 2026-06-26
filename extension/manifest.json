@@ -10,7 +10,8 @@
     "offscreen",
     "storage",
     "notifications",
-    "webRequest"
+    "webRequest",
+    "windows"
   ],
   "host_permissions": ["<all_urls>"],
   "content_scripts": [

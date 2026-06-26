@@ -710,6 +710,19 @@ async function startNewRecording() {
         timerPausedElapsed = s.pausedElapsed || 0;
         showState('recording');
         startTimer();
+        // Desktop mode: minimize the Chrome window so it moves to the background.
+        // Without this, clicking macOS's "Hide" on the screen-recording notification
+        // activates Chrome, which then applies Conditional Focus and traps focus in
+        // Chrome for the rest of the recording (can't Cmd-Tab to other apps).
+        // Minimizing pre-emptively keeps Chrome out of the way; recording continues
+        // in the offscreen document, and the on-page widget lets the user stop without
+        // bringing Chrome to the foreground.
+        if (captureMode === 'desktop') {
+          try {
+            const win = await chrome.windows.getCurrent();
+            await chrome.windows.update(win.id, { state: 'minimized' });
+          } catch { /* non-fatal — focus trap is annoying but not a blocker */ }
+        }
       }
     } else {
       btnStart.disabled = false;
