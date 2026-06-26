@@ -994,6 +994,29 @@ async function handleStartRecording(tabId, mode, micEnabled = true, systemAudioE
   const startedAt = Date.now();
   await setState('recording', { recordingStartedAt: startedAt, pausedElapsed: 0, recordingTabId: recordingSourceTabId });
 
+  // Desktop/monitor capture on macOS: proactively push the browser to the background.
+  // macOS keeps a persistent screen-recording pill on screen; clicking its "Hide"
+  // button re-activates the browser, and Chrome (130+) with a live getDisplayMedia
+  // capture then grabs and holds keyboard focus — the user can no longer Cmd-Tab out
+  // of the browser for the rest of the recording. Minimizing the recording window first
+  // means the "Hide" click has nothing to raise, so focus stays free. Recording
+  // continues in the offscreen document and the on-page widget still lets the user stop.
+  // IMPORTANT: this MUST run here in the service worker, not in popup.js — the popup is
+  // destroyed the moment the OS screen-picker opens, so any minimize code there never
+  // runs.
+  if (mode === 'desktop') {
+    try {
+      let winId = null;
+      if (recordingSourceTabId != null) {
+        try { winId = (await chrome.tabs.get(recordingSourceTabId)).windowId; } catch {}
+      }
+      if (winId == null) {
+        try { winId = (await chrome.windows.getLastFocused({ windowTypes: ['normal'] })).id; } catch {}
+      }
+      if (winId != null) await chrome.windows.update(winId, { state: 'minimized' });
+    } catch { /* non-fatal — focus trap is annoying but not a blocker */ }
+  }
+
   console.log('[BugReel] Recording started successfully');
   return { success: true };
 }
