@@ -15,6 +15,18 @@ import { getCurrentUserAsync } from './shared.js';
 /* ── i18n helper ──────────────────────────────────────────────────────────── */
 const t = window.__dashboardI18n?.t || ((k, f) => f || k);
 
+/**
+ * Emit a deployment-agnostic funnel event so a host (e.g. an analytics layer
+ * injected by the deployment) can observe recorder lifecycle. Core stays
+ * brand/analytics-agnostic — it only dispatches; no vendor code here.
+ * Steps: record_clicked, picker_shown, permission_denied, permission_dismissed,
+ * recording_started, recording_stopped, upload_started, upload_succeeded,
+ * upload_failed, share_link_shown.
+ */
+function emitFunnel(step, detail = {}) {
+  try { window.dispatchEvent(new CustomEvent('bugreel:funnel', { detail: { step, ...detail } })); } catch (_) {}
+}
+
 /* ── State machine ────────────────────────────────────────────────────────── */
 /** @type {'idle'|'requesting'|'recording'|'paused'|'stopping'|'preview'|'uploading'|'done'|'error'} */
 let state = 'idle';
@@ -360,6 +372,7 @@ function finalizeRecording() {
   if (claimMsg)       claimMsg.style.display = 'none';
   if (doneLinkRow)    doneLinkRow.style.display = 'none';
 
+  emitFunnel('recording_stopped');
   showPanel('preview');
 }
 
@@ -373,6 +386,7 @@ function setProgress(percent) {
 
 async function startUpload() {
   if (!recordingBlob) return;
+  emitFunnel('upload_started');
 
   // Upload in-place: keep the recorded video on screen, swap the action buttons
   // for the progress bar. showPanel('preview') re-activates the panel in case we
@@ -401,6 +415,7 @@ async function startUpload() {
     // Upload is persisted server-side now — release the beforeunload guard so
     // neither the auto-redirect nor the guest claim gate triggers a "Leave?" prompt.
     state = 'done';
+    emitFunnel('upload_succeeded', { durationSec });
 
     const shareToken = result.share_token;
     const shareUrl   = `${window.location.origin}/share/${shareToken}`;
@@ -426,6 +441,7 @@ async function startUpload() {
 
   } catch (err) {
     console.error('[recorder-page] upload error:', err);
+    emitFunnel('upload_failed');
     showError(
       t('rec_err_upload', 'Upload failed'),
       err.message || t('rec_err_upload', 'Upload failed'),
@@ -436,11 +452,13 @@ async function startUpload() {
 
 /* ── Share link reveal + guest claim gate ─────────────────────────────────── */
 function revealShareLink(url) {
+  emitFunnel('share_link_shown');
   if (doneLinkInput) doneLinkInput.value = url;
   if (doneLinkRow)   doneLinkRow.style.display = '';
 }
 
 function showClaimGate(shareUrl) {
+  emitFunnel('share_link_shown');
   pendingShareUrl = shareUrl;
   if (progressText) progressText.style.display = 'none';
   if (claimEmail)   claimEmail.placeholder = t('rec_claim_email_ph', 'you@example.com');
@@ -524,6 +542,8 @@ function attachTrackEndedListener(stream) {
 
 /* ── Core actions ─────────────────────────────────────────────────────────── */
 async function startRecording() {
+  emitFunnel('record_clicked');
+
   // Browser support gate: Safari doesn't support video/webm
   if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported('video/webm')) {
     showError(
@@ -548,6 +568,7 @@ async function startRecording() {
     // whole recording on monitor (entire-screen) capture — setFocusBehavior can't
     // override it for a monitor (throws by spec). Plain getDisplayMedia does NOT trap
     // focus on monitor capture, so you can freely cmd-tab. (See extension/recorder.js.)
+    emitFunnel('picker_shown');
     stream = await navigator.mediaDevices.getDisplayMedia({
       video: { displaySurface: 'monitor' }, // hint: prefer entire-screen
       audio: true,                          // system/tab audio (mic is captured separately)
@@ -557,18 +578,21 @@ async function startRecording() {
     });
   } catch (err) {
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      emitFunnel('permission_denied');
       showError(
         t('rec_err_denied_heading', 'Access denied'),
         t('rec_err_denied', 'Screen access was denied. Please click "Start recording" and allow screen sharing when prompted.')
       );
     } else {
       // Other errors (e.g. AbortError when user just closes dialog without choosing)
+      emitFunnel('permission_dismissed');
       showPanel('idle');
     }
     return;
   }
 
   mediaStream = stream;
+  emitFunnel('recording_started');
   attachTrackEndedListener(stream);
 
   // Live preview (display stream only — element is muted, so no echo)

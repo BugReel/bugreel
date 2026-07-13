@@ -496,6 +496,15 @@
     </div><!-- /.recorder-wrap -->
   </main>
 
+  <!--
+    Funnel event contract: recorder-page.js dispatches a window CustomEvent
+    'bugreel:funnel' with detail.step at each recorder lifecycle transition, so
+    a deployment can wire its own analytics without Core knowing about any
+    vendor. Steps (in order): record_clicked, picker_shown, permission_denied,
+    permission_dismissed, recording_started, recording_stopped, upload_started,
+    upload_succeeded (detail.durationSec), upload_failed, share_link_shown.
+    Listen with: window.addEventListener('bugreel:funnel', e => e.detail.step)
+  -->
   <script type="module">
     import { renderHeader, initUserMenu } from './js/shared.js';
     import { initQuotaWidget } from './js/quota.js';
