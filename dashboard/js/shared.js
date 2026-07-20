@@ -447,6 +447,16 @@ export async function getCurrentUserAsync() {
  * Fetch branding from /api/branding and apply to header + page title.
  * Falls back silently if the endpoint is unavailable.
  */
+// Последнее удачно полученное имя бренда. Нужно на аварийном пути: если
+// /api/branding не ответил, вернуть в шапку 'BugReel' — значит показать
+// человеку чужой бренд вместо того, под которым он пришёл. Кэш держит имя
+// деплоймента, и правки в самом движке под конкретный деплоймент (дрейф
+// файла на сервере вне git) больше не требуются.
+const BRAND_CACHE_KEY = 'bugreel:brand_name';
+function cachedBrandName() {
+  try { return localStorage.getItem(BRAND_CACHE_KEY) || ''; } catch { return ''; }
+}
+
 let _brandingPromise = null;
 function fetchBranding() {
   if (_brandingPromise) return _brandingPromise;
@@ -457,6 +467,7 @@ function fetchBranding() {
 
     // Set brand name
     if (nameEl) nameEl.textContent = b.name || t('brand_name', 'BugReel');
+    if (b.name) { try { localStorage.setItem(BRAND_CACHE_KEY, b.name); } catch { /* private mode */ } }
 
     // Set logo icon
     if (iconEl) {
@@ -531,9 +542,11 @@ function fetchBranding() {
     const nameEl = document.getElementById('brand-name');
     const iconEl = document.getElementById('brand-icon');
     const logoEl = document.getElementById('brand-logo');
-    if (nameEl) nameEl.textContent = t('brand_name', 'BugReel');
+    if (nameEl) nameEl.textContent = cachedBrandName() || t('brand_name', 'BugReel');
     if (iconEl) iconEl.innerHTML = icons.target;
     if (logoEl) logoEl.style.opacity = '1';
+    const cached = cachedBrandName();
+    if (cached) document.title = document.title.replace(/BugReel/g, cached);
     document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
   });
   return _brandingPromise;
