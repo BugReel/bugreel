@@ -123,10 +123,55 @@ const SIZE_WARN_RATIO      = 0.9;                // warn from 90% of the ceiling
 let recordedBytes  = 0;
 let sizeWarned     = false;
 let autoStopped    = false;
+let stopReason     = '';   // 'size' | 'duration' — drives the message on the preview
 
 function formatMB(bytes) {
   const mb = bytes / (1024 * 1024);
   return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${Math.round(mb)} MB`;
+}
+
+/* ── Duration ceiling ─────────────────────────────────────────────────────────
+ * The deployment may cap recording length per plan (limits.max_duration_sec on
+ * /api/auth/me). Without this the browser recorder ignored it entirely: a user
+ * on a 5-minute plan could record for an hour and only find out afterwards.
+ * Same principle as the size ceiling — stop cleanly, keep the recording.
+ */
+let durationTimer = null;
+let durationWarnTimer = null;
+let durationDeadline = 0;   // epoch ms; used to re-arm with the remainder after a pause
+const DURATION_WARN_SEC = 60;
+let pausedDurationRemaining = 0;
+
+function clearDurationLimit() {
+  if (durationTimer)     { clearTimeout(durationTimer);     durationTimer = null; }
+  if (durationWarnTimer) { clearTimeout(durationWarnTimer); durationWarnTimer = null; }
+  return durationDeadline ? Math.max(0, durationDeadline - Date.now()) : 0;
+}
+
+async function armDurationLimit(remainingMs = null) {
+  clearDurationLimit();
+  let maxSec = 0;
+  if (remainingMs !== null) {
+    maxSec = remainingMs / 1000;
+  } else {
+    durationDeadline = 0;
+    try { maxSec = (await getCurrentUserAsync())?.limits?.max_duration_sec || 0; } catch (_) {}
+  }
+  if (!maxSec || (state !== 'recording' && state !== 'paused')) return;
+  durationDeadline = Date.now() + maxSec * 1000;
+
+  const mins = Math.round(maxSec / 60);
+  if (maxSec > DURATION_WARN_SEC) {
+    durationWarnTimer = setTimeout(() => {
+      showSizeNotice(t('rec_duration_warn', `Less than a minute left of your ${mins}-minute limit.`));
+    }, (maxSec - DURATION_WARN_SEC) * 1000);
+  }
+  durationTimer = setTimeout(() => {
+    if (state !== 'recording' && state !== 'paused') return;
+    autoStopped = true;
+    stopReason  = 'duration';
+    stopRecording();
+  }, maxSec * 1000);
 }
 
 /** Warning line inside the recording panel (created on first use, hidden after). */
@@ -162,6 +207,7 @@ function trackRecordedSize(chunkSize) {
 
   if (recordedBytes >= MAX_RECORDING_BYTES && !autoStopped) {
     autoStopped = true;
+    stopReason  = 'size';
     stopRecording();
   }
 }
@@ -405,6 +451,8 @@ function showError(heading, msg, showRetry = false) {
 function finalizeRecording() {
   releaseTracks();
   resetTimer();
+  clearDurationLimit();
+  durationDeadline = 0;
 
   const mimeType = mediaRecorder?.mimeType || 'video/webm';
   recordingBlob = new Blob(chunks, { type: mimeType });
@@ -433,10 +481,9 @@ function finalizeRecording() {
   if (doneLinkRow)    doneLinkRow.style.display = 'none';
 
   if (autoStopped && previewTitle) {
-    previewTitle.textContent = t(
-      'rec_stopped_at_limit',
-      `Stopped at the ${formatMB(MAX_RECORDING_BYTES)} limit — the recording is saved and ready`,
-    );
+    previewTitle.textContent = stopReason === 'duration'
+      ? t('rec_stopped_at_duration', 'Stopped at your plan\'s time limit — the recording is saved and ready')
+      : t('rec_stopped_at_limit', `Stopped at the ${formatMB(MAX_RECORDING_BYTES)} limit — the recording is saved and ready`);
   }
 
   emitFunnel('recording_stopped');
@@ -706,7 +753,9 @@ async function startRecording() {
   recordedBytes = 0;
   sizeWarned    = false;
   autoStopped   = false;
+  stopReason    = '';
   showSizeNotice('');
+  armDurationLimit();
 
   mediaRecorder.ondataavailable = (e) => {
     if (e.data && e.data.size > 0) {
@@ -738,6 +787,7 @@ function pauseRecording() {
   if (state !== 'recording' || !mediaRecorder) return;
   mediaRecorder.pause();
   pauseTimer();
+  pausedDurationRemaining = clearDurationLimit(); // a paused recording burns no budget
   state = 'paused'; // keep same panel, just update dot + buttons
 
   if (dotEl)    { dotEl.className = 'rec-dot paused'; }
@@ -749,6 +799,7 @@ function resumeRecording() {
   if (state !== 'paused' || !mediaRecorder) return;
   mediaRecorder.resume();
   state = 'recording';
+  if (pausedDurationRemaining) armDurationLimit(pausedDurationRemaining);
 
   if (dotEl)    { dotEl.className = 'rec-dot recording'; }
   if (btnPause)  btnPause.style.display  = '';

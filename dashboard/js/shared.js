@@ -374,7 +374,10 @@ export function initUserMenu() {
     .then(data => {
       const u = data?.user;
       if (!u) return;
-      _currentUser = { ...u, upgrade_url: data.upgrade_url || '/auth/upgrade' };
+      // `limits` is whatever the deployment attaches to /api/auth/me (plan
+      // ceilings, quotas). Core stays generic — it only carries the field
+      // through so features like the recorder can honour it.
+      _currentUser = { ...u, limits: data.limits || null, upgrade_url: data.upgrade_url || '/auth/upgrade' };
       const menu = document.getElementById('user-menu');
       const nameEl = document.getElementById('user-menu-name');
       const fullEl = document.getElementById('user-menu-fullname');
