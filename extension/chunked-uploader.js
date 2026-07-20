@@ -13,6 +13,7 @@
  */
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB
+const PARALLEL_CHUNKS = 3; // чанков в полёте — столько же держит браузерный аплоадер
 const MAX_RETRIES = 5;
 const RETRY_BASE_DELAY = 2000; // 2s, exponential: 2s, 4s, 8s, 16s, 32s
 const AUTO_RETRY_MAX = 3;
@@ -156,48 +157,85 @@ async function uploadAllChunks(blob, opts) {
 
   let wasPaused = false;
 
+  // Очередь оставшихся чанков разбирают PARALLEL_CHUNKS воркеров. Строго
+  // последовательная заливка простаивает целый RTT между чанками — на дальнем
+  // канале это заметная доля времени; сервер принимает чанки в любом порядке.
+  const queue = [];
   for (let i = 0; i < totalChunks; i++) {
-    if (uploadedChunks.includes(i)) continue; // already uploaded
-
-    // Honor cancel/pause between chunks
-    if (controller.cancelled) throw cancelledError();
-    if (controller.paused) {
-      if (!wasPaused) { wasPaused = true; onPauseStateChange(true); }
-      while (controller.paused && !controller.cancelled) {
-        await sleep(300);
-      }
-      if (controller.cancelled) throw cancelledError();
-      wasPaused = false;
-      onPauseStateChange(false);
-    }
-
-    const start = i * CHUNK_SIZE;
-    const end = Math.min(start + CHUNK_SIZE, totalSize);
-    const chunkBlob = blob.slice(start, end);
-    const chunkSize = end - start;
-
-    // Upload with per-chunk retry
-    const result = await uploadChunkWithRetry(chunkBlob, {
-      apiBase, upload_id, chunkIndex: i, token, durationSec,
-      bytesUploaded, chunkSize, totalSize,
-      controller,
-      onProgress,
-    });
-
-    uploadedChunks.push(i);
-    bytesUploaded = result.total_received || (bytesUploaded + chunkSize);
-
-    // Update progress
-    const percent = Math.round((bytesUploaded / totalSize) * 100);
-    onProgress(percent, bytesUploaded, totalSize);
-    onChunkComplete(i, totalChunks);
-
-    // Save state after each chunk
-    await saveState(upload_id, {
-      serverUrl: opts.serverUrl, totalSize, totalChunks,
-      uploadedChunks, bytesUploaded,
-    });
+    if (!uploadedChunks.includes(i)) queue.push(i);
   }
+
+  // Прогресс при параллельной заливке считается из двух частей: завершённые
+  // чанки плюс байты каждого чанка в полёте. Иначе полоска дёргается назад,
+  // когда очередной воркер стартует с нуля.
+  const inflight = new Map();
+  const reportProgress = () => {
+    let bytes = bytesUploaded;
+    for (const b of inflight.values()) bytes += b;
+    if (bytes > totalSize) bytes = totalSize;
+    onProgress(Math.round((bytes / totalSize) * 100), bytes, totalSize);
+  };
+
+  async function worker() {
+    while (queue.length) {
+      // Honor cancel/pause between chunks
+      if (controller.cancelled) throw cancelledError();
+      if (controller.paused) {
+        if (!wasPaused) { wasPaused = true; onPauseStateChange(true); }
+        while (controller.paused && !controller.cancelled) {
+          await sleep(300);
+        }
+        if (controller.cancelled) throw cancelledError();
+        if (wasPaused) { wasPaused = false; onPauseStateChange(false); }
+      }
+
+      const i = queue.shift();
+      if (i === undefined) return;
+
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, totalSize);
+      const chunkBlob = blob.slice(start, end);
+      const chunkSize = end - start;
+      inflight.set(i, 0);
+
+      try {
+        // Upload with per-chunk retry
+        await uploadChunkWithRetry(chunkBlob, {
+          apiBase, upload_id, chunkIndex: i, token, durationSec,
+          chunkSize, totalSize,
+          controller,
+          onChunkBytes: (loaded) => { inflight.set(i, loaded); reportProgress(); },
+        });
+      } finally {
+        inflight.delete(i);
+      }
+
+      uploadedChunks.push(i);
+      // Счётчик ведём локально: ответ сервера total_received при параллельных
+      // чанках отражает чужой прогресс и ломает монотонность полоски.
+      bytesUploaded += chunkSize;
+
+      reportProgress();
+      onChunkComplete(i, totalChunks);
+
+      // Save state after each chunk
+      await saveState(upload_id, {
+        serverUrl: opts.serverUrl, totalSize, totalChunks,
+        uploadedChunks, bytesUploaded,
+      });
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(PARALLEL_CHUNKS, queue.length) },
+    () => worker(),
+  );
+  // Первая же ошибка должна всплыть наверх (там авто-ретрай всего аплоада),
+  // но дождаться надо всех — иначе висящие воркеры продолжат слать чанки
+  // отменённой сессии.
+  const results = await Promise.allSettled(workers);
+  const failed = results.find(r => r.status === 'rejected');
+  if (failed) throw failed.reason;
 }
 
 function cancelledError() {
@@ -210,7 +248,7 @@ function cancelledError() {
  * Upload a single chunk with retry logic (exponential backoff).
  */
 async function uploadChunkWithRetry(chunkBlob, opts) {
-  const { apiBase, upload_id, chunkIndex, token, durationSec, bytesUploaded, chunkSize, totalSize, controller, onProgress } = opts;
+  const { apiBase, upload_id, chunkIndex, token, durationSec, chunkSize, controller, onChunkBytes } = opts;
   let lastError = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -222,9 +260,9 @@ async function uploadChunkWithRetry(chunkBlob, opts) {
         durationSec,
         controller,
         onChunkProgress: (loaded, total) => {
-          const overallBytes = bytesUploaded + (chunkSize * (loaded / total));
-          const overallPercent = Math.round((overallBytes / totalSize) * 100);
-          onProgress(overallPercent, overallBytes, totalSize);
+          // Отдаём наверх байты ЭТОГО чанка — общий процент сводит вызывающий,
+          // он один видит все чанки в полёте.
+          if (onChunkBytes) onChunkBytes(Math.min(loaded, total) * (chunkSize / total));
         },
       });
 
