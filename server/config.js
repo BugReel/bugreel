@@ -44,7 +44,13 @@ export const config = {
     token: process.env.YOUTRACK_TOKEN || '',
     project: process.env.YOUTRACK_PROJECT || 'BUG',
   },
-  maxVideoSize: parseInt(process.env.MAX_VIDEO_SIZE || '104857600'),
+  // 4 GB — a sanity ceiling against a runaway upload, NOT a business limit.
+  // Per-plan limits (duration, storage) belong to the deployment's quota layer;
+  // when this value is smaller than what a plan allows, the user records for the
+  // time they paid for and is then refused at /upload/init with their recording
+  // already made. Whatever this is set to, the browser recorder must cap itself
+  // at or below it (dashboard/js/recorder-page.js MAX_RECORDING_BYTES).
+  maxVideoSize: parseInt(process.env.MAX_VIDEO_SIZE || '4294967296'),
   maxVideoDuration: parseInt(process.env.MAX_VIDEO_DURATION || '300'),
   // 0 = no fixed limit (the vision model decides count — a long video has more
   // distinct moments). A positive value is a safety ceiling against runaway, not

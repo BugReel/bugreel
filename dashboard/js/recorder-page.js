@@ -106,6 +106,66 @@ const chipMic         = $('rec-chip-mic');
 const chipSysAudio    = $('rec-chip-sysaudio');
 const micLiveBar      = $('rec-mic-live-bar');
 
+/* ── Size ceiling ─────────────────────────────────────────────────────────────
+ * The in-browser recorder holds the whole recording in RAM (`chunks`), so its
+ * ceiling is lower than the server's (config.maxVideoSize) and is set by what a
+ * tab can hold, not by policy. It must never exceed the server value: the server
+ * refuses an oversized file at /api/upload/init, i.e. AFTER the recording is
+ * finished, throwing away everything the user just recorded. So the recorder
+ * enforces its own ceiling — warns as it approaches, stops cleanly at it, and the
+ * user keeps a usable recording.
+ * At the default 1.5 Mbps this is roughly 90 minutes.
+ */
+const MAX_RECORDING_BYTES  = 1024 * 1024 * 1024; // 1 GB
+const SIZE_WARN_RATIO      = 0.9;                // warn from 90% of the ceiling
+
+/** Bytes collected so far in `chunks` (updated on every ondataavailable). */
+let recordedBytes  = 0;
+let sizeWarned     = false;
+let autoStopped    = false;
+
+function formatMB(bytes) {
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${Math.round(mb)} MB`;
+}
+
+/** Warning line inside the recording panel (created on first use, hidden after). */
+function showSizeNotice(text) {
+  const panel = panels.recording;
+  if (!panel) return;
+  let el = document.getElementById('rec-size-notice');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'rec-size-notice';
+    el.className = 'rec-size-notice';
+    el.style.cssText = 'margin-top:8px;font-size:13px;color:#b45309;text-align:center;';
+    panel.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.display = text ? '' : 'none';
+}
+
+/**
+ * Called on every recorded chunk. Shows a warning near the ceiling and stops the
+ * recording at it, so the upload can never be refused for size.
+ */
+function trackRecordedSize(chunkSize) {
+  recordedBytes += chunkSize;
+
+  if (!sizeWarned && recordedBytes >= MAX_RECORDING_BYTES * SIZE_WARN_RATIO) {
+    sizeWarned = true;
+    showSizeNotice(t(
+      'rec_size_warn',
+      `Approaching the ${formatMB(MAX_RECORDING_BYTES)} limit — recording will stop automatically.`,
+    ));
+  }
+
+  if (recordedBytes >= MAX_RECORDING_BYTES && !autoStopped) {
+    autoStopped = true;
+    stopRecording();
+  }
+}
+
 /* ── Supported MIME type (copied from extension/recorder.js getSupportedMimeType) ── */
 function pickMime() {
   const candidates = [
@@ -372,6 +432,13 @@ function finalizeRecording() {
   if (claimMsg)       claimMsg.style.display = 'none';
   if (doneLinkRow)    doneLinkRow.style.display = 'none';
 
+  if (autoStopped && previewTitle) {
+    previewTitle.textContent = t(
+      'rec_stopped_at_limit',
+      `Stopped at the ${formatMB(MAX_RECORDING_BYTES)} limit — the recording is saved and ready`,
+    );
+  }
+
   emitFunnel('recording_stopped');
   showPanel('preview');
 }
@@ -386,6 +453,21 @@ function setProgress(percent) {
 
 async function startUpload() {
   if (!recordingBlob) return;
+
+  // Pre-flight: the server refuses oversized files at /upload/init. Catching it
+  // here keeps the failure honest (the user is told immediately, with numbers)
+  // instead of after a long upload, and keeps a stale client ceiling from
+  // silently producing a file the server will reject.
+  if (recordingBlob.size > MAX_RECORDING_BYTES) {
+    emitFunnel('upload_failed', { reason: 'too_large' });
+    showError(
+      t('rec_err_too_large_heading', 'Recording is too large'),
+      t('rec_err_too_large', `This recording is ${formatMB(recordingBlob.size)}; the limit is ${formatMB(MAX_RECORDING_BYTES)}. Download it and record a shorter one.`),
+      false,
+    );
+    return;
+  }
+
   emitFunnel('upload_started');
 
   // Upload in-place: keep the recorded video on screen, swap the action buttons
@@ -621,8 +703,16 @@ async function startRecording() {
     return;
   }
 
+  recordedBytes = 0;
+  sizeWarned    = false;
+  autoStopped   = false;
+  showSizeNotice('');
+
   mediaRecorder.ondataavailable = (e) => {
-    if (e.data && e.data.size > 0) chunks.push(e.data);
+    if (e.data && e.data.size > 0) {
+      chunks.push(e.data);
+      trackRecordedSize(e.data.size);
+    }
   };
 
   mediaRecorder.onstop = () => {

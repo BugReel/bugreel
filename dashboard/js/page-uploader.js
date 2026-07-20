@@ -17,6 +17,7 @@
  */
 
 const CHUNK_SIZE    = 5 * 1024 * 1024; // 5 MB — must match server/services/chunked-upload.js
+const CHUNK_CONCURRENCY = 3;            // chunks in flight at once (see uploadAllChunks)
 const MAX_RETRIES   = 5;
 const RETRY_BASE_DELAY = 2000;          // 2s → 4s → 8s → 16s → 32s
 const AUTO_RETRY_MAX   = 3;
@@ -91,6 +92,7 @@ export async function chunkedUploadFromPage(blob, opts = {}) {
         try { await jsonRequest(`/api/upload/${upload_id}`, { method: 'DELETE' }); } catch { /* ignore */ }
         throw err;
       }
+      if (isTerminalStatus(err?.status)) throw err;
       autoRetryCount++;
       if (autoRetryCount > AUTO_RETRY_MAX) throw err;
       console.warn(`[page-uploader] auto-retry ${autoRetryCount}/${AUTO_RETRY_MAX}:`, err.message);
@@ -136,25 +138,54 @@ async function uploadAllChunks(blob, { upload_id, totalSize, totalChunks, durati
   // Emit initial progress to unfreeze the progress bar during the init round-trip
   onProgress(Math.round((bytesUploaded / totalSize) * 100), bytesUploaded, totalSize);
 
+  const pending = [];
   for (let i = 0; i < totalChunks; i++) {
-    if (uploadedChunks.includes(i)) continue; // already on server
-
-    const start     = i * CHUNK_SIZE;
-    const end       = Math.min(start + CHUNK_SIZE, totalSize);
-    const chunkBlob = blob.slice(start, end);
-    const chunkSize = end - start;
-
-    const result = await uploadChunkWithRetry(chunkBlob, {
-      upload_id, chunkIndex: i, durationSec,
-      bytesUploaded, chunkSize, totalSize,
-      onProgress,
-    });
-
-    uploadedChunks.push(i);
-    bytesUploaded = result.total_received ?? (bytesUploaded + chunkSize);
-
-    onProgress(Math.round((bytesUploaded / totalSize) * 100), bytesUploaded, totalSize);
+    if (!uploadedChunks.includes(i)) pending.push(i);
   }
+
+  // Progress is aggregated across the workers: completed chunks plus the bytes
+  // currently in flight in each one.
+  let completedBytes = bytesUploaded;
+  const inFlight = new Map(); // chunkIndex → bytes sent so far
+
+  const emit = () => {
+    let sum = completedBytes;
+    for (const n of inFlight.values()) sum += n;
+    const capped = Math.min(sum, totalSize);
+    onProgress(Math.round((capped / totalSize) * 100), capped, totalSize);
+  };
+
+  let cursor = 0;
+  const worker = async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= pending.length) return;
+      const index     = pending[i];
+      const start     = index * CHUNK_SIZE;
+      const end       = Math.min(start + CHUNK_SIZE, totalSize);
+      const chunkBlob = blob.slice(start, end);
+      const chunkSize = end - start;
+
+      inFlight.set(index, 0);
+      try {
+        await uploadChunkWithRetry(chunkBlob, {
+          upload_id, chunkIndex: index, durationSec,
+          onChunkBytes: (loaded) => { inFlight.set(index, loaded); emit(); },
+        });
+      } finally {
+        inFlight.delete(index);
+      }
+      completedBytes += chunkSize;
+      emit();
+    }
+  };
+
+  // Chunks are independent on the server (each is written to its own file and the
+  // session row is updated synchronously), so several can be in flight at once.
+  // On a high-latency link this is what turns a serial 30 s/chunk crawl into a
+  // usable upload — sequential chunking was leaving most of the uplink idle.
+  const workers = Math.min(CHUNK_CONCURRENCY, Math.max(1, pending.length));
+  await Promise.all(Array.from({ length: workers }, () => worker()));
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +193,7 @@ async function uploadAllChunks(blob, { upload_id, totalSize, totalChunks, durati
 // ---------------------------------------------------------------------------
 
 async function uploadChunkWithRetry(chunkBlob, opts) {
-  const { upload_id, chunkIndex, durationSec, bytesUploaded, chunkSize, totalSize, onProgress } = opts;
+  const { upload_id, chunkIndex, durationSec, onChunkBytes } = opts;
   let lastError = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -170,17 +201,17 @@ async function uploadChunkWithRetry(chunkBlob, opts) {
       const result = await uploadSingleChunk(chunkBlob, {
         url:  `/api/upload/${upload_id}/chunk/${chunkIndex}`,
         durationSec,
-        onChunkProgress: (loaded, total) => {
-          const overallBytes   = bytesUploaded + chunkSize * (loaded / total);
-          const overallPercent = Math.round((overallBytes / totalSize) * 100);
-          onProgress(overallPercent, overallBytes, totalSize);
-        },
+        onChunkProgress: (loaded) => { if (onChunkBytes) onChunkBytes(loaded); },
       });
 
       if (result.success) return result;
       lastError = new Error(result.error || 'Chunk upload failed');
     } catch (err) {
       lastError = err;
+      // A rejected session (expired/failed/completed) or a bad request will be
+      // rejected identically on every attempt — retrying just makes the user
+      // wait through the whole backoff ladder before the same error.
+      if (isTerminalStatus(err?.status)) throw err;
     }
 
     if (attempt < MAX_RETRIES - 1) {
@@ -227,7 +258,12 @@ function uploadSingleChunk(chunkBlob, { url, durationSec, onChunkProgress }) {
           reject(new Error('Invalid JSON response from server'));
         }
       } else {
-        reject(new Error(`HTTP ${xhr.status}: ${(xhr.responseText || '').slice(0, 200)}`));
+        let msg = '';
+        try { msg = JSON.parse(xhr.responseText)?.error || ''; } catch { /* not JSON */ }
+        reject(Object.assign(
+          new Error(msg || `HTTP ${xhr.status}: ${(xhr.responseText || '').slice(0, 200)}`),
+          { status: xhr.status },
+        ));
       }
     });
 
@@ -280,9 +316,14 @@ async function jsonRequest(url, { method = 'GET', body, durationSec } = {}) {
 
   const res = await fetch(url, opts);
   if (!res.ok) {
-    let detail = '';
-    try { detail = ': ' + (await res.text()).slice(0, 200); } catch { /* ignore */ }
-    throw new Error(`HTTP ${res.status}${detail}`);
+    // Surface the server's own message when it sends one — a raw "HTTP 413:
+    // {json}" in the error panel tells the user nothing about what to do.
+    let raw = '';
+    try { raw = await res.text(); } catch { /* ignore */ }
+    let msg = '';
+    try { msg = JSON.parse(raw)?.error || JSON.parse(raw)?.message || ''; } catch { /* not JSON */ }
+    if (!msg) msg = `HTTP ${res.status}${raw ? ': ' + raw.slice(0, 200) : ''}`;
+    throw Object.assign(new Error(msg), { status: res.status });
   }
   return res.json();
 }
@@ -293,4 +334,9 @@ async function jsonRequest(url, { method = 'GET', body, durationSec } = {}) {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** 4xx that will not change on retry (408 Timeout / 429 Too Many are excluded). */
+function isTerminalStatus(status) {
+  return typeof status === 'number' && status >= 400 && status < 500 && status !== 408 && status !== 429;
 }
