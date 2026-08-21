@@ -126,8 +126,40 @@ chrome.commands.onCommand.addListener(async (command) => {
   }
 });
 
+// Микрофон был включён в попапе, но записать его не вышло — человек узнает об
+// этом только по немому видео, если не сказать сейчас. Клик по уведомлению
+// ведёт на страницу выдачи прав.
+const MIC_ALERT_NOTIF_ID = 'bugreel-mic-unavailable';
+
+function i18n(key, fallback) {
+  try {
+    return chrome.i18n.getMessage(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function notifyMicUnavailable(micError) {
+  const message = micError === 'no-device'
+    ? i18n('notif_micNoDevice', 'No microphone found — recording without voice.')
+    : i18n('notif_micNoPermission', 'Microphone access not granted — click to allow.');
+  chrome.notifications.create(MIC_ALERT_NOTIF_ID, {
+    type: 'basic',
+    iconUrl: 'icons/icon128.png',
+    title: i18n('notif_micTitle', 'Recording without microphone'),
+    message,
+  });
+}
+
 // Notification click → open recording page
 chrome.notifications.onClicked.addListener(async (notifId) => {
+  if (notifId === MIC_ALERT_NOTIF_ID) {
+    chrome.notifications.clear(notifId);
+    // #mic — страница сама вызовет диалог браузера.
+    chrome.tabs.create({ url: chrome.runtime.getURL('mic-permission.html#mic') });
+    return;
+  }
+
   const serverUrl = await getServerUrl();
   const stored = await chrome.storage.local.get(['dashboardPath', 'extensionToken']);
   const dashPath = stored.dashboardPath || '/';
@@ -758,6 +790,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   ].includes(message.type)) {
     if (message.type === 'recording-stopped-max') {
       setState('ready');
+    }
+    if (message.type === 'audio-status' && message.micRequested && !message.mic) {
+      notifyMicUnavailable(message.micError);
     }
     if (message.type === 'upload-done') {
       setState('idle');

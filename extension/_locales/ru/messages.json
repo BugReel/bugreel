@@ -642,5 +642,17 @@
   },
   "status_done": {
     "message": "готово"
+  },
+  "notif_micTitle": {
+    "message": "Запись идёт без микрофона"
+  },
+  "notif_micNoPermission": {
+    "message": "Доступ к микрофону не выдан — нажмите, чтобы разрешить."
+  },
+  "notif_micNoDevice": {
+    "message": "Микрофон не найден — запись без голоса."
+  },
+  "popup_micNeedsPermission": {
+    "message": "Выдайте доступ к микрофону, чтобы записать голос"
   }
 }

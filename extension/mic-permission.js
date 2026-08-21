@@ -8,14 +8,22 @@ const systemHint = document.getElementById('system-hint');
 
 // Check existing permissions on load
 (async () => {
+  let micGranted = false;
   try {
     const mic = await navigator.permissions.query({ name: 'microphone' });
-    if (mic.state === 'granted') markGranted(btnMic, 'mic');
+    micGranted = mic.state === 'granted';
+    if (micGranted) markGranted(btnMic, 'mic');
   } catch {}
   try {
     const cam = await navigator.permissions.query({ name: 'camera' });
     if (cam.state === 'granted') markGranted(btnCam, 'cam');
   } catch {}
+
+  // Открыто с #mic (переключатель микрофона в попапе или старт записи) —
+  // сразу показываем диалог браузера, без лишнего клика по кнопке.
+  if (!micGranted && location.hash === '#mic') {
+    btnMic.click();
+  }
 })();
 
 function markGranted(btn, type) {

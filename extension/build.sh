@@ -20,6 +20,9 @@ COMMON_FILES=(
   recorder.html
   popup.html
   popup.js
+  mic-state.js
+  i18n.js
+  recorder-segments.js
   content-script-errors.js
   content-script-widget.js
   content-script-actions.js
@@ -40,6 +43,10 @@ for f in "${COMMON_FILES[@]}"; do
   cp "$SCRIPT_DIR/$f" "$BUILD_DIR/chrome/$f"
   cp "$SCRIPT_DIR/$f" "$BUILD_DIR/firefox/$f"
 done
+
+# Copy locales (manifest uses __MSG_ placeholders — без них расширение не грузится)
+cp -r "$SCRIPT_DIR/_locales" "$BUILD_DIR/chrome/_locales"
+cp -r "$SCRIPT_DIR/_locales" "$BUILD_DIR/firefox/_locales"
 
 # Copy icons
 cp -r "$SCRIPT_DIR/icons" "$BUILD_DIR/chrome/icons"

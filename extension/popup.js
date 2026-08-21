@@ -86,6 +86,9 @@ let captureMode = 'tab';
 let micPreviewing = false;
 let micPermissionGranted = false;
 let micHardwareAvailable = true; // Whether a mic device exists on the system
+let micPermissionKnown = false;  // Ответил ли Permissions API (в Firefox — нет)
+let micNeedsPrompt = false;      // Есть железо, прав нет, права спросить можно
+let micPermWatchStatus = null;   // PermissionStatus со слушателем 'change' (держим ссылку от GC)
 let isFirefox = false;
 let timerInterval = null;
 let timerStartedAt = 0;
@@ -152,9 +155,6 @@ let timerPausedElapsed = 0;
   }
   updateStartButton();
 
-  // Check if mic hardware exists
-  await checkMicHardware();
-
   // Detect Firefox
   const status = await chrome.runtime.sendMessage({ type: 'get-status' });
   isFirefox = status?.isFirefox || !!(typeof browser !== 'undefined' && browser.runtime?.getBrowserInfo);
@@ -171,7 +171,8 @@ let timerPausedElapsed = 0;
     dashLink.parentNode.insertBefore(setupLink, dashLink.nextSibling);
   }
 
-  await checkMicPermission();
+  // Микрофон: железо + права одним снимком
+  await refreshMicState();
   updateMicStatus();
 
   // Restore state from background
@@ -431,54 +432,75 @@ function showState(st) {
   updateMicStatus();
 }
 
-/* --- Mic hardware detection --- */
+/* --- Mic hardware + permission state --- */
 
-async function checkMicHardware() {
+// Firefox не поддерживает 'microphone' в permissions.query — там бросит, и
+// решение останется на флаге из storage. Слушатель 'change' вешаем ровно один
+// раз: каждый query возвращает новый объект, и повторная привязка размножала бы
+// подписки.
+async function queryMicPermissionState() {
+  try {
+    const status = await navigator.permissions.query({ name: 'microphone' });
+    if (!micPermWatchStatus) {
+      micPermWatchStatus = status;
+      status.addEventListener('change', () => {
+        refreshMicState().then(updateMicStatus);
+      });
+    }
+    return status.state;
+  } catch {
+    return null;
+  }
+}
+
+// Один снимок: устройства, флаг из storage, ответ Permissions API. Решение
+// принимает evaluateMicState() (mic-state.js) — оно же под тестом.
+async function refreshMicState() {
+  let audioInputs = [];
+  let enumerateFailed = false;
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const audioInputs = devices.filter(d => d.kind === 'audioinput');
-    // Firefox returns empty deviceId in popup context even when permission was granted
-    // in settings page, so also check stored permission as proof hardware exists
-    const stored = await chrome.storage.local.get(['micPermissionGranted']);
-    micHardwareAvailable = audioInputs.length > 0 &&
-      (audioInputs.some(d => d.deviceId !== '') || stored.micPermissionGranted);
+    audioInputs = devices.filter(d => d.kind === 'audioinput');
   } catch {
-    micHardwareAvailable = true; // Assume available if we can't check
+    enumerateFailed = true;
   }
 
+  const stored = await chrome.storage.local.get(['micPermissionGranted']);
+
+  const permissionState = await queryMicPermissionState();
+
+  const verdict = evaluateMicState({
+    audioInputs,
+    enumerateFailed,
+    storedGranted: stored.micPermissionGranted,
+    permissionState,
+  });
+
+  micHardwareAvailable = verdict.hardwareAvailable;
+  micPermissionGranted = verdict.permissionGranted;
+  micPermissionKnown = verdict.permissionKnown;
+  micNeedsPrompt = verdict.needsPrompt;
+
+  if (verdict.permissionGranted && !stored.micPermissionGranted) {
+    chrome.storage.local.set({ micPermissionGranted: true });
+  }
+  if (verdict.clearStoredFlag) {
+    chrome.storage.local.set({ micPermissionGranted: false });
+  }
+
+  // Гасим переключатель только когда микрофона реально нет. Отсутствие прав —
+  // не повод: для него есть запрос прав по клику на переключатель.
   if (!micHardwareAvailable) {
     toggleMic.checked = false;
     chrome.storage.local.set({ micEnabled: false });
   }
 }
 
-/* --- Mic permission check (storage flag + permissions.query fallback) --- */
-
-async function checkMicPermission() {
-  // Primary: check storage flag (set by mic-permission.html and setup page)
-  const stored = await chrome.storage.local.get(['micPermissionGranted']);
-  if (stored.micPermissionGranted) {
-    micPermissionGranted = true;
-    return;
-  }
-
-  // Fallback: permissions.query (works in some contexts)
-  try {
-    const result = await navigator.permissions.query({ name: 'microphone' });
-    micPermissionGranted = result.state === 'granted';
-    if (micPermissionGranted) {
-      chrome.storage.local.set({ micPermissionGranted: true });
-    }
-    result.addEventListener('change', () => {
-      micPermissionGranted = result.state === 'granted';
-      if (micPermissionGranted) {
-        chrome.storage.local.set({ micPermissionGranted: true });
-      }
-      updateMicStatus();
-    });
-  } catch {
-    micPermissionGranted = false;
-  }
+// Открыть страницу выдачи прав. Из popup вызвать getUserMedia нельзя: попап
+// закрывается при переводе фокуса в диалог браузера и запрос умирает.
+function openMicPermissionPage() {
+  // #mic — страница сама вызовет диалог браузера, человеку остаётся «Разрешить».
+  chrome.tabs.create({ url: chrome.runtime.getURL('mic-permission.html#mic') });
 }
 
 // React to permission granted from mic-permission.html while popup is open
@@ -550,12 +572,22 @@ function stopMicPreview() {
 
 /* --- Toggle handlers --- */
 
-toggleMic.addEventListener('change', () => {
+toggleMic.addEventListener('change', async () => {
   chrome.storage.local.set({ micEnabled: toggleMic.checked });
   if (!toggleMic.checked) {
     stopMicPreview();
+    updateMicStatus();
+    return;
   }
+
+  // Включили микрофон, а прав нет (шаг в setup.html пропущен или разрешение
+  // было разовым) — ведём на страницу запроса прав, иначе запись молча уйдёт
+  // без голоса.
+  await refreshMicState();
   updateMicStatus();
+  if (micNeedsPrompt) {
+    openMicPermissionPage();
+  }
 });
 toggleSystem.addEventListener('change', () => chrome.storage.local.set({ systemAudioEnabled: toggleSystem.checked }));
 
@@ -659,10 +691,20 @@ async function startNewRecording() {
   // Determine author: from token (userName), legacy dropdown, or fallback to 'anonymous'
   const author = hasExtensionToken ? currentUserName : (inputAuthor.value || 'anonymous');
 
-  // Mic not granted: record without mic instead of blocking
+  // Микрофон включён, но прав нет — ведём на страницу выдачи прав и не
+  // стартуем. Раньше здесь микрофон молча выключался, и человек узнавал об
+  // этом только по готовой записи без голоса.
   let micEnabled = toggleMic.checked;
-  if (micEnabled && !micPermissionGranted) {
-    micEnabled = false; // Will record without mic
+  if (micEnabled) {
+    await refreshMicState();
+    updateMicStatus();
+    if (micNeedsPrompt) {
+      setStatus('error', t('popup_micNeedsPermission', 'Grant microphone access to record with voice'));
+      openMicPermissionPage();
+      return;
+    }
+    // Firefox о правах молчит — там микрофон запросит сама вкладка рекордера.
+    micEnabled = micHardwareAvailable && (micPermissionGranted || !micPermissionKnown);
   }
 
   // Discard previous recording blob if exists (prevents "No recording found" on stale review tab)
@@ -986,7 +1028,7 @@ async function loadRecentRecordings() {
 // Mic permission grant button
 document.getElementById('grant-mic-btn')?.addEventListener('click', (e) => {
   e.preventDefault();
-  chrome.tabs.create({ url: chrome.runtime.getURL('mic-permission.html') });
+  openMicPermissionPage();
 });
 
 // Recent recordings are loaded inside init() — no need for a duplicate call here.

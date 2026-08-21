@@ -657,5 +657,17 @@
   },
   "status_done": {
     "message": "done"
+  },
+  "notif_micTitle": {
+    "message": "Recording without microphone"
+  },
+  "notif_micNoPermission": {
+    "message": "Microphone access not granted — click to allow."
+  },
+  "notif_micNoDevice": {
+    "message": "No microphone found — recording without voice."
+  },
+  "popup_micNeedsPermission": {
+    "message": "Grant microphone access to record with voice"
   }
 }

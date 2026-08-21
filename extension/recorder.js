@@ -247,6 +247,7 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
   }
 
   // If mic wasn't reused from preview, try to get it fresh
+  let micError = null; // 'permission' | 'no-device' | 'other' — уходит в audio-status
   if (micEnabled && !hasMic) {
     // Check if any audio input device exists before requesting getUserMedia
     // Note: Firefox returns empty deviceId in non-primary contexts, so just check count
@@ -271,10 +272,14 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
         console.error('Mic capture failed:', e.message);
         micStream = null;
         hasMic = false;
+        micError = (e.name === 'NotAllowedError' || e.name === 'SecurityError')
+          ? 'permission'
+          : 'other';
       }
     } else {
       console.log('[BugReel] No audio input device found, skipping mic capture');
       hasMic = false;
+      micError = 'no-device';
     }
   }
 
@@ -297,7 +302,14 @@ async function startRecording(streamId, serverUrl, author, mode, micEnabled, sys
     }
   }
 
-  chrome.runtime.sendMessage({ type: 'audio-status', mic: hasMic, systemAudio: hasSystemAudio, webcam: hasWebcam }).catch(() => {});
+  chrome.runtime.sendMessage({
+    type: 'audio-status',
+    mic: hasMic,
+    micRequested: !!micEnabled,
+    micError,
+    systemAudio: hasSystemAudio,
+    webcam: hasWebcam,
+  }).catch(() => {});
 
   // Downscale video to max 1280px width
   const videoTrack = captureStream.getVideoTracks()[0];
