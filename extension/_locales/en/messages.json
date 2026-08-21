@@ -669,5 +669,41 @@
   },
   "popup_micNeedsPermission": {
     "message": "Grant microphone access to record with voice"
+  },
+  "permissions_description": {
+    "message": "Grant access to use microphone and camera during screen recording."
+  },
+  "perm_mic_name": {
+    "message": "Microphone"
+  },
+  "perm_mic_desc": {
+    "message": "For voice recording"
+  },
+  "perm_cam_name": {
+    "message": "Camera"
+  },
+  "perm_cam_desc": {
+    "message": "For webcam overlay (PiP)"
+  },
+  "perm_allow": {
+    "message": "Allow"
+  },
+  "perm_granted": {
+    "message": "Granted"
+  },
+  "perm_requesting": {
+    "message": "Requesting…"
+  },
+  "perm_tryAgain": {
+    "message": "Try again"
+  },
+  "perm_denied": {
+    "message": "Permission denied. Check system settings below."
+  },
+  "perm_hint": {
+    "message": "You can close this tab after granting access."
+  },
+  "perm_sysHint": {
+    "message": "<strong>System permission required</strong><br>If the browser dialog doesn't appear, check your system settings:<br><strong>macOS:</strong> System Settings &rarr; Privacy &amp; Security &rarr; Camera / Microphone &rarr; enable for Chrome<br><strong>Windows:</strong> Settings &rarr; Privacy &rarr; Camera / Microphone &rarr; allow desktop apps"
   }
 }

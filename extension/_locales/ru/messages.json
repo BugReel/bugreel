@@ -654,5 +654,41 @@
   },
   "popup_micNeedsPermission": {
     "message": "Выдайте доступ к микрофону, чтобы записать голос"
+  },
+  "permissions_description": {
+    "message": "Разрешите доступ к микрофону и камере — они нужны для записи экрана."
+  },
+  "perm_mic_name": {
+    "message": "Микрофон"
+  },
+  "perm_mic_desc": {
+    "message": "Для записи голоса"
+  },
+  "perm_cam_name": {
+    "message": "Камера"
+  },
+  "perm_cam_desc": {
+    "message": "Вебкамера поверх видео (PiP)"
+  },
+  "perm_allow": {
+    "message": "Разрешить"
+  },
+  "perm_granted": {
+    "message": "Доступ выдан"
+  },
+  "perm_requesting": {
+    "message": "Запрашиваем…"
+  },
+  "perm_tryAgain": {
+    "message": "Попробовать снова"
+  },
+  "perm_denied": {
+    "message": "Доступ запрещён. Проверьте системные настройки ниже."
+  },
+  "perm_hint": {
+    "message": "После выдачи доступа вкладку можно закрыть."
+  },
+  "perm_sysHint": {
+    "message": "<strong>Нужно разрешение системы</strong><br>Если диалог браузера не появился, проверьте настройки системы:<br><strong>macOS:</strong> Системные настройки &rarr; Конфиденциальность и безопасность &rarr; Камера / Микрофон &rarr; включить для Chrome<br><strong>Windows:</strong> Параметры &rarr; Конфиденциальность &rarr; Камера / Микрофон &rarr; разрешить классическим приложениям"
   }
 }
