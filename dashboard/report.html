@@ -643,6 +643,23 @@
 
       var viewId = null;
       var heartbeatInterval = null;
+      var lastTickAt = null;
+
+      // Start (or resume) the 30s heartbeat tick, tracking when the current
+      // tick window opened so we can bill the actual elapsed time instead of
+      // a flat 30s regardless of how long the tab was really visible.
+      function startHeartbeat() {
+        if (heartbeatInterval) return;
+        lastTickAt = Date.now();
+        heartbeatInterval = setInterval(sendHeartbeat, 30000);
+      }
+
+      function stopHeartbeat() {
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
+      }
 
       // Resolve share_token to recording ID, then log the view
       function logView(rid) {
@@ -655,7 +672,7 @@
         .then(function(data) {
           if (data.ok && data.view_id) {
             viewId = data.view_id;
-            heartbeatInterval = setInterval(sendHeartbeat, 30000);
+            startHeartbeat();
           }
         })
         .catch(function() {});
@@ -677,33 +694,46 @@
         });
 
       function sendHeartbeat() {
-        if (!viewId) return;
+        if (!viewId || !lastTickAt) return;
+        var seconds = Math.round((Date.now() - lastTickAt) / 1000);
+        lastTickAt = Date.now();
         fetch('/api/analytics/heartbeat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ view_id: viewId, seconds: 30 })
+          body: JSON.stringify({ view_id: viewId, seconds: seconds })
         }).catch(function() {});
       }
 
-      // Send final heartbeat on page unload via Beacon API
+      // Pause the tick while the tab is hidden (setInterval on a hidden tab
+      // still fires — a hidden tab was ticking a full 30s every 30s of wall
+      // time, and visibilitychange→hidden + beforeunload each added another
+      // flat 30s on top, so a tab left open overnight logged tens of
+      // thousands of watched seconds). Resume on visible; bill the real
+      // elapsed time either way.
       document.addEventListener('visibilitychange', function() {
-        if (document.visibilityState === 'hidden' && viewId) {
-          var data = JSON.stringify({ view_id: viewId, seconds: 30 });
+        if (!viewId || !lastTickAt) return;
+        if (document.visibilityState === 'hidden') {
+          stopHeartbeat();
+          var seconds = Math.round((Date.now() - lastTickAt) / 1000);
+          var data = JSON.stringify({ view_id: viewId, seconds: seconds });
           if (navigator.sendBeacon) {
             navigator.sendBeacon('/api/analytics/heartbeat',
               new Blob([data], { type: 'application/json' }));
           }
+        } else if (document.visibilityState === 'visible') {
+          startHeartbeat();
         }
       });
 
       window.addEventListener('beforeunload', function() {
-        if (!viewId) return;
-        var data = JSON.stringify({ view_id: viewId, seconds: 30 });
+        if (!viewId || !lastTickAt) return;
+        var seconds = Math.round((Date.now() - lastTickAt) / 1000);
+        var data = JSON.stringify({ view_id: viewId, seconds: seconds });
         if (navigator.sendBeacon) {
           navigator.sendBeacon('/api/analytics/heartbeat',
             new Blob([data], { type: 'application/json' }));
         }
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        stopHeartbeat();
       });
     })();
   </script>
