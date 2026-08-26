@@ -715,6 +715,7 @@
         if (document.visibilityState === 'hidden') {
           stopHeartbeat();
           var seconds = Math.round((Date.now() - lastTickAt) / 1000);
+          lastTickAt = Date.now();
           var data = JSON.stringify({ view_id: viewId, seconds: seconds });
           if (navigator.sendBeacon) {
             navigator.sendBeacon('/api/analytics/heartbeat',
