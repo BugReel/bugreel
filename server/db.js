@@ -178,7 +178,10 @@ export function initDB() {
       metadata_json TEXT,
       error_message TEXT,
       created_at TEXT DEFAULT (datetime('now')),
-      expires_at TEXT NOT NULL
+      expires_at TEXT NOT NULL,
+      recording_id TEXT,
+      share_token TEXT,
+      final_status TEXT
     );
 
     CREATE TABLE IF NOT EXISTS cta_buttons (
@@ -216,6 +219,14 @@ export function initDB() {
   // recording. Without this, multi-tenant deployments end up with NULL owners
   // on every chunked upload and recordings.user_id-based ownership checks 404.
   try { db.exec('ALTER TABLE upload_sessions ADD COLUMN user_id TEXT'); } catch {}
+  // Retrying POST /complete after a genuinely-successful-but-unacknowledged
+  // first attempt (response lost after Core already finalized) must return
+  // the SAME recording — not a bare {status:'already_completed'} with no id.
+  // Persist the outcome on the session row so the early-return branch in
+  // completeUpload() can answer with the real id/share_token/status.
+  try { db.exec('ALTER TABLE upload_sessions ADD COLUMN recording_id TEXT'); } catch {}
+  try { db.exec('ALTER TABLE upload_sessions ADD COLUMN share_token TEXT'); } catch {}
+  try { db.exec('ALTER TABLE upload_sessions ADD COLUMN final_status TEXT'); } catch {}
   // Observability for the recorder auto-restart fix (docs/recording-resilience.md
   // §Observability). NULL or 1 = single-segment normal recording. >1 means the
   // encoder stalled during capture and the segment controller restarted it

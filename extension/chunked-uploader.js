@@ -117,14 +117,55 @@ async function chunkedUpload(blob, options = {}) {
   }
 
   // --- Step 3: Complete ---
-  const completeRes = await apiRequest(`${apiBase}/${upload_id}/complete`, {
-    method: 'POST',
-    token,
-    durationSec,
-  });
+  // All chunks are already safely on disk server-side at this point — a
+  // transient failure here (network blip, core briefly unreachable) must not
+  // throw away megabytes of already-uploaded video. Same auto-retry budget
+  // as the chunk-upload loop above, but we never retry a cancellation or a
+  // 4xx (client/validation) response — those won't succeed on retry and
+  // would just hammer the server.
+  let completeRes;
+  let completeRetryCount = 0;
+  while (true) {
+    if (controller.cancelled) throw cancelledError();
+    try {
+      completeRes = await apiRequest(`${apiBase}/${upload_id}/complete`, {
+        method: 'POST',
+        token,
+        durationSec,
+      });
+      break; // success
+    } catch (err) {
+      if (err && err.__cancelled) throw err;
+      if (isClientError(err)) throw err; // 4xx — retrying won't help
+      completeRetryCount++;
+      if (completeRetryCount > AUTO_RETRY_MAX) {
+        // Don't clearState — chunks and the upload session are still intact
+        // server-side. There's no code path that resumes/retries /complete
+        // later from this saved state today (chunkedUpload() always starts
+        // over from /init on the next call, and nothing reads
+        // chrome.storage.local back out) — we simply leave the state behind
+        // rather than actively clearing it, in case that changes.
+        onError(err, true); // canResume=true
+        throw err;
+      }
+      console.warn(`[ChunkedUploader] /complete auto-retry ${completeRetryCount}/${AUTO_RETRY_MAX} after error:`, err.message);
+      await sleep(AUTO_RETRY_DELAYS[completeRetryCount - 1] || 3000);
+    }
+  }
 
   if (!completeRes.success) {
     throw new Error(completeRes.error || 'Failed to complete upload');
+  }
+
+  // A response with success:true but no id is not a success the caller can
+  // act on — the human sees "uploaded" with no working link
+  // (recorder.js falls back to recordingId: 'unknown'). Treat it exactly
+  // like any other /complete failure: leave the resumable state in place
+  // and route through onError so the caller knows this needs a retry.
+  if (!completeRes.id) {
+    const err = new Error('Complete response missing recording id');
+    onError(err, true); // canResume=true
+    throw err;
   }
 
   // Clear saved state
@@ -242,6 +283,31 @@ function cancelledError() {
   const e = new Error('Upload cancelled by user');
   e.__cancelled = true;
   return e;
+}
+
+// A 4xx from apiRequest() means the request itself is invalid (bad upload_id,
+// session already gone, validation failure) — retrying an unchanged request
+// against the same endpoint will just fail the same way again. Network
+// errors and 5xx (Core temporarily unreachable/overloaded) are transient and
+// worth retrying. 408 (Request Timeout) and 429 (Too Many Requests) are 4xx
+// but describe a transient condition, not an invalid request — a proxy in
+// front of Core rate-limits with 429, and retrying after backoff is exactly
+// the right response, not giving up permanently.
+//
+// Prefer the structured `err.status` apiRequest() attaches to HTTP errors;
+// the message-regex is only a fallback for errors that didn't come through
+// apiRequest (defensive — shouldn't happen on this call site today).
+function isClientError(err) {
+  let status = null;
+  if (err && typeof err.status === 'number') {
+    status = err.status;
+  } else {
+    const match = /^HTTP (\d{3})/.exec((err && err.message) || '');
+    if (match) status = Number(match[1]);
+  }
+  if (!status) return false;
+  if (status === 408 || status === 429) return false;
+  return status >= 400 && status < 500;
 }
 
 /**
@@ -378,7 +444,12 @@ async function apiRequest(url, { method = 'GET', token, durationSec, body } = {}
   if (!res.ok) {
     let detail = '';
     try { detail = ': ' + (await res.text()).slice(0, 200); } catch {}
-    throw new Error(`HTTP ${res.status}${detail}`);
+    const err = new Error(`HTTP ${res.status}${detail}`);
+    // Structured status for callers that need to branch on it (e.g. "retry
+    // 5xx/network, never 4xx"). Prefer this over parsing err.message — the
+    // message text is for logs/humans and isn't a contract.
+    err.status = res.status;
+    throw err;
   }
   return res.json();
 }

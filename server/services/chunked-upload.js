@@ -108,7 +108,7 @@ export async function completeUpload(uploadId) {
   if (!session) throw Object.assign(new Error('Upload session not found'), { statusCode: 404 });
 
   if (session.status === 'completed') {
-    return { upload_id: uploadId, recording_id: session.recording_id, status: 'already_completed' };
+    return alreadyCompletedResult(uploadId, session);
   }
 
   const uploadedChunks = JSON.parse(session.uploaded_chunks);
@@ -119,128 +119,190 @@ export async function completeUpload(uploadId) {
     );
   }
 
-  // Generate recording ID and create target directory
-  const recordingId = generateRecordingId();
-  const recordingDir = path.join(config.dataDir, recordingId);
-  fs.mkdirSync(recordingDir, { recursive: true });
+  // Atomic claim: the merge below spans several awaits (stream flush, ffmpeg
+  // concat) with nothing else guarding re-entry, and the extension now
+  // retries POST /complete on a transient failure ~3s later. Two concurrent
+  // calls for the same session both used to reach the INSERT below — one
+  // hit a generateRecordingId() PK collision (bare 500), the other created a
+  // *second* recording + a second enqueuePipeline() (duplicate paid AI
+  // work), and the winner's temp_dir cleanup could delete chunks out from
+  // under the loser's still-running readFileSync loop. Claiming the row
+  // here (status: pending/uploading/failed → completing) makes only one
+  // caller ever enter the merge; the loser is turned away below before
+  // touching any chunk files.
+  const claim = db.prepare(
+    "UPDATE upload_sessions SET status = 'completing' WHERE id = ? AND status IN ('pending', 'uploading', 'failed')",
+  ).run(uploadId);
 
-  const finalPath = path.join(recordingDir, 'video.webm');
-
-  // Streaming merge — write chunks sequentially without loading all into RAM
-  const writeStream = fs.createWriteStream(finalPath);
-  let totalBytesWritten = 0;
-
-  for (let i = 0; i < session.total_chunks; i++) {
-    const chunkPath = path.join(session.temp_dir, `chunk_${i}`);
-    const chunkData = fs.readFileSync(chunkPath);
-    writeStream.write(chunkData);
-    totalBytesWritten += chunkData.length;
-  }
-  writeStream.end();
-
-  // Wait for stream to flush before we try to concat or stat the file
-  await new Promise((resolve, reject) => {
-    writeStream.on('finish', resolve);
-    writeStream.on('error', reject);
-  });
-
-  // Verify size
-  if (totalBytesWritten !== session.total_size) {
-    // Cleanup on mismatch
-    fs.rmSync(recordingDir, { recursive: true, force: true });
-    db.prepare("UPDATE upload_sessions SET status = 'failed', error_message = ? WHERE id = ?")
-      .run(`Size mismatch: expected ${session.total_size}, got ${totalBytesWritten}`, uploadId);
-    throw Object.assign(
-      new Error(`Size mismatch: expected ${session.total_size}, got ${totalBytesWritten}`),
-      { statusCode: 500 },
-    );
+  if (claim.changes === 0) {
+    const current = db.prepare('SELECT * FROM upload_sessions WHERE id = ?').get(uploadId);
+    if (current && current.status === 'completed') {
+      // Finished between our first read and the claim attempt above.
+      return alreadyCompletedResult(uploadId, current);
+    }
+    // Someone else's merge is in flight (status = 'completing'). This is NOT
+    // a 4xx: the extension's /complete retry loop (chunked-uploader.js)
+    // treats 4xx as permanent and gives up immediately via isClientError().
+    // A 5xx here is retried on the same backoff schedule instead.
+    throw Object.assign(new Error('Upload completion already in progress'), { statusCode: 503 });
   }
 
-  // Parse session metadata once — we need recorderSegmentSizes BEFORE inserting
-  // the recording so file_size_bytes reflects the post-concat size.
-  let sessionMeta = null;
-  if (session.metadata_json) {
-    try { sessionMeta = JSON.parse(session.metadata_json); } catch { /* ignore */ }
-  }
+  try {
+    // Generate recording ID and create target directory
+    const recordingId = generateRecordingId();
+    const recordingDir = path.join(config.dataDir, recordingId);
+    fs.mkdirSync(recordingDir, { recursive: true });
 
-  // Stitch multi-segment recordings (encoder auto-restarted mid-capture) into
-  // a single valid WebM. No-op for single-segment uploads.
-  const segSizes = sessionMeta && Array.isArray(sessionMeta.recorderSegmentSizes)
-    ? sessionMeta.recorderSegmentSizes
-    : null;
-  let finalBytes = totalBytesWritten;
-  if (segSizes && segSizes.length > 1) {
-    console.log(`[chunked-upload ${recordingId}] concat ${segSizes.length} recorder segments, sizes=`, segSizes);
-    try {
-      await concatRecorderSegments(finalPath, segSizes);
-      finalBytes = fs.statSync(finalPath).size;
-    } catch (err) {
+    const finalPath = path.join(recordingDir, 'video.webm');
+
+    // Streaming merge — write chunks sequentially without loading all into RAM
+    const writeStream = fs.createWriteStream(finalPath);
+    let totalBytesWritten = 0;
+
+    for (let i = 0; i < session.total_chunks; i++) {
+      const chunkPath = path.join(session.temp_dir, `chunk_${i}`);
+      const chunkData = fs.readFileSync(chunkPath);
+      writeStream.write(chunkData);
+      totalBytesWritten += chunkData.length;
+    }
+    writeStream.end();
+
+    // Wait for stream to flush before we try to concat or stat the file
+    await new Promise((resolve, reject) => {
+      writeStream.on('finish', resolve);
+      writeStream.on('error', reject);
+    });
+
+    // Verify size
+    if (totalBytesWritten !== session.total_size) {
+      // Cleanup on mismatch
       fs.rmSync(recordingDir, { recursive: true, force: true });
       db.prepare("UPDATE upload_sessions SET status = 'failed', error_message = ? WHERE id = ?")
-        .run(`concat failed: ${err.message}`, uploadId);
-      throw Object.assign(new Error(`concat failed: ${err.message}`), { statusCode: 500 });
-    }
-  }
-
-  // stage_only: client wants the stitched blob back for local preview; don't
-  // start the pipeline here — a later /finalize call will.
-  const stageOnly = !!(sessionMeta && (sessionMeta.stage_only === '1' || sessionMeta.stage_only === true));
-
-  // Create recording in DB
-  const shareToken = crypto.randomUUID();
-  const initialStatus = stageOnly ? 'staged' : 'uploaded';
-  // Observability: number of MediaRecorder lifecycles that contributed to this
-  // recording. >1 means the watchdog had to restart the encoder mid-capture.
-  const recorderSegmentCount = Array.isArray(segSizes) ? segSizes.length : null;
-  // Carry the upload session's user_id (captured at /upload/init from the
-  // X-User-Id proxy header) onto the recording so multi-tenant ownership
-  // checks resolve correctly. Mirrors the non-chunked /upload path.
-  db.prepare(`
-    INSERT INTO recordings (id, author, user_id, video_filename, file_size_bytes, status, share_token, recorder_segment_count)
-    VALUES (?, ?, ?, 'video.webm', ?, ?, ?, ?)
-  `).run(recordingId, session.author, session.user_id || null, finalBytes, initialStatus, shareToken, recorderSegmentCount);
-
-  // Save metadata (url_events, console_events, etc.)
-  if (sessionMeta) {
-    const meta = sessionMeta;
-    db.prepare(`UPDATE recordings SET url_events_json = ?, metadata_json = ?, console_events_json = ?, action_events_json = ?, manual_markers_json = ?, trim_start = ?, trim_end = ?, segments_json = ? WHERE id = ?`)
-      .run(
-        meta.url_events || null, meta.metadata || null,
-        meta.console_events || null, meta.action_events || null,
-        meta.manual_markers || null,
-        meta.trim_start ? parseFloat(meta.trim_start) : null,
-        meta.trim_end ? parseFloat(meta.trim_end) : null,
-        meta.segments || null,
-        recordingId,
+        .run(`Size mismatch: expected ${session.total_size}, got ${totalBytesWritten}`, uploadId);
+      throw Object.assign(
+        new Error(`Size mismatch: expected ${session.total_size}, got ${totalBytesWritten}`),
+        { statusCode: 500 },
       );
+    }
+
+    // Parse session metadata once — we need recorderSegmentSizes BEFORE inserting
+    // the recording so file_size_bytes reflects the post-concat size.
+    let sessionMeta = null;
+    if (session.metadata_json) {
+      try { sessionMeta = JSON.parse(session.metadata_json); } catch { /* ignore */ }
+    }
+
+    // Stitch multi-segment recordings (encoder auto-restarted mid-capture) into
+    // a single valid WebM. No-op for single-segment uploads.
+    const segSizes = sessionMeta && Array.isArray(sessionMeta.recorderSegmentSizes)
+      ? sessionMeta.recorderSegmentSizes
+      : null;
+    let finalBytes = totalBytesWritten;
+    if (segSizes && segSizes.length > 1) {
+      console.log(`[chunked-upload ${recordingId}] concat ${segSizes.length} recorder segments, sizes=`, segSizes);
+      try {
+        await concatRecorderSegments(finalPath, segSizes);
+        finalBytes = fs.statSync(finalPath).size;
+      } catch (err) {
+        fs.rmSync(recordingDir, { recursive: true, force: true });
+        db.prepare("UPDATE upload_sessions SET status = 'failed', error_message = ? WHERE id = ?")
+          .run(`concat failed: ${err.message}`, uploadId);
+        throw Object.assign(new Error(`concat failed: ${err.message}`), { statusCode: 500 });
+      }
+    }
+
+    // stage_only: client wants the stitched blob back for local preview; don't
+    // start the pipeline here — a later /finalize call will.
+    const stageOnly = !!(sessionMeta && (sessionMeta.stage_only === '1' || sessionMeta.stage_only === true));
+
+    // Create recording in DB
+    const shareToken = crypto.randomUUID();
+    const initialStatus = stageOnly ? 'staged' : 'uploaded';
+    // Observability: number of MediaRecorder lifecycles that contributed to this
+    // recording. >1 means the watchdog had to restart the encoder mid-capture.
+    const recorderSegmentCount = Array.isArray(segSizes) ? segSizes.length : null;
+    // Carry the upload session's user_id (captured at /upload/init from the
+    // X-User-Id proxy header) onto the recording so multi-tenant ownership
+    // checks resolve correctly. Mirrors the non-chunked /upload path.
+    db.prepare(`
+      INSERT INTO recordings (id, author, user_id, video_filename, file_size_bytes, status, share_token, recorder_segment_count)
+      VALUES (?, ?, ?, 'video.webm', ?, ?, ?, ?)
+    `).run(recordingId, session.author, session.user_id || null, finalBytes, initialStatus, shareToken, recorderSegmentCount);
+
+    // Save metadata (url_events, console_events, etc.)
+    if (sessionMeta) {
+      const meta = sessionMeta;
+      db.prepare(`UPDATE recordings SET url_events_json = ?, metadata_json = ?, console_events_json = ?, action_events_json = ?, manual_markers_json = ?, trim_start = ?, trim_end = ?, segments_json = ? WHERE id = ?`)
+        .run(
+          meta.url_events || null, meta.metadata || null,
+          meta.console_events || null, meta.action_events || null,
+          meta.manual_markers || null,
+          meta.trim_start ? parseFloat(meta.trim_start) : null,
+          meta.trim_end ? parseFloat(meta.trim_end) : null,
+          meta.segments || null,
+          recordingId,
+        );
+    }
+
+    // Mark session completed — persist recording_id/share_token/final_status
+    // too, so a retried /complete (see the already-completed branch above)
+    // can return the real outcome instead of an empty acknowledgement.
+    const finalStatus = stageOnly ? 'staged' : 'uploaded';
+    db.prepare("UPDATE upload_sessions SET status = 'completed', recording_id = ?, share_token = ?, final_status = ? WHERE id = ?")
+      .run(recordingId, shareToken, finalStatus, uploadId);
+
+    // Cleanup temp chunks (fire and forget) — safe now: we're the sole
+    // claimant, no concurrent reader can be mid-readFileSync on this dir.
+    fs.rm(session.temp_dir, { recursive: true, force: true }, () => {});
+
+    if (stageOnly) {
+      return {
+        upload_id: uploadId,
+        recording_id: recordingId,
+        status: 'staged',
+        share_token: shareToken,
+        video_url: `/api/recordings/${shareToken}/video`,
+      };
+    }
+
+    // Enqueue pipeline
+    enqueuePipeline(recordingId).catch(err => {
+      console.error(`Pipeline error for ${recordingId}:`, err);
+      db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('error', recordingId);
+    });
+
+    // Return share_token (mirrors the stage_only branch above) so the route
+    // handler — and ultimately the extension — can surface the public URL
+    // /recording/{share_token} as the auto-copied link after upload.
+    return { upload_id: uploadId, recording_id: recordingId, status: 'uploaded', share_token: shareToken };
+  } catch (err) {
+    // Any failure during merge — including one we didn't already handle
+    // above with its own status='failed' update — must not leave the
+    // session wedged in 'completing' forever. The claim step treats
+    // 'failed' as claimable, so this keeps the upload retryable instead of
+    // stuck until SESSION_TTL_HOURS expiry.
+    db.prepare("UPDATE upload_sessions SET status = 'failed', error_message = ? WHERE id = ? AND status = 'completing'")
+      .run(err.message || 'complete failed', uploadId);
+    throw err;
   }
+}
 
-  // Mark session completed
-  db.prepare("UPDATE upload_sessions SET status = 'completed' WHERE id = ?").run(uploadId);
-
-  // Cleanup temp chunks (fire and forget)
-  fs.rm(session.temp_dir, { recursive: true, force: true }, () => {});
-
-  if (stageOnly) {
-    return {
-      upload_id: uploadId,
-      recording_id: recordingId,
-      status: 'staged',
-      share_token: shareToken,
-      video_url: `/api/recordings/${shareToken}/video`,
-    };
+/**
+ * Build the response for a retried /complete call that lands on an
+ * already-finalized session — same shape as a fresh completion so the
+ * route handler (and ultimately the extension) can't tell the two apart.
+ */
+function alreadyCompletedResult(uploadId, session) {
+  const result = {
+    upload_id: uploadId,
+    recording_id: session.recording_id,
+    status: session.final_status || 'already_completed',
+  };
+  if (session.share_token) {
+    result.share_token = session.share_token;
+    result.video_url = `/api/recordings/${session.share_token}/video`;
   }
-
-  // Enqueue pipeline
-  enqueuePipeline(recordingId).catch(err => {
-    console.error(`Pipeline error for ${recordingId}:`, err);
-    db.prepare('UPDATE recordings SET status = ? WHERE id = ?').run('error', recordingId);
-  });
-
-  // Return share_token (mirrors the stage_only branch above) so the route
-  // handler — and ultimately the extension — can surface the public URL
-  // /recording/{share_token} as the auto-copied link after upload.
-  return { upload_id: uploadId, recording_id: recordingId, status: 'uploaded', share_token: shareToken };
+  return result;
 }
 
 /**
@@ -308,12 +370,34 @@ export function cleanupExpiredSessions() {
 }
 
 /**
+ * Release sessions left in 'completing' by a process that died mid-merge.
+ *
+ * The merge claim survives process death: the catch that would reset it never
+ * runs on SIGKILL/OOM/restart, and 'completing' is not claimable, so the
+ * session stays stuck until its TTL expires. A freshly started process is by
+ * definition not merging anything, so any 'completing' row it finds is stale
+ * and safe to hand back to the next /complete attempt. Single-process
+ * assumption: the server runs in fork mode, one instance per database.
+ */
+export function releaseStaleMergeClaims() {
+  const db = getDB();
+  const { changes } = db.prepare(
+    "UPDATE upload_sessions SET status = 'failed' WHERE status = 'completing'",
+  ).run();
+
+  if (changes > 0) {
+    console.log(`[chunked-upload] Released ${changes} stale merge claim(s) from a previous process`);
+  }
+}
+
+/**
  * Start periodic cleanup. Call after initDB().
  */
 let cleanupStarted = false;
 export function startCleanupTimer() {
   if (cleanupStarted) return;
   cleanupStarted = true;
+  releaseStaleMergeClaims();
   cleanupExpiredSessions();
   setInterval(cleanupExpiredSessions, CLEANUP_INTERVAL_MS);
 }
