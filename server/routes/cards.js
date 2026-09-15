@@ -250,7 +250,14 @@ router.post('/recordings/:id/reanalyze', async (req, res) => {
 
   const duration = recording.duration_seconds || 0;
   console.log(`[${req.params.id}] Reanalyzing with GPT (duration=${duration}s)...`);
-  const analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents, duration);
+  let analysis;
+  try {
+    analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents, duration);
+  } catch (err) {
+    // gpt.js now throws on proxy error bodies — an unhandled reject here would crash the process
+    console.error(`[${req.params.id}] Reanalyze failed: ${err.message}`);
+    return res.status(502).json({ error: 'AI analysis unavailable' });
+  }
   db.prepare('UPDATE recordings SET analysis_json = ? WHERE id = ?').run(JSON.stringify(analysis), req.params.id);
 
   // Update card if exists

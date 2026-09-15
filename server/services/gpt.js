@@ -90,7 +90,19 @@ async function callGptJson(systemPrompt, userMessage, extraNudge = null) {
     throw new Error(`GPT error ${res.status}: ${body}`);
   }
   const data = await res.json();
+  // OpenAI-compatible proxies answer HTTP 200 with an `error`
+  // body for auth/quota failures. Treating that as "model returned no JSON"
+  // silently produced title "Untitled" + empty summary for every recording
+  // from 2026-08-22 (revoked key). Fail loudly instead.
+  // Regression test: server/__tests__/services/gpt-proxy-error.test.js.
+  if (data && data.error) {
+    const code = data.error.code || data.error.type || 'unknown';
+    throw new Error(`GPT API error (${code}): ${String(data.error.message || '').slice(0, 200)}`);
+  }
   const content = data.choices?.[0]?.message?.content;
+  if (typeof content !== 'string') {
+    throw new Error('GPT response has no choices[0].message.content');
+  }
   try {
     return JSON.parse(content);
   } catch {
@@ -601,6 +613,10 @@ export async function selectFramesVision(candidates, transcript, opts) {
     let parsed;
     try {
       const data = await res.json();
+      if (data && data.error) {
+        console.error(`[selectFramesVision] ${model} API error (window ${start}): ${data.error.code || data.error.type || 'unknown'}`);
+        continue;
+      }
       parsed = JSON.parse(data.choices?.[0]?.message?.content || '{}');
     } catch (err) {
       console.error(`[selectFramesVision] bad JSON (window ${start}): ${err.message}`);

@@ -217,18 +217,31 @@ async function processPipeline(recordingId) {
   // Runs for EVERY recording (bug, lesson, meeting, demo, ...). The result drives
   // which type-specific extractor (if any) runs next.
   console.log(`[${recordingId}] Classifying recording + generating summary/chapters...`);
-  const classification = await classifyAndSummarize(transcript, duration, urlEvents, consoleEvents, actionEvents);
-  db.prepare(
-    'UPDATE recordings SET ai_type = ?, ai_title = ?, ai_summary = ?, ai_chapters_json = ? WHERE id = ?'
-  ).run(
-    classification.type,
-    classification.title,
-    classification.summary || null,
-    JSON.stringify(classification.chapters || []),
-    recordingId
-  );
-  console.log(`[${recordingId}] Classified as ${classification.type}: "${classification.title}" (${(classification.chapters || []).length} chapters)`);
-  notifyUsage(recordingId, 'analysis', { count: 1 });
+  // An AI outage must not fail the recording (video/share still work), but it
+  // must not masquerade as a real result either: leave ai_* NULL and log a
+  // greppable [AI_FAIL] line. Health-check `ai.summary` counts NULLs.
+  let classification;
+  let aiFailed = false;
+  try {
+    classification = await classifyAndSummarize(transcript, duration, urlEvents, consoleEvents, actionEvents);
+  } catch (err) {
+    aiFailed = true;
+    console.error(`[${recordingId}] [AI_FAIL] classifyAndSummarize: ${err.message}`);
+    classification = { type: 'other', title: '', summary: '', chapters: [] };
+  }
+  if (!aiFailed) {
+    db.prepare(
+      'UPDATE recordings SET ai_type = ?, ai_title = ?, ai_summary = ?, ai_chapters_json = ? WHERE id = ?'
+    ).run(
+      classification.type,
+      classification.title,
+      classification.summary || null,
+      JSON.stringify(classification.chapters || []),
+      recordingId
+    );
+    console.log(`[${recordingId}] Classified as ${classification.type}: "${classification.title}" (${(classification.chapters || []).length} chapters)`);
+    notifyUsage(recordingId, 'analysis', { count: 1 });
+  }
 
   // 4. Type-specific deep extraction.
   let analysis = null;          // legacy bug-card analysis (only for BUG_LIKE_TYPES)
@@ -238,10 +251,17 @@ async function processPipeline(recordingId) {
 
   if (BUG_LIKE_TYPES.has(aiType)) {
     console.log(`[${recordingId}] Running bug-card analysis (analyzeTranscript)...`);
-    analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents, duration);
-    db.prepare('UPDATE recordings SET analysis_json = ? WHERE id = ?')
-      .run(JSON.stringify(analysis), recordingId);
-    notifyUsage(recordingId, 'analysis', { count: 1 });
+    try {
+      analysis = await analyzeTranscript(transcript, urlEvents, consoleEvents, actionEvents, duration);
+      db.prepare('UPDATE recordings SET analysis_json = ? WHERE id = ?')
+        .run(JSON.stringify(analysis), recordingId);
+      notifyUsage(recordingId, 'analysis', { count: 1 });
+    } catch (err) {
+      // callGptJson now throws on proxy error bodies; keep the recording alive
+      // (analysis stays null — key frames/card below already handle that).
+      console.error(`[${recordingId}] [AI_FAIL] analyzeTranscript: ${err.message}`);
+      analysis = null;
+    }
   } else if (MEETING_TYPES.has(aiType)) {
     console.log(`[${recordingId}] Extracting action items / decisions / open questions...`);
     try {
