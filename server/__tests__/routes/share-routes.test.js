@@ -9,21 +9,27 @@
  *   2. 301-redirect /{prefix}/{recording_id} → /{prefix}/{share_token}
  *      (don't cross prefixes — preserve referrer/analytics signals)
  *   3. Be reachable without authentication
+ *
+ * Uses the real handler from server/routes/share-page.js (the same one
+ * server/index.js's catch-all delegates to) rather than a re-implemented
+ * fixture, so every branch it takes — including the og:image fallback via
+ * `frames` — is the branch production actually runs.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import express from 'express';
 import { cleanupTestData } from '../setup.js';
 import { initDB, getDB } from '../../db.js';
-import { getBrandingConfig } from '../../routes/settings.js';
-import { renderSharePage } from '../../services/share-meta.js';
+import { createSharePageHandler } from '../../routes/share-page.js';
 
 let server, baseUrl;
+const FRAME_TOKEN = 'ffffffff-1111-2222-3333-444444444444';
+const THUMB_TOKEN = 'tttttttt-1111-2222-3333-444444444444';
+const XSS_TOKEN = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeef';
 
 beforeAll(async () => {
   initDB();
 
-  // Seed a recording with a known share_token
   const db = getDB();
   db.prepare(
     `INSERT OR REPLACE INTO recordings (id, author, share_token, status, video_filename, ai_title, ai_summary, ai_type)
@@ -33,42 +39,63 @@ beforeAll(async () => {
     'Login button does nothing', 'Clicking Login on the homepage produces no visible reaction.', 'bug'
   );
 
-  // Spin up the same /share/ + /report/ handler as server/index.js, in
-  // isolation so we don't pull in pipeline/ffmpeg/multer side effects.
+  // No thumbnail_filename, no frames row — og:image must be omitted rather
+  // than a broken/guessed URL.
+  db.prepare(
+    `INSERT OR REPLACE INTO recordings (id, author, share_token, status, video_filename, ai_title, ai_summary, ai_type)
+     VALUES (?, ?, ?, 'uploaded', 'video.webm', ?, ?, ?)`
+  ).run(
+    'REC-NO-THUMB-001', 'tester', 'nnnnnnnn-1111-2222-3333-444444444444',
+    'No thumbnail recording', 'A recording with no thumbnail and no frames.', 'bug'
+  );
+
+  // No thumbnail_filename, but a frames row exists — og:image must build
+  // from the earliest frame (server/routes/share-page.js's fallback query).
+  db.prepare(
+    `INSERT OR REPLACE INTO recordings (id, author, share_token, status, video_filename, ai_title, ai_summary, ai_type)
+     VALUES (?, ?, ?, 'uploaded', 'video.webm', ?, ?, ?)`
+  ).run(
+    'REC-FRAME-001', 'tester', FRAME_TOKEN,
+    'Recording with frame fallback', 'Uses a frame as the preview image.', 'bug'
+  );
+  db.prepare(
+    `INSERT INTO frames (recording_id, time_seconds, filename) VALUES (?, ?, ?)`
+  ).run('REC-FRAME-001', 2.5, 'frame-002.jpg');
+
+  // thumbnail_filename set directly on the recording — takes precedence over
+  // any frames row.
+  db.prepare(
+    `INSERT OR REPLACE INTO recordings (id, author, share_token, status, video_filename, ai_title, ai_summary, ai_type, thumbnail_filename)
+     VALUES (?, ?, ?, 'uploaded', 'video.webm', ?, ?, ?, ?)`
+  ).run(
+    'REC-THUMB-001', 'tester', THUMB_TOKEN,
+    'Recording with explicit thumbnail', 'Uses thumbnail_filename directly.', 'bug', 'thumb.jpg'
+  );
+
+  // Title containing a JS string-replace special pattern — must not splice
+  // the rest of report.html into <head> (see share-meta.js absoluteUrl doc /
+  // blocker on `.replace()` with a string replacement).
+  db.prepare(
+    `INSERT OR REPLACE INTO recordings (id, author, share_token, status, video_filename, ai_title, ai_summary, ai_type)
+     VALUES (?, ?, ?, 'uploaded', 'video.webm', ?, ?, ?)`
+  ).run(
+    'REC-XSS-001', 'tester', XSS_TOKEN,
+    "Crash on $' input", 'Title contains a $-prefixed replace pattern.', 'bug'
+  );
+
+  // Spin up the real handler in isolation so we don't pull in
+  // pipeline/ffmpeg/multer side effects from the rest of server/index.js.
   const app = express();
   const path = await import('path');
   const url = await import('url');
   const __filename = url.fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const dashboardDir = path.join(__dirname, '..', '..', '..', 'dashboard');
+  const sharePageHandler = createSharePageHandler(dashboardDir);
 
   app.get('*', (req, res) => {
     if (req.path.startsWith('/share/') || req.path.startsWith('/report/')) {
-      const prefix = req.path.startsWith('/share/') ? '/share/' : '/report/';
-      const rawId = req.path.replace(prefix, '').replace(/\/$/, '');
-      if (rawId) {
-        const paramId = decodeURIComponent(rawId);
-        const rec = getDB().prepare('SELECT * FROM recordings WHERE id = ?').get(paramId)
-          || getDB().prepare('SELECT * FROM recordings WHERE share_token = ?').get(paramId);
-        if (rec && rec.share_token && rec.id === paramId) {
-          return res.redirect(301, `${prefix}${encodeURIComponent(rec.share_token)}`);
-        }
-        if (rec) {
-          const card = getDB().prepare('SELECT title, summary FROM cards WHERE recording_id = ?').get(rec.id);
-          const html = renderSharePage({
-            recording: rec,
-            card,
-            branding: getBrandingConfig(),
-            dashboardDir,
-            dashboardUrl: '',
-            req,
-            shareToken: paramId,
-          });
-          res.setHeader('Content-Type', 'text/html; charset=utf-8');
-          return res.send(html);
-        }
-      }
-      return res.sendFile(path.join(dashboardDir, 'report.html'));
+      return sharePageHandler(req, res);
     }
     res.status(404).send('not found');
   });
@@ -139,6 +166,41 @@ describe('share/report public routes', () => {
     // No thumbnail_filename and no frames row seeded for this recording — no
     // og:image should be emitted rather than a broken/guessed URL.
     expect(html).not.toContain('og:image');
+  });
+
+  it('GET /share/{share_token} omits og:image when there is no thumbnail and no frames', async () => {
+    const res = await fetch(`${baseUrl}/share/nnnnnnnn-1111-2222-3333-444444444444`);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).not.toContain('og:image');
+    expect(html).toContain('<meta name="twitter:card" content="summary">');
+  });
+
+  it('GET /share/{share_token} builds og:image from the earliest frame when thumbnail_filename is unset', async () => {
+    const res = await fetch(`${baseUrl}/share/${FRAME_TOKEN}`);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain(`<meta property="og:image" content="http://127.0.0.1`);
+    expect(html).toContain(`/data/REC-FRAME-001/frames/frame-002.jpg"`);
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
+  });
+
+  it('GET /share/{share_token} builds og:image from thumbnail_filename when set', async () => {
+    const res = await fetch(`${baseUrl}/share/${THUMB_TOKEN}`);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain(`/data/REC-THUMB-001/frames/thumb.jpg"`);
+  });
+
+  it('GET /share/{share_token} escapes a title containing $-prefixed replace patterns', async () => {
+    const res = await fetch(`${baseUrl}/share/${XSS_TOKEN}`);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain(`<title>Crash on $' input — BugReel</title>`);
+    // The rest of the template must survive intact — a string-replacer bug
+    // would splice a $`/$'/$& match into the output and corrupt this.
+    expect(html).toMatch(/<script/);
+    expect(html).toMatch(/id="content"|id="app"/);
   });
 
   it('GET /share/{share_token} still ships the client-side app (script tags, report container)', async () => {

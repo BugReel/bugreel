@@ -483,7 +483,16 @@
 
     function applyBranding() {
       const branding = window.__branding;
-      const reveal = () => document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
+      const ctaLinkEl = document.getElementById('report-record-cta-link');
+      const reveal = () => {
+        document.querySelectorAll('.brand-name').forEach(el => { el.style.opacity = '1'; });
+        // The link's markup already ships with the default bugreel.io href
+        // (see comment above it in the template) — that's the same fallback
+        // applyBranding() below would compute from a missing branding.url.
+        // So on a /api/branding failure it's safe to just reveal it as-is
+        // instead of leaving an invisible-but-clickable link in the DOM.
+        if (ctaLinkEl) ctaLinkEl.style.opacity = '1';
+      };
       if (!branding) { reveal(); return; }
       const logoEl = document.getElementById('report-logo');
       if (logoEl && branding.logo_url) {
@@ -493,14 +502,13 @@
       if (branding.name) {
         document.querySelectorAll('.brand-name').forEach(el => { el.textContent = branding.name; });
       }
-      const ctaLink = document.getElementById('report-record-cta-link');
-      if (ctaLink) {
+      if (ctaLinkEl) {
         // branding.url is BRAND_URL (env-pinned per deployment; defaults to
         // bugreel.io in the OSS build). rec=<id> lets the destination site
         // attribute the visit back to the recording that sent it.
         const base = (branding.url || 'https://bugreel.io').replace(/\/$/, '');
-        ctaLink.href = `${base}/?from=share&rec=${encodeURIComponent(recordingId)}`;
-        ctaLink.style.opacity = '1';
+        ctaLinkEl.href = `${base}/?from=share&rec=${encodeURIComponent(recordingId)}`;
+        ctaLinkEl.style.opacity = '1';
       }
       reveal();
     }

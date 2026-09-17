@@ -7,10 +7,10 @@ import path from 'path';
  * report.html is a static SPA page — its <title> and content are filled in
  * client-side after the browser executes JS. Chat-app / messenger / search
  * crawlers (Telegram, Slack, WhatsApp, iMessage link previews) do NOT run
- * that JS: they read <head> as delivered. Since /share/<id> is the single
- * most-visited screen in the product (per docs/../audit-view-page-and-limits),
- * every link shared into a chat currently previews as an unbranded, titleless
- * "BugReel" card with zero context — this fixes that by rendering the real
+ * that JS: they read <head> as delivered. /share/<id> is the screen every
+ * shared recording link points at, so every link shared into a chat
+ * currently previews as an unbranded, titleless "BugReel" card with zero
+ * context — this fixes that by rendering the real
  * <head> per recording on the server, then handing off the same static
  * report.html body/scripts unchanged so client-side rendering still owns
  * the interactive page.
@@ -55,14 +55,35 @@ export function resolveShareContent(recording, card) {
   return { title, description };
 }
 
+// A bare hostname or hostname:port — no scheme, no path, no userinfo, no
+// whitespace/control chars. Rejects header-injection shaped input outright;
+// it does NOT prove the Host header names *this* deployment's real domain
+// (see absoluteUrl doc below for that gap).
+const SAFE_HOST_RE = /^[a-zA-Z0-9.-]+(?::\d{1,5})?$/;
+
 /**
  * Build an absolute URL for a path, using DASHBOARD_URL (config.dashboardUrl)
  * when set, falling back to the request's own scheme+host (same pattern as
  * server/routes/embed.js and server/auth.js).
+ *
+ * Known gap: without DASHBOARD_URL configured, an attacker-controlled Host
+ * header still drives og:url/og:image — Express (like the codebase's other
+ * two callers of this pattern) has no allowlist of expected hostnames to
+ * check it against, and adding one needs a new config key (e.g.
+ * ALLOWED_HOSTS) this fix doesn't introduce. What's closed here is only the
+ * cheap part: a malformed/injected Host value (anything outside
+ * hostname[:port]) is rejected rather than echoed into a public meta tag.
+ * Operators who don't set DASHBOARD_URL in production remain exposed to
+ * Host-header-driven og:url/og:image spoofing (cache-poisoning-style) until
+ * an allowlist lands; setting DASHBOARD_URL sidesteps the whole class.
  */
 export function absoluteUrl(req, dashboardUrl, pathname) {
-  const base = dashboardUrl || `${req.protocol}://${req.get('host')}`;
-  return `${base.replace(/\/$/, '')}${pathname}`;
+  if (dashboardUrl) {
+    return `${dashboardUrl.replace(/\/$/, '')}${pathname}`;
+  }
+  const host = req.get('host') || '';
+  const safeHost = SAFE_HOST_RE.test(host) ? host : 'invalid-host.invalid';
+  return `${req.protocol}://${safeHost}${pathname}`;
 }
 
 /**
@@ -107,6 +128,10 @@ export function renderSharePage({ recording, card, branding, dashboardDir, dashb
     imageUrl ? `<meta name="twitter:image" content="${escapeAttr(imageUrl)}">` : '',
   ].filter(Boolean).join('\n  ');
 
+  // String.prototype.replace with a *string* replacement treats $&, $$, $`,
+  // $' as substitution patterns — escapeHTML doesn't escape "$", so a title
+  // containing e.g. "$'" would splice the rest of report.html into <head>.
+  // A function replacer sidesteps pattern interpolation entirely.
   return template
-    .replace('<title>BugReel</title>', `<title>${escapeHTML(pageTitle)}</title>\n  ${metaTags}`);
+    .replace('<title>BugReel</title>', () => `<title>${escapeHTML(pageTitle)}</title>\n  ${metaTags}`);
 }
