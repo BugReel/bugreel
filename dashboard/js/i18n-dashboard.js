@@ -241,6 +241,7 @@
 
       // Report page
       report_download: 'Download',
+      report_record_cta: 'Record your own video — free',
 
       // Login page
       login_subtitle: 'Screen Recording QA Tool',
@@ -725,6 +726,7 @@
 
       // Report page
       report_download: 'Скачать',
+      report_record_cta: 'Записать своё видео — бесплатно',
 
       // Login page
       login_subtitle: 'Инструмент записи экрана для QA',

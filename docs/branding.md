@@ -49,6 +49,8 @@ Database (Settings UI)  →  Environment Variable  →  Hardcoded Default
 | Dashboard page titles | `Page - {name}` | `/api/branding` |
 | Embed player (public reports) | Logo or name + link | Server-side from `getBrandingConfig()` |
 | Embed page `<title>` | `{title} — {name}` | Server-side |
+| Share page (`/share/:id`) `<title>` + OG/Twitter meta | `{title} — {name}`, `og:site_name`, description, image | Server-side, `server/services/share-meta.js`, from `getBrandingConfig()` |
+| Share page "Record your own" CTA | Links to `{BRAND_URL}/?from=share&rec={id}` | `/api/branding` (`url` field), client-side `applyBranding()` |
 | Settings page | Editable form fields | `/api/settings` |
 
 ## API

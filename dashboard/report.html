@@ -328,6 +328,17 @@
 
               <!-- Timeline -->
               ${validFrames.length ? `<div id="timelineContainer"></div>` : ''}
+
+              <!-- Record-your-own CTA. Href/label are filled in by
+                   applyBranding() once /api/branding resolves, so a
+                   white-labeled deployment points visitors at its own
+                   product, not bugreel.io. Hidden (opacity via .brand-name
+                   sibling pattern) until then to avoid a wrong-brand flash. -->
+              <div class="report-record-cta" style="margin-top:16px; text-align:center;">
+                <a id="report-record-cta-link" href="https://bugreel.io/?from=share" target="_blank" rel="noopener" class="btn btn-primary" style="opacity:0; transition:opacity 0.15s;">
+                  ${icons.video} <span class="report-record-cta-label">${t('report_record_cta', 'Record your own video — free')}</span>
+                </a>
+              </div>
             </div>
 
             <!-- Right: key moments + analysis -->
@@ -481,6 +492,15 @@
       }
       if (branding.name) {
         document.querySelectorAll('.brand-name').forEach(el => { el.textContent = branding.name; });
+      }
+      const ctaLink = document.getElementById('report-record-cta-link');
+      if (ctaLink) {
+        // branding.url is BRAND_URL (env-pinned per deployment; defaults to
+        // bugreel.io in the OSS build). rec=<id> lets the destination site
+        // attribute the visit back to the recording that sent it.
+        const base = (branding.url || 'https://bugreel.io').replace(/\/$/, '');
+        ctaLink.href = `${base}/?from=share&rec=${encodeURIComponent(recordingId)}`;
+        ctaLink.style.opacity = '1';
       }
       reveal();
     }
