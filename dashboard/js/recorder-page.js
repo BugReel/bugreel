@@ -20,9 +20,9 @@ const t = window.__dashboardI18n?.t || ((k, f) => f || k);
  * injected by the deployment) can observe recorder lifecycle. Core stays
  * brand/analytics-agnostic — it only dispatches; no vendor code here.
  * Steps: record_clicked, picker_shown, permission_denied, permission_dismissed,
- * recording_started, recording_stopped, upload_started, upload_succeeded,
- * upload_failed, share_link_shown, claim_gate_shown, recording_discarded,
- * recording_abandoned.
+ * recording_started, recording_stopped, duration_limit_hit, upload_started,
+ * upload_succeeded, upload_failed, share_link_shown, claim_gate_shown,
+ * recording_discarded, recording_abandoned.
  */
 function emitFunnel(step, detail = {}) {
   try { window.dispatchEvent(new CustomEvent('bugreel:funnel', { detail: { step, ...detail } })); } catch (_) {}
@@ -140,6 +140,8 @@ function formatMB(bytes) {
 let durationTimer = null;
 let durationWarnTimer = null;
 let durationDeadline = 0;   // epoch ms; used to re-arm with the remainder after a pause
+let planMaxSec = 0;         // the plan ceiling itself — re-arming after a pause passes the
+                            // remainder in maxSec, so the funnel event reports this instead
 const DURATION_WARN_SEC = 60;
 let pausedDurationRemaining = 0;
 
@@ -157,6 +159,7 @@ async function armDurationLimit(remainingMs = null) {
   } else {
     durationDeadline = 0;
     try { maxSec = (await getCurrentUserAsync())?.limits?.max_duration_sec || 0; } catch (_) {}
+    planMaxSec = maxSec;
   }
   if (!maxSec || (state !== 'recording' && state !== 'paused')) return;
   durationDeadline = Date.now() + maxSec * 1000;
@@ -171,6 +174,7 @@ async function armDurationLimit(remainingMs = null) {
     if (state !== 'recording' && state !== 'paused') return;
     autoStopped = true;
     stopReason  = 'duration';
+    emitFunnel('duration_limit_hit', { limit_sec: Math.round(planMaxSec || maxSec) });
     stopRecording();
   }, maxSec * 1000);
 }
