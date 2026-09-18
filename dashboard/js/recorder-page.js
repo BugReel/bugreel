@@ -21,7 +21,8 @@ const t = window.__dashboardI18n?.t || ((k, f) => f || k);
  * brand/analytics-agnostic — it only dispatches; no vendor code here.
  * Steps: record_clicked, picker_shown, permission_denied, permission_dismissed,
  * recording_started, recording_stopped, upload_started, upload_succeeded,
- * upload_failed, share_link_shown.
+ * upload_failed, share_link_shown, claim_gate_shown, recording_discarded,
+ * recording_abandoned.
  */
 function emitFunnel(step, detail = {}) {
   try { window.dispatchEvent(new CustomEvent('bugreel:funnel', { detail: { step, ...detail } })); } catch (_) {}
@@ -587,7 +588,10 @@ function revealShareLink(url) {
 }
 
 function showClaimGate(shareUrl) {
-  emitFunnel('share_link_shown');
+  // The guest sees an email form, not the link — that is its own funnel step.
+  // This used to emit a second 'share_link_shown', so one successful guest
+  // upload was counted twice in the "link shown" goal.
+  emitFunnel('claim_gate_shown');
   pendingShareUrl = shareUrl;
   if (progressText) progressText.style.display = 'none';
   if (claimEmail)   claimEmail.placeholder = t('rec_claim_email_ph', 'you@example.com');
@@ -820,6 +824,7 @@ function stopRecording() {
 }
 
 function discardRecording() {
+  emitFunnel('recording_discarded');
   revokeBlobUrl();
   recordingBlob = null;
   releaseTracks();
@@ -831,7 +836,10 @@ function discardRecording() {
 
 /* ── Beforeunload guard ───────────────────────────────────────────────────── */
 window.addEventListener('beforeunload', (e) => {
-  if (state === 'recording' || state === 'paused' || state === 'uploading') {
+  // 'preview': recording has stopped but lives only in this tab's memory, so
+  // closing it loses the take for good — warn here too, not just while busy.
+  if (state === 'preview') emitFunnel('recording_abandoned');
+  if (state === 'recording' || state === 'paused' || state === 'uploading' || state === 'preview') {
     e.preventDefault();
     // Modern browsers show a generic warning; setting returnValue triggers it
     e.returnValue = '';
