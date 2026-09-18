@@ -24,6 +24,32 @@ async function hasAudioStream(videoPath) {
 }
 
 /**
+ * Last resort duration probe: read the presentation timestamp of the final
+ * video packet. Chrome's MediaRecorder WebM carries neither a format nor a
+ * stream duration, so for video-only recordings both header probes return
+ * N/A and the MP3 fallback does not exist. Seeking to 99% keeps this cheap
+ * (no full decode) while still landing in the tail of the file.
+ *
+ * @param {string} videoPath
+ * @returns {Promise<number>} duration in seconds, 0 when unknown
+ */
+async function probeDurationFromLastPacket(videoPath) {
+  try {
+    const { stdout } = await execAsync(
+      `ffprobe -v error -select_streams v:0 -show_entries packet=pts_time -read_intervals "99%" -of csv=p=0 "${videoPath}"`
+    );
+    const values = stdout
+      .split('\n')
+      .map(line => parseFloat(line.replace(/,+$/, '').trim()))
+      .filter(value => !isNaN(value) && value > 0);
+    if (values.length === 0) return 0;
+    return Math.round(Math.max(...values));
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Extract audio track from video file as MP3, with graceful handling of
  * video-only recordings (no audio stream).
  *
@@ -65,6 +91,12 @@ export async function extractAudio(videoPath, audioPath) {
       if (!isNaN(dur) && dur > 0) return { duration: Math.round(dur), hasAudio: true };
     } catch {}
   }
+
+  // Last resort: derive the length from the final video packet. This is the
+  // only source for video-only Chrome WebM recordings, which have no format
+  // duration and no extracted MP3 to fall back on.
+  const packetDuration = await probeDurationFromLastPacket(videoPath);
+  if (packetDuration > 0) return { duration: packetDuration, hasAudio: audioPresent };
 
   return { duration: 0, hasAudio: audioPresent }; // unknown duration
 }

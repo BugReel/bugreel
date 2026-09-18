@@ -275,6 +275,43 @@ describe('extractAudio — no-audio path', () => {
     await expect(extractAudio(videoPath, audioPath)).rejects.toThrow(/extractAudio failed/);
   });
 
+  it('falls back to the last video packet pts when the WebM carries no format duration', async () => {
+    // Chrome's MediaRecorder output for a video-only recording: the audio
+    // probe is empty, the format duration is N/A, and there is no MP3 to
+    // fall back on — only the packet timestamps carry the length.
+    const cmds = [];
+    stubExec((cmd, cb) => {
+      cmds.push(cmd);
+      if (cmd.includes('stream=index')) return cb(null, { stdout: '', stderr: '' });
+      if (cmd.includes('packet=pts_time')) {
+        return cb(null, { stdout: '95.320000\n96.396000\n', stderr: '' });
+      }
+      return cb(null, { stdout: 'N/A\n', stderr: '' });
+    });
+
+    const result = await extractAudio(videoPath, audioPath);
+
+    expect(result.hasAudio).toBe(false);
+    expect(result.duration).toBe(96);
+    expect(cmds.some(c => c.includes('-read_intervals "99%"'))).toBe(true);
+    // Video-only: no MP3 probe, since no MP3 was written.
+    expect(cmds.some(c => c.includes(audioPath))).toBe(false);
+  });
+
+  it('prefers the format duration and never probes packets when the header has one', async () => {
+    const cmds = [];
+    stubExec((cmd, cb) => {
+      cmds.push(cmd);
+      if (cmd.includes('stream=index')) return cb(null, { stdout: '', stderr: '' });
+      return cb(null, { stdout: '12.4\n', stderr: '' });
+    });
+
+    const result = await extractAudio(videoPath, audioPath);
+
+    expect(result.duration).toBe(12);
+    expect(cmds.some(c => c.includes('packet=pts_time'))).toBe(false);
+  });
+
   it('returns duration 0 when ffprobe reports no audio and duration probe fails', async () => {
     let call = 0;
     stubExec((cmd, cb) => {
